@@ -1,0 +1,12 @@
+---
+description: Project research notes live in docs/
+alwaysApply: true
+---
+
+# Research notes (`docs/`)
+
+This repo has a **`docs/`** directory with markdown research notes from building the Mad-Dog Everettianism simulator. Consult these for physics context, measured results, and design rationale before guessing.
+
+Start at `docs/README.md` for the index. Topics include emergent space/time, holography tests, TFIM parameters (`h`, `J`), the 3+1 Universe Lab, and open questions.
+
+These are **working learnings** (what the code does and what `sim-check` showed), not claims of new physics. Update `docs/` when experiments or behavior change materially.
