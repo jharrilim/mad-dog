@@ -4,9 +4,12 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build:wasm": "wasm-pack build wasm/mad-dog-sim --target web --out-dir ../../src/sim/wasm/pkg --release",
+    "ensure:wasm": "test -f src/sim/wasm/pkg/mad_dog_sim.js || npm run build:wasm",
+    "dev": "npm run ensure:wasm && vite",
+    "build": "npm run build:wasm && tsc -b && vite build",
     "build:pages": "GITHUB_PAGES=true npm run build",
+    "check:wasm": "npm run build:wasm && node scripts/wasm-check.ts",
     "lint": "eslint .",
     "preview": "vite preview"
   },

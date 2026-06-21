@@ -10,9 +10,9 @@ import {
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
-  runSpacetime,
   type SpacetimeRunConfig,
 } from '@/sim/runner'
+import { runSpacetimeAsync, type SpacetimeResultWithBackend } from '@/sim/runner-async'
 import {
   measureLightCone,
   type LightCone,
@@ -163,20 +163,18 @@ const DEFAULT: SpacetimeRunConfig = {
 
 export function SpacetimeViz() {
   const [config, setConfig] = useState<SpacetimeRunConfig>(DEFAULT)
-  const [result, setResult] = useState<SpacetimeResult | null>(null)
+  const [result, setResult] = useState<SpacetimeResultWithBackend | null>(null)
   const [selected, setSelected] = useState(0)
   const [running, setRunning] = useState(false)
 
   const run = useCallback(() => {
     setRunning(true)
-    setTimeout(() => {
-      try {
-        setResult(runSpacetime(config))
+    void runSpacetimeAsync(config)
+      .then((r) => {
+        setResult(r)
         setSelected(0)
-      } finally {
-        setRunning(false)
-      }
-    }, 30)
+      })
+      .finally(() => setRunning(false))
   }, [config])
 
   const update = <K extends keyof SpacetimeRunConfig>(
@@ -261,6 +259,9 @@ export function SpacetimeViz() {
           <div className="space-y-6 border-t pt-6">
             <div className="flex flex-wrap items-center gap-3">
               <Badge variant="secondary">{result.sites}-site chain</Badge>
+              <Badge variant="outline">
+                {result.backend === 'wasm' ? 'Rust WASM' : 'TypeScript'}
+              </Badge>
               <Badge>
                 emergent speed of light v ≈ {cone.velocity.toFixed(2)}{' '}
                 sites/time

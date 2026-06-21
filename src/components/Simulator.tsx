@@ -10,11 +10,10 @@ import {
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
-  runEmergence,
   type ModelKind,
   type RunConfig,
-  type RunResult,
 } from '@/sim/runner'
+import { runEmergenceAsync, type RunResultWithBackend } from '@/sim/runner-async'
 
 const MODELS: { kind: ModelKind; label: string; blurb: string }[] = [
   {
@@ -224,7 +223,7 @@ const DEFAULT_CONFIG: RunConfig = {
 
 export function Simulator() {
   const [config, setConfig] = useState<RunConfig>(DEFAULT_CONFIG)
-  const [result, setResult] = useState<RunResult | null>(null)
+  const [result, setResult] = useState<RunResultWithBackend | null>(null)
   const [running, setRunning] = useState(false)
 
   const qubitCount = useMemo(() => {
@@ -234,14 +233,9 @@ export function Simulator() {
 
   const run = useCallback(() => {
     setRunning(true)
-    // Defer so the spinner paints before the synchronous solve blocks the thread.
-    setTimeout(() => {
-      try {
-        setResult(runEmergence(config))
-      } finally {
-        setRunning(false)
-      }
-    }, 30)
+    void runEmergenceAsync(config)
+      .then(setResult)
+      .finally(() => setRunning(false))
   }, [config])
 
   const update = <K extends keyof RunConfig>(key: K, value: RunConfig[K]) =>
@@ -357,8 +351,8 @@ export function Simulator() {
           </div>
           {qubitCount >= 11 && (
             <p className="text-xs text-amber-500/80">
-              Large systems run on the main thread and may briefly freeze the
-              page. A WebGPU backend for bigger systems is planned.
+              Large systems may take a few seconds in the WASM worker; the page
+              stays responsive.
             </p>
           )}
         </div>
@@ -368,6 +362,9 @@ export function Simulator() {
           <div className="space-y-6 border-t pt-6">
             <div className="flex flex-wrap items-center gap-3">
               <Badge variant="secondary">{result.label}</Badge>
+              <Badge variant="outline">
+                {result.backend === 'wasm' ? 'Rust WASM' : 'TypeScript'}
+              </Badge>
               <Badge>
                 Emergent dimension: {result.report.mds.emergentDim}
               </Badge>

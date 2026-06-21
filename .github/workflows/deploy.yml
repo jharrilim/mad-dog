@@ -25,11 +25,18 @@ jobs:
           node-version: 22
           cache: npm
 
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Install wasm-pack
+        run: cargo install wasm-pack --locked
+
       - run: npm ci
 
-      - run: npm run build
-        env:
-          GITHUB_PAGES: 'true'
+      - run: npm run check:wasm
+
+      - run: npm run build:pages
 
       - uses: actions/upload-pages-artifact@v3
         with:

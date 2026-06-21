@@ -2,7 +2,7 @@
 
 ## Goal
 
-A separate page (`#/lab`) showing **three emergent spatial dimensions + one emergent time** in one dashboard.
+A separate page (`/lab`) showing **three emergent spatial dimensions + one emergent time** in one dashboard.
 
 ## Model
 

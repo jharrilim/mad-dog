@@ -9,7 +9,8 @@ import {
 } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { runSpacetime2D, type Spacetime2DConfig } from '@/sim/runner'
+import { type Spacetime2DConfig } from '@/sim/runner'
+import { runSpacetime2DAsync, type SpacetimeResultWithBackend } from '@/sim/runner-async'
 import { measureLightCone, type SpacetimeResult } from '@/sim/spacetime'
 
 function signalColor(v: number) {
@@ -109,7 +110,7 @@ const DEFAULT: Spacetime2DConfig = {
 
 export function Spacetime2DViz() {
   const [config, setConfig] = useState<Spacetime2DConfig>(DEFAULT)
-  const [result, setResult] = useState<SpacetimeResult | null>(null)
+  const [result, setResult] = useState<SpacetimeResultWithBackend | null>(null)
   const [selected, setSelected] = useState(0)
   const [running, setRunning] = useState(false)
   const [playing, setPlaying] = useState(false)
@@ -118,14 +119,12 @@ export function Spacetime2DViz() {
   const run = useCallback(() => {
     setRunning(true)
     setPlaying(false)
-    setTimeout(() => {
-      try {
-        setResult(runSpacetime2D(config))
+    void runSpacetime2DAsync(config)
+      .then((r) => {
+        setResult(r)
         setSelected(0)
-      } finally {
-        setRunning(false)
-      }
-    }, 30)
+      })
+      .finally(() => setRunning(false))
   }, [config])
 
   useEffect(() => {
@@ -216,6 +215,9 @@ export function Spacetime2DViz() {
             <div className="flex flex-wrap items-center gap-3">
               <Badge variant="secondary">
                 {config.rows}×{config.cols} grid
+              </Badge>
+              <Badge variant="outline">
+                {result.backend === 'wasm' ? 'Rust WASM' : 'TypeScript'}
               </Badge>
               <Badge>v ≈ {cone.velocity.toFixed(2)} sites/time</Badge>
               <span className="text-xs text-muted-foreground">

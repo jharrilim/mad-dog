@@ -9,7 +9,8 @@ import {
 } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { runHolography, type HolographyRunResult } from '@/sim/runner'
+import type { HolographyRunResult } from '@/sim/runner'
+import { runHolographyAsync, type HolographyRunResultWithBackend } from '@/sim/runner-async'
 
 const GROUND = 'oklch(0.72 0.16 290)'
 const RANDOM = 'oklch(0.78 0.13 60)'
@@ -223,18 +224,14 @@ const DEFAULT = { n: 10, field: 1.5, seed: 7 }
 
 export function HolographyViz() {
   const [config, setConfig] = useState(DEFAULT)
-  const [result, setResult] = useState<HolographyRunResult | null>(null)
+  const [result, setResult] = useState<HolographyRunResultWithBackend | null>(null)
   const [running, setRunning] = useState(false)
 
   const run = useCallback(() => {
     setRunning(true)
-    setTimeout(() => {
-      try {
-        setResult(runHolography(config))
-      } finally {
-        setRunning(false)
-      }
-    }, 30)
+    void runHolographyAsync(config)
+      .then(setResult)
+      .finally(() => setRunning(false))
   }, [config])
 
   const update = (key: keyof typeof config, value: number) =>
@@ -301,6 +298,9 @@ export function HolographyViz() {
           <div className="space-y-6 border-t pt-6">
             <div className="flex flex-wrap items-center gap-3">
               <Badge variant="secondary">{result.report.n}-site chain</Badge>
+              <Badge variant="outline">
+                {result.backend === 'wasm' ? 'Rust WASM' : 'TypeScript'}
+              </Badge>
               <Badge>RT slope ≈ {result.report.rtSlope.toFixed(2)}</Badge>
               <Badge
                 variant={result.report.rtR2 > 0.9 ? 'default' : 'outline'}

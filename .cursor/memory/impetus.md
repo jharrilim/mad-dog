@@ -28,7 +28,7 @@ Dated bullets for decisions future agents should not relitigate without cause.
 
 ## 3+1 Universe Lab
 
-- **Separate `#/lab` page** with HashRouter: essay stays readable; Three.js bundle ~1.3MB.
+- **Separate `/lab` page** with lazy-loaded Three.js: essay stays lean; browser routing with `404.html` SPA fallback on GitHub Pages.
 - **2×2×2 cube default**: smallest 3D lattice that runs interactively; dim detector noisy at n=8 (reported honestly).
 - **Procrustes3D alignment**: MDS gauge freedom would spin the 3D view between slices without it.
 - **Fixed canvas height + block wheel propagation**: `h-full` in unconstrained grid caused infinite scroll; OrbitControls zoom scrolled the page.
@@ -36,6 +36,12 @@ Dated bullets for decisions future agents should not relitigate without cause.
 ## Parameters
 
 - **Lower h → sharper quench worldlines; higher h → muddier tracks** (user observation): ordered vs paramagnetic dynamics — document in `docs/parameters-and-phases.md`, not a single h for all demos.
+
+## 2026 — Rust WASM backend (GitHub Pages)
+
+- **Single-threaded Rust/WASM in a Web Worker** — no `SharedArrayBuffer` / COOP-COEP; works on GitHub Pages.
+- **TypeScript sim stays the oracle** — `scripts/wasm-check.ts` compares energy, emergent dim, MI to TS.
+- **Emergence demo wired first** — `runEmergenceAsync` uses WASM with TS fallback; extend to other runners later.
 
 ## Documentation
 

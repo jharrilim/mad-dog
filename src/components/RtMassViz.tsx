@@ -9,7 +9,8 @@ import {
 } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { runRtMass, type RtMassRunResult } from '@/sim/runner'
+import type { RtMassRunResult } from '@/sim/runner'
+import { runRtMassAsync, type RtMassRunResultWithBackend } from '@/sim/runner-async'
 
 const VACUUM = 'oklch(0.55 0.02 290 / 0.55)'
 
@@ -196,18 +197,14 @@ const DEFAULT = { n: 10, field: 1.5, seed: 7, strength: 1.0 }
 
 export function RtMassViz() {
   const [config, setConfig] = useState(DEFAULT)
-  const [result, setResult] = useState<RtMassRunResult | null>(null)
+  const [result, setResult] = useState<RtMassRunResultWithBackend | null>(null)
   const [running, setRunning] = useState(false)
 
   const run = useCallback(() => {
     setRunning(true)
-    setTimeout(() => {
-      try {
-        setResult(runRtMass(config))
-      } finally {
-        setRunning(false)
-      }
-    }, 30)
+    void runRtMassAsync(config)
+      .then(setResult)
+      .finally(() => setRunning(false))
   }, [config])
 
   const update = (key: keyof typeof config, value: number) =>
@@ -281,6 +278,9 @@ export function RtMassViz() {
             <div className="flex flex-wrap items-center gap-3">
               <Badge variant="secondary">
                 mass at site {result.report.massSite}
+              </Badge>
+              <Badge variant="outline">
+                {result.backend === 'wasm' ? 'Rust WASM' : 'TypeScript'}
               </Badge>
               <Badge>
                 vacuum slope {result.report.vacuum.rtSlope.toFixed(2)}

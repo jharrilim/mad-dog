@@ -1,17 +1,47 @@
-import { HashRouter, Routes, Route } from 'react-router-dom'
+import { Suspense, lazy } from 'react'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { Layout } from '@/components/Layout'
-import Home from '@/pages/Home'
-import Lab from '@/pages/Lab'
+
+const Home = lazy(() => import('@/pages/Home'))
+const Lab = lazy(() => import('@/pages/Lab'))
+
+/** GitHub Pages serves from `/mad-dog/`; local dev uses `/`. */
+const basename =
+  import.meta.env.BASE_URL === '/'
+    ? undefined
+    : import.meta.env.BASE_URL.replace(/\/$/, '')
+
+function PageLoader() {
+  return (
+    <div className="flex flex-1 items-center justify-center p-12 text-sm text-muted-foreground">
+      Loading…
+    </div>
+  )
+}
 
 export default function App() {
   return (
-    <HashRouter>
+    <BrowserRouter basename={basename}>
       <Routes>
         <Route element={<Layout />}>
-          <Route path="/" element={<Home />} />
-          <Route path="/lab" element={<Lab />} />
+          <Route
+            path="/"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <Home />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/lab"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <Lab />
+              </Suspense>
+            }
+          />
         </Route>
       </Routes>
-    </HashRouter>
+    </BrowserRouter>
   )
 }
