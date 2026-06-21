@@ -1,0 +1,27 @@
+---
+description: Agent-maintained project memory in .cursor/memory/
+alwaysApply: true
+---
+
+# Project memory (`.cursor/memory/`)
+
+Maintain and reference a **memory directory** at `.cursor/memory/` for durable project context that is not worth encoding in every rule.
+
+**Do not** memorize something from every prompt. **Do** update memory when a decision has lasting impact — especially *why* it was made.
+
+## Files
+
+| File | Purpose |
+|------|---------|
+| `goals.md` | What we are trying to achieve |
+| `non-goals.md` | What we are explicitly not doing (yet or ever) |
+| `impetus.md` | Why key decisions were made — rationale, tradeoffs, rejected alternatives |
+
+Read these at the start of substantial work. Update them when goals shift or when you make a non-obvious choice future agents should inherit.
+
+## vs `docs/`
+
+- **`docs/`** — research notes: what the sim does, what we measured, physics/engine learnings (see `research-docs` rule).
+- **`.cursor/memory/`** — agent memory: goals, non-goals, and decision *impetus*. Shorter and more actionable for ongoing development.
+
+Keep memory concise. Prefer appending dated bullets to `impetus.md` over long prose.
