@@ -3,6 +3,8 @@ import { cn } from '@/lib/utils'
 
 export function Layout() {
   const { pathname } = useLocation()
+  const isEssay = pathname === '/'
+  const isExperiments = pathname.startsWith('/experiments')
   const isLab = pathname.startsWith('/lab')
 
   return (
@@ -20,12 +22,23 @@ export function Layout() {
               to="/"
               className={cn(
                 'px-3 py-1.5 rounded-md transition-colors',
-                !isLab
+                isEssay
                   ? 'bg-secondary text-secondary-foreground'
                   : 'text-muted-foreground hover:text-foreground',
               )}
             >
               Essay
+            </Link>
+            <Link
+              to="/experiments"
+              className={cn(
+                'px-3 py-1.5 rounded-md transition-colors',
+                isExperiments
+                  ? 'bg-secondary text-secondary-foreground'
+                  : 'text-muted-foreground hover:text-foreground',
+              )}
+            >
+              Experiments
             </Link>
             <Link
               to="/lab"

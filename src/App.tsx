@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { Layout } from '@/components/Layout'
 
 const Home = lazy(() => import('@/pages/Home'))
+const Experiments = lazy(() => import('@/pages/Experiments'))
 const Lab = lazy(() => import('@/pages/Lab'))
 
 /** GitHub Pages serves from `/mad-dog/`; local dev uses `/`. */
@@ -29,6 +30,14 @@ export default function App() {
             element={
               <Suspense fallback={<PageLoader />}>
                 <Home />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/experiments"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <Experiments />
               </Suspense>
             }
           />

@@ -14,12 +14,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { SpectrumViz } from '@/components/visualizations/SpectrumViz'
 import { EntanglementGraphViz } from '@/components/visualizations/EntanglementGraphViz'
 import { DecoherenceViz } from '@/components/visualizations/DecoherenceViz'
-import { Simulator } from '@/components/Simulator'
-import { SpacetimeViz } from '@/components/SpacetimeViz'
-import { Spacetime2DViz } from '@/components/Spacetime2DViz'
-import { HolographyViz } from '@/components/HolographyViz'
-import { RtMassViz } from '@/components/RtMassViz'
-import { RelationalTimeViz } from '@/components/RelationalTimeViz'
 
 const sections = [
   {
@@ -177,6 +171,9 @@ function Home() {
               </a>
             </Button>
             <Button variant="outline" asChild>
+              <Link to="/experiments">Run Experiments</Link>
+            </Button>
+            <Button variant="outline" asChild>
               <Link to="/lab">Universe Lab (3+1)</Link>
             </Button>
             <Button variant="outline" asChild>
@@ -243,7 +240,11 @@ function Home() {
             <h2 className="text-2xl font-semibold mb-2">Visualizations</h2>
             <p className="text-muted-foreground">
               Illustrative diagrams for the paper&apos;s central constructions.
-              These use toy data — a full simulation is planned for later.
+              Live quantum checks are on the{' '}
+              <Link to="/experiments" className="underline hover:text-foreground">
+                Experiments
+              </Link>{' '}
+              tab.
             </p>
           </div>
 
@@ -263,61 +264,6 @@ function Home() {
               <DecoherenceViz />
             </TabsContent>
           </Tabs>
-        </section>
-
-        <Separator />
-
-        {/* Live simulator */}
-        <section className="space-y-6">
-          <div>
-            <h2 className="text-2xl font-semibold mb-2">Emergence, Simulated</h2>
-            <p className="text-muted-foreground">
-              Not a cartoon — a real quantum state-vector engine. It finds a
-              low-energy state of a Hamiltonian, measures the entanglement
-              between qubits, and asks whether a spatial geometry emerges from
-              that entanglement alone.
-            </p>
-          </div>
-          <Simulator />
-        </section>
-
-        <Separator />
-
-        {/* Emergent spacetime */}
-        <section className="space-y-6">
-          <div>
-            <h2 className="text-2xl font-semibold mb-2">Spacetime from a Timeless State</h2>
-            <p className="text-muted-foreground">
-              If space can emerge from entanglement, can time? Here a single
-              timeless global state, conditioned on an internal clock, recovers
-              dynamics &mdash; and the emergent geometry evolves across clock
-              readings into a spacetime with a causal light cone.
-            </p>
-          </div>
-          <SpacetimeViz />
-          <Spacetime2DViz />
-          <RelationalTimeViz />
-        </section>
-
-        <Separator />
-
-        {/* Holographic test */}
-        <section className="space-y-6">
-          <div>
-            <h2 className="text-2xl font-semibold mb-2">
-              A Holographic Aside, Tested
-            </h2>
-            <p className="text-muted-foreground">
-              If geometry is woven from entanglement, the boldest claim nearby is
-              holography: that a region&apos;s information lives on its boundary.
-              Rather than assert the connection, we test it. The same chains that
-              gave us emergent space turn out to obey an area law and a discrete
-              Ryu&ndash;Takayanagi relation &mdash; entropy equal to boundary
-              &ldquo;area.&rdquo; A speculation, honestly checked.
-            </p>
-          </div>
-          <HolographyViz />
-          <RtMassViz />
         </section>
 
         {/* Roadmap */}
