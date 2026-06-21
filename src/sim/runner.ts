@@ -18,7 +18,7 @@ import {
 } from './models.ts'
 import { analyzeEmergentGeometry, type EmergenceReport } from './geometry.ts'
 import { buildSpacetime, type SpacetimeResult } from './spacetime.ts'
-import { analyzeHolography, type HolographyReport } from './holography.ts'
+import { analyzeHolography, analyzeRtMassDeformation, type HolographyReport, type RtMassReport } from './holography.ts'
 import { buildDualClock, type DualClockResult } from './relational-time.ts'
 
 export type ModelKind = 'chain' | 'grid' | 'random'
@@ -181,6 +181,45 @@ export function runHolography(config: HolographyRunConfig): HolographyRunResult 
   return {
     label: model.label,
     energy,
+    report,
+    elapsedMs: performance.now() - start,
+  }
+}
+
+export interface RtMassRunConfig {
+  n: number
+  field: number
+  seed: number
+  /** Qubit where the excitation ("mass") is injected. */
+  massSite?: number
+  /** Quench evolution time — mass strength. */
+  strength: number
+}
+
+export interface RtMassRunResult {
+  label: string
+  report: RtMassReport
+  elapsedMs: number
+}
+
+/**
+ * Deform the RT slope by concentrating entanglement at a local excitation.
+ * Compare vacuum (ground state) vs. mass-perturbed RT relation.
+ */
+export function runRtMass(config: RtMassRunConfig): RtMassRunResult {
+  const start = performance.now()
+  const model = tfimChain(config.n, 1, config.field)
+  const rng = makeRng(config.seed)
+  const { state } = groundState(model.hamiltonian, rng, { maxIters: 4000 })
+  const massSite = config.massSite ?? Math.floor(config.n / 2)
+  const report = analyzeRtMassDeformation(
+    model.hamiltonian,
+    state,
+    massSite,
+    config.strength,
+  )
+  return {
+    label: model.label,
     report,
     elapsedMs: performance.now() - start,
   }

@@ -25,7 +25,7 @@ import {
   mutualInformationMatrix,
 } from '../src/sim/geometry.ts'
 import { buildSpacetime } from '../src/sim/spacetime.ts'
-import { analyzeHolography } from '../src/sim/holography.ts'
+import { analyzeHolography, analyzeRtMassDeformation } from '../src/sim/holography.ts'
 import { runRelationalTime } from '../src/sim/runner.ts'
 
 function approx(a: number, b: number, tol = 1e-6): string {
@@ -218,6 +218,30 @@ const rng = makeRng(12345)
   console.log(
     `  defect clock (site ${center}): sync R^2 = ${atDefect.syncR2.toFixed(4)}`,
     atDefect.syncR2 > 0.99 ? 'OK (clock at defect stays in sync)' : 'UNEXPECTED',
+  )
+}
+
+// --- RT slope deformation under local "mass" ---
+{
+  const n = 10
+  const model = tfimChain(n, 1, 1.5)
+  const { state } = groundState(model.hamiltonian, makeRng(7), { maxIters: 4000 })
+  const center = Math.floor(n / 2)
+  const vacuum = analyzeRtMassDeformation(model.hamiltonian, state, center, 0)
+  const heavy = analyzeRtMassDeformation(model.hamiltonian, state, center, 1.0)
+  const delta = heavy.mass.rtSlope - vacuum.vacuum.rtSlope
+  console.log('\nRT slope under mass (10-site chain, h=1.5):')
+  console.log(
+    `  vacuum slope = ${vacuum.vacuum.rtSlope.toFixed(3)}`,
+    Math.abs(vacuum.vacuum.rtSlope - 1) < 0.1 ? 'OK (~1)' : 'UNEXPECTED',
+  )
+  console.log(
+    `  mass slope   = ${heavy.mass.rtSlope.toFixed(3)}  (Δ = ${delta.toFixed(3)})`,
+    delta > 0.2 ? 'OK (slope deformed upward)' : 'WEAK',
+  )
+  console.log(
+    `  mass R^2     = ${heavy.mass.rtR2.toFixed(3)}`,
+    heavy.mass.rtR2 > 0.85 ? 'OK (relation still holds roughly)' : 'BROKEN',
   )
 }
 

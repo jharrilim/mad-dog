@@ -54,6 +54,21 @@ export function expectationZ(state: QuantumState, q: number): number {
   return sum
 }
 
+/** Apply a single Pauli-X to a qubit, returning a new state. */
+export function kickX(state: QuantumState, qubit: number): QuantumState {
+  const kicked = cloneState(state)
+  const { dim, data } = state
+  for (let s = 0; s < dim; s++) {
+    if ((s >> qubit) & 1) continue
+    const t = s | (1 << qubit)
+    kicked.data[2 * t] = data[2 * s]
+    kicked.data[2 * t + 1] = data[2 * s + 1]
+    kicked.data[2 * s] = 0
+    kicked.data[2 * s + 1] = 0
+  }
+  return kicked
+}
+
 /** A normalized random complex state (deterministic given the supplied RNG). */
 export function makeRandomState(n: number, rng: () => number): QuantumState {
   const state = makeZeroState(n)

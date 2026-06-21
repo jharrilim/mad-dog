@@ -17,6 +17,7 @@ import { Simulator } from '@/components/Simulator'
 import { SpacetimeViz } from '@/components/SpacetimeViz'
 import { Spacetime2DViz } from '@/components/Spacetime2DViz'
 import { HolographyViz } from '@/components/HolographyViz'
+import { RtMassViz } from '@/components/RtMassViz'
 import { RelationalTimeViz } from '@/components/RelationalTimeViz'
 
 const sections = [
@@ -305,6 +306,7 @@ function App() {
             </p>
           </div>
           <HolographyViz />
+          <RtMassViz />
         </section>
 
         {/* Roadmap */}
@@ -325,11 +327,6 @@ function App() {
                 <li>
                   Search for the factorization that makes a given spectrum look
                   local (locality from the spectrum)
-                </li>
-                <li>
-                  Curved emergent space: test whether the Ryu&ndash;Takayanagi
-                  slope deforms as entanglement is concentrated, hinting at an
-                  emergent metric&apos;s response to &ldquo;mass&rdquo;
                 </li>
                 <li>
                   Three-or-more-clock networks: build a graph of relational time
