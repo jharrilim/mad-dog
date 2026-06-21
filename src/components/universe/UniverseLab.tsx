@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Play, Pause, Loader2, RotateCcw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -12,12 +12,11 @@ import {
 } from '@/components/ui/card'
 import { UniverseCanvas } from '@/components/universe/UniverseCanvas'
 import {
-  runUniverse3D,
-  stateAtUniverseSlice,
-  type Universe3DConfig,
-  type Universe3DResult,
-} from '@/sim/runner'
-import { analyzeEmergentGeometry } from '@/sim/geometry'
+  runUniverse3DAsync,
+  runUniverseSliceAsync,
+  type Universe3DResultWithBackend,
+} from '@/sim/runner-async'
+import type { Universe3DConfig } from '@/sim/runner'
 
 type LatticePreset = '2x2x2' | '2x2x3'
 
@@ -44,7 +43,7 @@ function SpacetimeStrip({
   selected,
   onSelect,
 }: {
-  result: Universe3DResult
+  result: Universe3DResultWithBackend
   selected: number
   onSelect: (k: number) => void
 }) {
@@ -89,39 +88,38 @@ function SpacetimeStrip({
 
 export function UniverseLab() {
   const [config, setConfig] = useState(DEFAULT)
-  const [result, setResult] = useState<Universe3DResult | null>(null)
+  const [result, setResult] = useState<Universe3DResultWithBackend | null>(null)
   const [selected, setSelected] = useState(0)
   const [running, setRunning] = useState(false)
   const [playing, setPlaying] = useState(false)
+  const [sliceReport, setSliceReport] = useState<
+    Awaited<ReturnType<typeof runUniverseSliceAsync>> | null
+  >(null)
   const timer = useRef<number | null>(null)
 
   const run = useCallback(() => {
     setRunning(true)
     setPlaying(false)
-    setTimeout(() => {
-      try {
-        const { preset: _, ...cfg } = config
-        setResult(runUniverse3D(cfg))
+    const { preset: _, ...cfg } = config
+    void runUniverse3DAsync(cfg)
+      .then((r) => {
+        setResult(r)
         setSelected(0)
-      } finally {
-        setRunning(false)
-      }
-    }, 30)
+      })
+      .finally(() => setRunning(false))
   }, [config])
 
-  const sliceMi = useMemo(() => {
-    if (!result) return null
+  useEffect(() => {
+    if (!result) {
+      setSliceReport(null)
+      return
+    }
     const { preset: _, ...cfg } = config
-    const { state } = stateAtUniverseSlice(cfg, selected)
-    return analyzeEmergentGeometry(state, 1, 3).mi
+    void runUniverseSliceAsync({ ...cfg, k: selected }).then(setSliceReport)
   }, [result, selected, config])
 
-  const sliceAnalysis = useMemo(() => {
-    if (!result) return null
-    const { preset: _, ...cfg } = config
-    const { state } = stateAtUniverseSlice(cfg, selected)
-    return analyzeEmergentGeometry(state, 1, 3)
-  }, [result, selected, config])
+  const sliceMi = sliceReport?.report.mi ?? null
+  const sliceAnalysis = sliceReport?.report ?? null
 
   useEffect(() => {
     if (!playing || !result) return
@@ -319,6 +317,7 @@ export function UniverseLab() {
               <aside className="space-y-4 text-sm">
                 <div className="flex flex-wrap gap-2">
                   <Badge variant="secondary">{result.model.label}</Badge>
+                  <Badge variant="outline">{result.backend}</Badge>
                   <Badge>
                     dim≈{sliceAnalysis?.mds.emergentDim ?? '?'}
                   </Badge>

@@ -1,19 +1,35 @@
 mod emergence;
+mod factorization;
 mod geometry;
 mod holography;
 mod linalg;
 mod models;
 mod quantum;
+mod relational_time;
 mod rng;
+mod refinement;
+mod run_factorization;
 mod run_holography;
+mod run_refinement;
+mod run_relational_time;
 mod run_spacetime;
+mod run_universe;
 mod spacetime;
 
 use emergence::{run_emergence, RunConfig as EmergenceConfig};
+use run_factorization::{run_factorization_search, FactorizationSearchConfig};
 use run_holography::{
     run_holography, run_rt_mass, HolographyRunConfig, RtMassRunConfig,
 };
+use run_refinement::{
+    run_refinement_n_compare, run_refinement_quench, RefinementNCompareConfig,
+    RefinementQuenchConfig,
+};
+use run_relational_time::{run_relational_time, RelationalTimeConfig};
 use run_spacetime::{run_spacetime, run_spacetime_2d, Spacetime2DConfig, SpacetimeRunConfig};
+use run_universe::{
+    run_universe_3d, run_universe_slice, Universe3DConfig, UniverseSliceConfig,
+};
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
@@ -67,8 +83,68 @@ pub fn run_rt_mass_json(config_json: &str) -> Result<String, JsValue> {
 }
 
 #[wasm_bindgen]
+pub fn run_refinement_quench_json(config_json: &str) -> Result<String, JsValue> {
+    let start = js_sys::Date::now();
+    let config: RefinementQuenchConfig =
+        serde_json::from_str(config_json).map_err(|e| JsValue::from_str(&e.to_string()))?;
+    let mut result = run_refinement_quench(&config);
+    result.elapsed_ms = js_sys::Date::now() - start;
+    serde_json::to_string(&result).map_err(|e| JsValue::from_str(&e.to_string()))
+}
+
+#[wasm_bindgen]
+pub fn run_refinement_n_compare_json(config_json: &str) -> Result<String, JsValue> {
+    let start = js_sys::Date::now();
+    let config: RefinementNCompareConfig =
+        serde_json::from_str(config_json).map_err(|e| JsValue::from_str(&e.to_string()))?;
+    let mut result = run_refinement_n_compare(&config);
+    result.elapsed_ms = js_sys::Date::now() - start;
+    serde_json::to_string(&result).map_err(|e| JsValue::from_str(&e.to_string()))
+}
+
+#[wasm_bindgen]
+pub fn run_relational_time_json(config_json: &str) -> Result<String, JsValue> {
+    let start = js_sys::Date::now();
+    let config: RelationalTimeConfig =
+        serde_json::from_str(config_json).map_err(|e| JsValue::from_str(&e.to_string()))?;
+    let mut result = run_relational_time(&config);
+    result.elapsed_ms = js_sys::Date::now() - start;
+    serde_json::to_string(&result).map_err(|e| JsValue::from_str(&e.to_string()))
+}
+
+#[wasm_bindgen]
+pub fn run_universe_3d_json(config_json: &str) -> Result<String, JsValue> {
+    let start = js_sys::Date::now();
+    let config: Universe3DConfig =
+        serde_json::from_str(config_json).map_err(|e| JsValue::from_str(&e.to_string()))?;
+    let mut result = run_universe_3d(&config);
+    result.elapsed_ms = js_sys::Date::now() - start;
+    serde_json::to_string(&result).map_err(|e| JsValue::from_str(&e.to_string()))
+}
+
+#[wasm_bindgen]
+pub fn run_universe_slice_json(config_json: &str) -> Result<String, JsValue> {
+    let start = js_sys::Date::now();
+    let config: UniverseSliceConfig =
+        serde_json::from_str(config_json).map_err(|e| JsValue::from_str(&e.to_string()))?;
+    let mut result = run_universe_slice(&config);
+    result.elapsed_ms = js_sys::Date::now() - start;
+    serde_json::to_string(&result).map_err(|e| JsValue::from_str(&e.to_string()))
+}
+
+#[wasm_bindgen]
+pub fn run_factorization_search_json(config_json: &str) -> Result<String, JsValue> {
+    let start = js_sys::Date::now();
+    let config: FactorizationSearchConfig =
+        serde_json::from_str(config_json).map_err(|e| JsValue::from_str(&e.to_string()))?;
+    let mut result = run_factorization_search(&config);
+    result.elapsed_ms = js_sys::Date::now() - start;
+    serde_json::to_string(&result).map_err(|e| JsValue::from_str(&e.to_string()))
+}
+
+#[wasm_bindgen]
 pub fn wasm_sim_version() -> String {
-    "0.2.0".to_string()
+    "0.4.0".to_string()
 }
 
 #[cfg(test)]

@@ -1,7 +1,7 @@
 //! Emergent spacetime — port of `src/sim/spacetime.ts`.
 
 use crate::geometry::analyze_emergent_geometry;
-use crate::linalg::procrustes_2d;
+use crate::linalg::{procrustes_2d, procrustes_3d};
 use crate::models::TruePosition;
 use crate::quantum::{evolve_interval, expectation_z, Hamiltonian, QuantumState};
 use crate::rng::Rng;
@@ -61,8 +61,14 @@ pub fn build_spacetime(config: SpacetimeConfig<'_>) -> SpacetimeResult {
     let hamiltonian = config.hamiltonian;
     let sites = hamiltonian.n;
     let embed_dim = config.embed_dim.max(1);
-    let use_2d = embed_dim >= 2;
+    let use_3d = embed_dim >= 3;
+    let use_2d = embed_dim >= 2 && !use_3d;
 
+    let align_target_3: Option<Vec<Vec<f64>>> = config.align_to.map(|pts| {
+        pts.iter()
+            .map(|p| vec![p.x, p.y, p.z.unwrap_or(0.0)])
+            .collect()
+    });
     let align_target_2: Option<Vec<Vec<f64>>> = config.align_to.map(|pts| {
         pts.iter().map(|p| vec![p.x, p.y]).collect()
     });
@@ -83,7 +89,25 @@ pub fn build_spacetime(config: SpacetimeConfig<'_>) -> SpacetimeResult {
         energy_drift = energy_drift.max((energy - energy0).abs());
 
         let report = analyze_emergent_geometry(&psi, 1.0, embed_dim.max(1));
-        let coords = if use_2d {
+        let coords = if use_3d {
+            let raw: Vec<Vec<f64>> = report
+                .mds
+                .coords
+                .iter()
+                .map(|c| {
+                    vec![
+                        c.first().copied().unwrap_or(0.0),
+                        c.get(1).copied().unwrap_or(0.0),
+                        c.get(2).copied().unwrap_or(0.0),
+                    ]
+                })
+                .collect();
+            if let Some(ref target) = align_target_3 {
+                procrustes_3d(&raw, target)
+            } else {
+                raw
+            }
+        } else if use_2d {
             let raw: Vec<Vec<f64>> = report
                 .mds
                 .coords

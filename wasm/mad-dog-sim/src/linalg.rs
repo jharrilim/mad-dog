@@ -176,3 +176,139 @@ pub fn procrustes_2d(x: &[Vec<f64>], y: &[Vec<f64>]) -> Vec<Vec<f64>> {
         })
         .collect()
 }
+
+fn mat_mul_3(a: &[[f64; 3]; 3], b: &[[f64; 3]; 3]) -> [[f64; 3]; 3] {
+    let mut c = [[0.0; 3]; 3];
+    for i in 0..3 {
+        for j in 0..3 {
+            for k in 0..3 {
+                c[i][j] += a[i][k] * b[k][j];
+            }
+        }
+    }
+    c
+}
+
+fn transpose_3(m: &[[f64; 3]; 3]) -> [[f64; 3]; 3] {
+    [
+        [m[0][0], m[1][0], m[2][0]],
+        [m[0][1], m[1][1], m[2][1]],
+        [m[0][2], m[1][2], m[2][2]],
+    ]
+}
+
+fn det_3(m: &[[f64; 3]; 3]) -> f64 {
+    m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1])
+        - m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0])
+        + m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0])
+}
+
+/// 3D Procrustes (Kabsch) alignment — port of `procrustes3D` in `src/sim/linalg.ts`.
+pub fn procrustes_3d(x: &[Vec<f64>], y: &[Vec<f64>]) -> Vec<Vec<f64>> {
+    let n = x.len();
+    if n == 0 {
+        return x.to_vec();
+    }
+    let mut cx = [0.0; 3];
+    let mut cy = [0.0; 3];
+    for i in 0..n {
+        for d in 0..3 {
+            cx[d] += x[i].get(d).copied().unwrap_or(0.0);
+            cy[d] += y[i].get(d).copied().unwrap_or(0.0);
+        }
+    }
+    for d in 0..3 {
+        cx[d] /= n as f64;
+        cy[d] /= n as f64;
+    }
+
+    let xc: Vec<[f64; 3]> = x
+        .iter()
+        .map(|p| {
+            [
+                p.first().copied().unwrap_or(0.0) - cx[0],
+                p.get(1).copied().unwrap_or(0.0) - cx[1],
+                p.get(2).copied().unwrap_or(0.0) - cx[2],
+            ]
+        })
+        .collect();
+    let yc: Vec<[f64; 3]> = y
+        .iter()
+        .map(|p| {
+            [
+                p.first().copied().unwrap_or(0.0) - cy[0],
+                p.get(1).copied().unwrap_or(0.0) - cy[1],
+                p.get(2).copied().unwrap_or(0.0) - cy[2],
+            ]
+        })
+        .collect();
+
+    let mut h = [[0.0; 3]; 3];
+    let mut norm_x = 0.0;
+    for i in 0..n {
+        norm_x += xc[i][0] * xc[i][0] + xc[i][1] * xc[i][1] + xc[i][2] * xc[i][2];
+        for j in 0..3 {
+            for k in 0..3 {
+                h[j][k] += xc[i][j] * yc[i][k];
+            }
+        }
+    }
+
+    let ht = transpose_3(&h);
+    let ht_h = mat_mul_3(&ht, &h);
+    let ht_h_vec: Vec<Vec<f64>> = ht_h.iter().map(|row| row.to_vec()).collect();
+    let eig = jacobi_eigen_symmetric(&ht_h_vec);
+    let mut order: Vec<(f64, usize)> = eig
+        .values
+        .iter()
+        .copied()
+        .enumerate()
+        .map(|(i, val)| (val, i))
+        .collect();
+    order.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
+
+    let sing: Vec<f64> = order.iter().map(|o| o.0.max(0.0).sqrt()).collect();
+    let total_sing: f64 = sing.iter().sum::<f64>().max(1.0);
+    let scale = if norm_x > 1e-12 {
+        total_sing / norm_x
+    } else {
+        1.0
+    };
+
+    let mut v = [[0.0; 3]; 3];
+    for k in 0..3 {
+        let col = order[k].1;
+        for i in 0..3 {
+            v[i][k] = eig.vectors[i][col];
+        }
+    }
+
+    let mut u = mat_mul_3(&h, &v);
+    for k in 0..3 {
+        let s = if sing[k] > 1e-12 { sing[k] } else { 1.0 };
+        for i in 0..3 {
+            u[i][k] /= s;
+        }
+    }
+
+    let mut rmat = mat_mul_3(&u, &transpose_3(&v));
+    if det_3(&rmat) < 0.0 {
+        for i in 0..3 {
+            u[i][2] *= -1.0;
+        }
+        rmat = mat_mul_3(&u, &transpose_3(&v));
+    }
+
+    xc.iter()
+        .map(|p| {
+            let rx = p[0] * rmat[0][0] + p[1] * rmat[0][1] + p[2] * rmat[0][2];
+            let ry = p[0] * rmat[1][0] + p[1] * rmat[1][1] + p[2] * rmat[1][2];
+            let rz = p[0] * rmat[2][0] + p[1] * rmat[2][1] + p[2] * rmat[2][2];
+            vec![
+                scale * rx + cy[0],
+                scale * ry + cy[1],
+                scale * rz + cy[2],
+            ]
+        })
+        .collect()
+}

@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { runRelationalTime } from '@/sim/runner'
+import { runRelationalTimeAsync, type DualClockResultWithBackend } from '@/sim/runner-async'
 import type { DualClockResult } from '@/sim/relational-time'
 
 function signalColor(v: number) {
@@ -164,18 +164,14 @@ const DEFAULT = {
 
 export function RelationalTimeViz() {
   const [config, setConfig] = useState(DEFAULT)
-  const [result, setResult] = useState<DualClockResult | null>(null)
+  const [result, setResult] = useState<DualClockResultWithBackend | null>(null)
   const [running, setRunning] = useState(false)
 
   const run = useCallback(() => {
     setRunning(true)
-    setTimeout(() => {
-      try {
-        setResult(runRelationalTime(config))
-      } finally {
-        setRunning(false)
-      }
-    }, 30)
+    void runRelationalTimeAsync(config)
+      .then(setResult)
+      .finally(() => setRunning(false))
   }, [config])
 
   const update = (key: keyof typeof config, value: number) =>
@@ -256,7 +252,7 @@ export function RelationalTimeViz() {
                 rate ratio ≈ {result.syncSlope.toFixed(2)}
               </Badge>
               <span className="text-xs text-muted-foreground">
-                {result.elapsedMs.toFixed(0)} ms
+                {result.elapsedMs.toFixed(0)} ms · {result.backend}
               </span>
             </div>
 

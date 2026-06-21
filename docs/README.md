@@ -12,6 +12,8 @@ These are **working learnings**, not claims of new physics. They record what the
 | [emergent-space.md](./emergent-space.md) | Mutual information, MDS, dimension detection |
 | [emergent-time.md](./emergent-time.md) | Page–Wootters time, light cones, two clocks |
 | [holography.md](./holography.md) | Area law, baby Ryu–Takayanagi, mass deformation |
+| [refinement.md](./refinement.md) | Adaptive factor-count diagnostics (prototype) |
+| [factorization.md](./factorization.md) | Spectrum-driven locality search (prototype) |
 | [parameters-and-phases.md](./parameters-and-phases.md) | What `h` and `J` mean; ordered vs paramagnetic |
 | [universe-lab.md](./universe-lab.md) | 3+1 lab: cube lattice, visualization, limits |
 | [emergent-particles.md](./emergent-particles.md) | What particle-like structure would look like |
@@ -25,7 +27,9 @@ src/sim/
   geometry.ts     — RDM entropy, MI matrix, MDS, emergent dimension
   spacetime.ts    — unitary evolution, Page–Wootters slices, light cone
   holography.ts   — area law, RT fit, mass injection
-  relational-time.ts — dual-clock comparison
+  refinement.ts — adaptive factor-count pressure (prototype)
+  factorization.ts — spectrum-driven locality search (types + TS fallback)
+  relational-time.ts — dual-clock comparison (TS fallback)
   models.ts       — TFIM chain / grid / cube / random
   runner.ts       — UI-facing drivers
 

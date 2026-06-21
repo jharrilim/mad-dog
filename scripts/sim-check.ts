@@ -27,6 +27,10 @@ import {
 import { buildSpacetime } from '../src/sim/spacetime.ts'
 import { analyzeHolography, analyzeRtMassDeformation } from '../src/sim/holography.ts'
 import { runRelationalTime, runUniverse3D } from '../src/sim/runner.ts'
+import {
+  runRefinementQuench,
+  runRefinementNCompare,
+} from '../src/sim/refinement.ts'
 
 function approx(a: number, b: number, tol = 1e-6): string {
   return Math.abs(a - b) < tol ? 'OK' : `MISMATCH (got ${a}, want ${b})`
@@ -294,6 +298,46 @@ const rng = makeRng(12345)
     '  LR velocity:',
     uni.lightCone.velocity.toFixed(3),
     uni.lightCone.velocity > 0 ? 'OK (finite)' : 'WEAK',
+  )
+}
+
+// --- Adaptive holographic refinement (prototype) ---
+{
+  const quench = runRefinementQuench({
+    n: 10,
+    field: 1.5,
+    dt: 0.2,
+    steps: 16,
+    seed: 7711,
+  })
+  const vacuum = quench.slices[0].diagnostics
+  const late = quench.slices[quench.slices.length - 1].diagnostics
+  console.log('\nAdaptive refinement quench (10-site, h=1.5):')
+  console.log(
+    `  vacuum pressure=${vacuum.pressure.toFixed(3)}`,
+    vacuum.pressure < 0.25 ? 'OK (low at t=0)' : 'HIGH',
+  )
+  console.log(
+    `  late   pressure=${late.pressure.toFixed(3)}`,
+    late.pressure > vacuum.pressure ? 'OK (rises under quench)' : 'FLAT',
+  )
+  console.log(
+    '  refinement flagged late:',
+    late.needsRefinement ? 'YES' : 'no',
+  )
+
+  const cmp = runRefinementNCompare({
+    n: 10,
+    deltaN: 2,
+    field: 1.5,
+    dt: 0.2,
+    quenchStep: 12,
+    seed: 7711,
+  })
+  console.log(
+    `  n=${cmp.n} vs n=${cmp.nLarge} after ${cmp.quenchStep} steps:`,
+    `pressure ${cmp.small.pressure.toFixed(3)} → ${cmp.large.pressure.toFixed(3)}`,
+    cmp.largerRelieves ? 'OK (larger n relieves)' : 'INCONCLUSIVE',
   )
 }
 

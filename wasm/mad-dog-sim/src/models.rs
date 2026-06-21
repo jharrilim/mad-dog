@@ -180,3 +180,117 @@ pub fn random_nonlocal(n: usize, rng: &mut Rng) -> BuiltModel {
         label: format!("Random non-local (n={n})"),
     }
 }
+
+/// 3D transverse-field Ising cube (open boundary).
+pub fn tfim_cube(lx: usize, ly: usize, lz: usize, j: f64, h: f64) -> BuiltModel {
+    let n = lx * ly * lz;
+    let idx = |x: usize, y: usize, z: usize| z * (lx * ly) + y * lx + x;
+    let mut terms = Vec::new();
+
+    for z in 0..lz {
+        for y in 0..ly {
+            for x in 0..lx {
+                let q = idx(x, y, z);
+                if x + 1 < lx {
+                    terms.push(PauliTerm {
+                        coeff: -j,
+                        ops: vec![
+                            PauliOp {
+                                qubit: q,
+                                letter: PauliLetter::Z,
+                            },
+                            PauliOp {
+                                qubit: idx(x + 1, y, z),
+                                letter: PauliLetter::Z,
+                            },
+                        ],
+                    });
+                }
+                if y + 1 < ly {
+                    terms.push(PauliTerm {
+                        coeff: -j,
+                        ops: vec![
+                            PauliOp {
+                                qubit: q,
+                                letter: PauliLetter::Z,
+                            },
+                            PauliOp {
+                                qubit: idx(x, y + 1, z),
+                                letter: PauliLetter::Z,
+                            },
+                        ],
+                    });
+                }
+                if z + 1 < lz {
+                    terms.push(PauliTerm {
+                        coeff: -j,
+                        ops: vec![
+                            PauliOp {
+                                qubit: q,
+                                letter: PauliLetter::Z,
+                            },
+                            PauliOp {
+                                qubit: idx(x, y, z + 1),
+                                letter: PauliLetter::Z,
+                            },
+                        ],
+                    });
+                }
+            }
+        }
+    }
+    for i in 0..n {
+        terms.push(PauliTerm {
+            coeff: -h,
+            ops: vec![PauliOp {
+                qubit: i,
+                letter: PauliLetter::X,
+            }],
+        });
+    }
+
+    let mut true_positions = Vec::new();
+    for z in 0..lz {
+        for y in 0..ly {
+            for x in 0..lx {
+                true_positions.push(TruePosition {
+                    x: x as f64,
+                    y: y as f64,
+                    z: Some(z as f64),
+                });
+            }
+        }
+    }
+
+    BuiltModel {
+        hamiltonian: Hamiltonian::new(n, terms),
+        layout: LatticeLayout {
+            true_positions,
+            expected_dim: 3,
+        },
+        label: format!("TFIM cube ({lx}x{ly}x{lz})"),
+    }
+}
+
+/// Cube lattice neighbour pairs for drawing edges.
+pub fn cube_edges(lx: usize, ly: usize, lz: usize) -> Vec<[usize; 2]> {
+    let idx = |x: usize, y: usize, z: usize| z * (lx * ly) + y * lx + x;
+    let mut edges = Vec::new();
+    for z in 0..lz {
+        for y in 0..ly {
+            for x in 0..lx {
+                let q = idx(x, y, z);
+                if x + 1 < lx {
+                    edges.push([q, idx(x + 1, y, z)]);
+                }
+                if y + 1 < ly {
+                    edges.push([q, idx(x, y + 1, z)]);
+                }
+                if z + 1 < lz {
+                    edges.push([q, idx(x, y, z + 1)]);
+                }
+            }
+        }
+    }
+    edges
+}

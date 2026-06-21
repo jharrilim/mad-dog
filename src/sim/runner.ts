@@ -279,14 +279,32 @@ export interface Universe3DConfig {
   steps: number
 }
 
+export interface UniverseModelSummary {
+  label: string
+  layout: {
+    truePositions: { x: number; y: number; z?: number }[]
+    expectedDim: number
+  }
+}
+
 export interface Universe3DResult {
-  model: BuiltModel
+  model: UniverseModelSummary
   spacetime: SpacetimeResult
   lightCone: LightCone
   defectSite: number
   edges: [number, number][]
   /** Manhattan distance from defect on the true lattice. */
   siteDistances: number[]
+  elapsedMs: number
+}
+
+export interface UniverseSliceConfig extends Universe3DConfig {
+  k: number
+}
+
+export interface UniverseSliceResult {
+  report: import('./geometry.ts').EmergenceReport
+  defectSite: number
   elapsedMs: number
 }
 
@@ -339,7 +357,13 @@ export function runUniverse3D(config: Universe3DConfig): Universe3DResult {
     siteDistances,
   )
   return {
-    model,
+    model: {
+      label: model.label,
+      layout: {
+        truePositions: model.layout.truePositions,
+        expectedDim: model.layout.expectedDim,
+      },
+    },
     spacetime,
     lightCone,
     defectSite,
@@ -371,3 +395,36 @@ export function stateAtUniverseSlice(
   }
   return { state: psi, defectSite }
 }
+
+/** Emergence diagnostics at a single universe clock slice (TS fallback). */
+export function runUniverseSlice(config: UniverseSliceConfig): UniverseSliceResult {
+  const start = performance.now()
+  const { state, defectSite } = stateAtUniverseSlice(config, config.k)
+  const report = analyzeEmergentGeometry(state, 1, 3)
+  return {
+    report,
+    defectSite,
+    elapsedMs: performance.now() - start,
+  }
+}
+
+export {
+  runRefinementQuench,
+  runRefinementNCompare,
+  measureRefinementDiagnostics,
+  computeRefinementBaselines,
+  type RefinementQuenchConfig,
+  type RefinementQuenchResult,
+  type RefinementNCompareConfig,
+  type RefinementNCompareResult,
+  type RefinementDiagnostics,
+  type RefinementBaselines,
+} from './refinement.ts'
+
+export {
+  runFactorizationSearch,
+  type FactorizationSearchConfig,
+  type FactorizationSearchResult,
+  type FactorizationCandidate,
+  type FactorizationKind,
+} from './factorization.ts'

@@ -46,6 +46,12 @@ export type WasmMethod =
   | 'spacetime2d'
   | 'holography'
   | 'rtMass'
+  | 'refinementQuench'
+  | 'refinementNCompare'
+  | 'relationalTime'
+  | 'universe3d'
+  | 'universeSlice'
+  | 'factorizationSearch'
 
 export function callWasm<T>(method: WasmMethod, config: unknown): Promise<T> {
   const id = nextId++
