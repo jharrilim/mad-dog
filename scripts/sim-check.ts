@@ -26,6 +26,7 @@ import {
 } from '../src/sim/geometry.ts'
 import { buildSpacetime } from '../src/sim/spacetime.ts'
 import { analyzeHolography } from '../src/sim/holography.ts'
+import { runRelationalTime } from '../src/sim/runner.ts'
 
 function approx(a: number, b: number, tol = 1e-6): string {
   return Math.abs(a - b) < tol ? 'OK' : `MISMATCH (got ${a}, want ${b})`
@@ -186,6 +187,37 @@ const rng = makeRng(12345)
   console.log(
     `  RT fit  S_A = ${report.rtSlope.toFixed(3)} * (boundary MI cut),  R^2 = ${report.rtR2.toFixed(4)}`,
     report.rtR2 > 0.9 ? 'OK (entropy tracks boundary area)' : 'WEAK',
+  )
+}
+
+// --- Two-clock relational time ---
+{
+  const n = 9
+  const center = Math.floor(n / 2)
+  const edge = runRelationalTime({
+    n,
+    field: 1,
+    dt: 0.2,
+    steps: 40,
+    clockSite: 0,
+    physicalSlices: 15,
+  })
+  const atDefect = runRelationalTime({
+    n,
+    field: 1,
+    dt: 0.2,
+    steps: 40,
+    clockSite: center,
+    physicalSlices: 15,
+  })
+  console.log('\nTwo-clock relational time (9-site chain, defect at center):')
+  console.log(
+    `  edge clock (site 0): sync R^2 = ${edge.syncR2.toFixed(4)}`,
+    edge.syncR2 < 0.95 ? 'OK (clocks disagree)' : 'UNEXPECTED (too synchronized)',
+  )
+  console.log(
+    `  defect clock (site ${center}): sync R^2 = ${atDefect.syncR2.toFixed(4)}`,
+    atDefect.syncR2 > 0.99 ? 'OK (clock at defect stays in sync)' : 'UNEXPECTED',
   )
 }
 

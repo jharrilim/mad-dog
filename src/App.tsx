@@ -17,6 +17,7 @@ import { Simulator } from '@/components/Simulator'
 import { SpacetimeViz } from '@/components/SpacetimeViz'
 import { Spacetime2DViz } from '@/components/Spacetime2DViz'
 import { HolographyViz } from '@/components/HolographyViz'
+import { RelationalTimeViz } from '@/components/RelationalTimeViz'
 
 const sections = [
   {
@@ -283,6 +284,7 @@ function App() {
           </div>
           <SpacetimeViz />
           <Spacetime2DViz />
+          <RelationalTimeViz />
         </section>
 
         <Separator />
@@ -330,8 +332,8 @@ function App() {
                   emergent metric&apos;s response to &ldquo;mass&rdquo;
                 </li>
                 <li>
-                  Two-clock / relational time: compare emergent histories defined
-                  by different clock subsystems
+                  Three-or-more-clock networks: build a graph of relational time
+                  coordinates and look for consistency conditions
                 </li>
               </ul>
             </CardContent>

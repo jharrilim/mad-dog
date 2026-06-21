@@ -19,6 +19,7 @@ import {
 import { analyzeEmergentGeometry, type EmergenceReport } from './geometry.ts'
 import { buildSpacetime, type SpacetimeResult } from './spacetime.ts'
 import { analyzeHolography, type HolographyReport } from './holography.ts'
+import { buildDualClock, type DualClockResult } from './relational-time.ts'
 
 export type ModelKind = 'chain' | 'grid' | 'random'
 
@@ -183,4 +184,39 @@ export function runHolography(config: HolographyRunConfig): HolographyRunResult 
     report,
     elapsedMs: performance.now() - start,
   }
+}
+
+export interface RelationalTimeConfig {
+  n: number
+  field: number
+  dt: number
+  steps: number
+  /** Qubit whose local disturbance defines the physical clock. */
+  clockSite: number
+  physicalSlices: number
+}
+
+/**
+ * Two-clock demo: same quench, same Hamiltonian, but time read off a uniform
+ * clock vs. a physical clock at `clockSite`. The relational time map shows
+ * how emergent histories diverge when clocks disagree.
+ */
+export function runRelationalTime(
+  config: RelationalTimeConfig,
+): DualClockResult {
+  const model = tfimChain(config.n, 1, config.field)
+  const center = Math.floor(config.n / 2)
+  const initial = makeZeroState(config.n)
+  initial.data[2 * (1 << center)] = 1
+  const reference = makeZeroState(config.n)
+  reference.data[0] = 1
+  return buildDualClock({
+    hamiltonian: model.hamiltonian,
+    initial,
+    reference,
+    dt: config.dt,
+    steps: config.steps,
+    clockSite: config.clockSite,
+    physicalSlices: config.physicalSlices,
+  })
 }
