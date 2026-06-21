@@ -16,6 +16,7 @@ import { DecoherenceViz } from '@/components/visualizations/DecoherenceViz'
 import { Simulator } from '@/components/Simulator'
 import { SpacetimeViz } from '@/components/SpacetimeViz'
 import { Spacetime2DViz } from '@/components/Spacetime2DViz'
+import { HolographyViz } from '@/components/HolographyViz'
 
 const sections = [
   {
@@ -284,6 +285,26 @@ function App() {
           <Spacetime2DViz />
         </section>
 
+        <Separator />
+
+        {/* Holographic test */}
+        <section className="space-y-6">
+          <div>
+            <h2 className="text-2xl font-semibold mb-2">
+              A Holographic Aside, Tested
+            </h2>
+            <p className="text-muted-foreground">
+              If geometry is woven from entanglement, the boldest claim nearby is
+              holography: that a region&apos;s information lives on its boundary.
+              Rather than assert the connection, we test it. The same chains that
+              gave us emergent space turn out to obey an area law and a discrete
+              Ryu&ndash;Takayanagi relation &mdash; entropy equal to boundary
+              &ldquo;area.&rdquo; A speculation, honestly checked.
+            </p>
+          </div>
+          <HolographyViz />
+        </section>
+
         {/* Roadmap */}
         <section>
           <Card className="border-dashed">
@@ -304,12 +325,13 @@ function App() {
                   local (locality from the spectrum)
                 </li>
                 <li>
-                  Extract the emergent Lieb&ndash;Robinson velocity as a measured
-                  &ldquo;speed of light&rdquo;
+                  Curved emergent space: test whether the Ryu&ndash;Takayanagi
+                  slope deforms as entanglement is concentrated, hinting at an
+                  emergent metric&apos;s response to &ldquo;mass&rdquo;
                 </li>
                 <li>
-                  2D emergent geometry evolving in time (emergent curved
-                  spacetime)
+                  Two-clock / relational time: compare emergent histories defined
+                  by different clock subsystems
                 </li>
               </ul>
             </CardContent>

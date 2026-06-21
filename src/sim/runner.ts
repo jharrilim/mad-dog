@@ -4,7 +4,12 @@
  * it can later move into a Web Worker / WebGPU backend without UI changes.
  */
 
-import { groundState, makeRng, makeZeroState } from './quantum.ts'
+import {
+  groundState,
+  makeRandomState,
+  makeRng,
+  makeZeroState,
+} from './quantum.ts'
 import {
   randomNonlocal,
   tfimChain,
@@ -13,6 +18,7 @@ import {
 } from './models.ts'
 import { analyzeEmergentGeometry, type EmergenceReport } from './geometry.ts'
 import { buildSpacetime, type SpacetimeResult } from './spacetime.ts'
+import { analyzeHolography, type HolographyReport } from './holography.ts'
 
 export type ModelKind = 'chain' | 'grid' | 'random'
 
@@ -139,4 +145,42 @@ export function runSpacetime2D(config: Spacetime2DConfig): SpacetimeResult {
     embedDim: 2,
     alignTo: model.layout.truePositions,
   })
+}
+
+export interface HolographyRunConfig {
+  /** chain length */
+  n: number
+  /** transverse field (h > 1 gapped paramagnet -> clean area law) */
+  field: number
+  seed: number
+}
+
+export interface HolographyRunResult {
+  label: string
+  energy: number
+  report: HolographyReport
+  elapsedMs: number
+}
+
+/**
+ * Baby Ryu-Takayanagi test: take the gapped ground state of a local Ising chain
+ * (area-law entanglement) and a Haar-random state (volume-law), then compare
+ * how region entropy scales and whether the discrete "entropy = boundary area"
+ * relation holds for the ground state.
+ */
+export function runHolography(config: HolographyRunConfig): HolographyRunResult {
+  const start = performance.now()
+  const model = tfimChain(config.n, 1, config.field)
+  const rng = makeRng(config.seed)
+  const { state, energy } = groundState(model.hamiltonian, rng, {
+    maxIters: 4000,
+  })
+  const random = makeRandomState(config.n, makeRng(config.seed + 4242))
+  const report = analyzeHolography(state, random)
+  return {
+    label: model.label,
+    energy,
+    report,
+    elapsedMs: performance.now() - start,
+  }
 }

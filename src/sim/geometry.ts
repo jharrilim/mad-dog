@@ -80,6 +80,65 @@ export function entropyTwoSite(
   return entropyFromEigenvalues(hermitianEigenvalues(re, im))
 }
 
+/**
+ * Von Neumann entropy of an arbitrary subset of qubits, via the reduced density
+ * matrix obtained by tracing out the rest. For a pure global state the entropy
+ * of a region equals that of its complement, so we always build the RDM of the
+ * smaller side: the matrix dimension is 2^min(|A|, n-|A|), keeping it tractable
+ * up to ~half the chain.
+ */
+export function entropyOfRegion(state: QuantumState, region: number[]): number {
+  const { data, dim, n } = state
+  // Work with whichever side is smaller (S_A = S_complement for a pure state).
+  const inRegion = new Array<boolean>(n).fill(false)
+  for (const q of region) inRegion[q] = true
+  const a: number[] = []
+  const env: number[] = []
+  for (let q = 0; q < n; q++) (inRegion[q] ? a : env).push(q)
+  const [keep, trace] = a.length <= env.length ? [a, env] : [env, a]
+
+  const k = keep.length
+  if (k === 0) return 0
+  const dimA = 1 << k
+  const dimE = 1 << trace.length
+
+  // Reorganize amplitudes into amp[e * dimA + idxA] so each environment block is
+  // contiguous, then accumulate rho = sum_e |amp_e><amp_e|.
+  const re = new Float64Array(dimE * dimA)
+  const im = new Float64Array(dimE * dimA)
+  for (let s = 0; s < dim; s++) {
+    let ia = 0
+    for (let j = 0; j < keep.length; j++) ia |= ((s >> keep[j]) & 1) << j
+    let ie = 0
+    for (let j = 0; j < trace.length; j++) ie |= ((s >> trace[j]) & 1) << j
+    re[ie * dimA + ia] = data[2 * s]
+    im[ie * dimA + ia] = data[2 * s + 1]
+  }
+
+  const rhoRe: number[][] = Array.from({ length: dimA }, () =>
+    new Array<number>(dimA).fill(0),
+  )
+  const rhoIm: number[][] = Array.from({ length: dimA }, () =>
+    new Array<number>(dimA).fill(0),
+  )
+  for (let e = 0; e < dimE; e++) {
+    const base = e * dimA
+    for (let i = 0; i < dimA; i++) {
+      const ar = re[base + i]
+      const ai = im[base + i]
+      if (ar === 0 && ai === 0) continue
+      for (let j = 0; j < dimA; j++) {
+        const br = re[base + j]
+        const bi = im[base + j]
+        // rho[i][j] += amp_i * conj(amp_j)
+        rhoRe[i][j] += ar * br + ai * bi
+        rhoIm[i][j] += ai * br - ar * bi
+      }
+    }
+  }
+  return entropyFromEigenvalues(hermitianEigenvalues(rhoRe, rhoIm))
+}
+
 /** Full mutual-information matrix between all single-qubit factors. */
 export function mutualInformationMatrix(state: QuantumState): number[][] {
   const n = state.n

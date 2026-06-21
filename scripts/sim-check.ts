@@ -9,14 +9,23 @@
  *  - Random non-local: high emergent dimension (no clean low-D space).
  */
 
-import { groundState, makeRng, makeZeroState, normalize } from '../src/sim/quantum.ts'
+import {
+  groundState,
+  makeRandomState,
+  makeRng,
+  makeZeroState,
+  normalize,
+} from '../src/sim/quantum.ts'
 import { tfimChain, tfimGrid, randomNonlocal } from '../src/sim/models.ts'
 import {
   analyzeEmergentGeometry,
+  entropyOfRegion,
   entropyOneSite,
+  entropyTwoSite,
   mutualInformationMatrix,
 } from '../src/sim/geometry.ts'
 import { buildSpacetime } from '../src/sim/spacetime.ts'
+import { analyzeHolography } from '../src/sim/holography.ts'
 
 function approx(a: number, b: number, tol = 1e-6): string {
   return Math.abs(a - b) < tol ? 'OK' : `MISMATCH (got ${a}, want ${b})`
@@ -127,6 +136,57 @@ const rng = makeRng(12345)
   }
   console.log('  arrival times by site:', arrival.map((a) => a.toFixed(1)).join(' '))
   console.log('  arrival delayed with distance (finite speed):', causal ? 'OK' : 'NO')
+}
+
+// --- entropyOfRegion agrees with the dedicated one/two-site routines ---
+{
+  const model = tfimChain(8, 1, 1.2)
+  const { state } = groundState(model.hamiltonian, makeRng(2024), { maxIters: 3000 })
+  const s1a = entropyOneSite(state, 3)
+  const s1b = entropyOfRegion(state, [3])
+  const s2a = entropyTwoSite(state, 2, 5)
+  const s2b = entropyOfRegion(state, [2, 5])
+  // Pure-state symmetry: S_A = S_complement.
+  const sLeft = entropyOfRegion(state, [0, 1, 2, 3])
+  const sRight = entropyOfRegion(state, [4, 5, 6, 7])
+  console.log('\nentropyOfRegion consistency:')
+  console.log('  vs one-site :', approx(s1a, s1b, 1e-9))
+  console.log('  vs two-site :', approx(s2a, s2b, 1e-9))
+  console.log('  S_A = S_comp:', approx(sLeft, sRight, 1e-9))
+}
+
+// --- Baby Ryu-Takayanagi: area law vs volume law + entropy = boundary area ---
+{
+  const n = 10
+  const model = tfimChain(n, 1, 1.5)
+  const { state } = groundState(model.hamiltonian, makeRng(31337), { maxIters: 4000 })
+  const random = makeRandomState(n, makeRng(99))
+  const report = analyzeHolography(state, random)
+
+  console.log('\nBaby Ryu-Takayanagi (10-site chain, h=1.5):')
+  console.log('  S(A) vs region size |A| (edge-anchored):')
+  console.log('    |A|      :', report.areaLaw.map((p) => p.size.toString().padStart(5)).join(''))
+  console.log('    ground   :', report.areaLaw.map((p) => p.sGround.toFixed(2).padStart(5)).join(''))
+  console.log('    random   :', report.areaLaw.map((p) => p.sRandom.toFixed(2).padStart(5)).join(''))
+
+  // Area law: ground-state entropy of the bulk-spanning region stays well below
+  // the random (volume-law) value at the same size.
+  const mid = report.areaLaw[Math.floor(report.areaLaw.length / 2)]
+  console.log(
+    `  at |A|=${mid.size}: ground=${mid.sGround.toFixed(3)} << random=${mid.sRandom.toFixed(3)}`,
+    mid.sGround < 0.6 * mid.sRandom ? 'OK (area << volume)' : 'UNEXPECTED',
+  )
+
+  // Random state should grow with size up to the half-chain (volume law).
+  const grows = report.areaLaw
+    .slice(0, Math.floor(n / 2))
+    .every((p, i, arr) => i === 0 || p.sRandom > arr[i - 1].sRandom - 1e-9)
+  console.log('  random S grows with |A| (volume law):', grows ? 'OK' : 'NO')
+
+  console.log(
+    `  RT fit  S_A = ${report.rtSlope.toFixed(3)} * (boundary MI cut),  R^2 = ${report.rtR2.toFixed(4)}`,
+    report.rtR2 > 0.9 ? 'OK (entropy tracks boundary area)' : 'WEAK',
+  )
 }
 
 console.log('\nDone.')
