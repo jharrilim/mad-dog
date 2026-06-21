@@ -6,6 +6,7 @@
 - **Effective field theory / QECC** — are IR matter degrees of freedom a code subspace?
 - **Problem of time** — what picks the clock subsystem? (We use explicit Δt ticks or site-based physical clocks — not derived from Wheeler–DeWitt constraint.)
 - **Locality from spectrum** — search for factorizations that make a given Ĥ look local.
+- **Factor count and Hilbert-space growth** — Mad-Dog takes ℋ = ⊗ₐ ℋₐ and the number of micro-factors as primitive. It does not explain why *this* factorization, *this* dimension, or whether new fundamental degrees of freedom can appear over time (cosmological “creation” of qubits, growing Hilbert space in quantum gravity, etc.). Our simulator fixes `n` at model-build time; it never adds a tensor factor.
 
 ## From our experiments
 

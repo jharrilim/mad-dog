@@ -130,6 +130,13 @@ const sections = [
           In the Wheeler-DeWitt case, what determines the clock subsystem? The
           thermal time hypothesis offers one route.
         </li>
+        <li>
+          <strong className="text-foreground">Factor count:</strong> The theory
+          assumes a fixed tensor-product factorization ℋ = ⊗ₐ ℋₐ — the
+          &ldquo;qubits&rdquo; are already there. It does not explain why there
+          are this many fundamental degrees of freedom, or whether the universe
+          can create new ones over time.
+        </li>
       </ul>
     ),
   },
