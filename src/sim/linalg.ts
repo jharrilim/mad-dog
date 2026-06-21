@@ -191,6 +191,128 @@ export function procrustes2D(x: number[][], y: number[][]): number[][] {
   })
 }
 
+/** 3x3 matrix multiply C = A * B. */
+function matMul3(
+  a: number[][],
+  b: number[][],
+): number[][] {
+  const c = [
+    [0, 0, 0],
+    [0, 0, 0],
+    [0, 0, 0],
+  ]
+  for (let i = 0; i < 3; i++) {
+    for (let j = 0; j < 3; j++) {
+      for (let k = 0; k < 3; k++) c[i][j] += a[i][k] * b[k][j]
+    }
+  }
+  return c
+}
+
+function transpose3(m: number[][]): number[][] {
+  return [
+    [m[0][0], m[1][0], m[2][0]],
+    [m[0][1], m[1][1], m[2][1]],
+    [m[0][2], m[1][2], m[2][2]],
+  ]
+}
+
+function det3(m: number[][]): number {
+  return (
+    m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1]) -
+    m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0]) +
+    m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0])
+  )
+}
+
+/**
+ * 3D Procrustes (Kabsch) alignment: rotate/reflect/scale/translate `x` to
+ * best match `y`. Removes MDS gauge freedom for evolving 3D embeddings.
+ */
+export function procrustes3D(x: number[][], y: number[][]): number[][] {
+  const n = x.length
+  if (n === 0) return x
+  const cx = [0, 0, 0]
+  const cy = [0, 0, 0]
+  for (let i = 0; i < n; i++) {
+    for (let d = 0; d < 3; d++) {
+      cx[d] += x[i][d] ?? 0
+      cy[d] += y[i][d] ?? 0
+    }
+  }
+  for (let d = 0; d < 3; d++) {
+    cx[d] /= n
+    cy[d] /= n
+  }
+
+  const xc = x.map((p) => [
+    (p[0] ?? 0) - cx[0],
+    (p[1] ?? 0) - cx[1],
+    (p[2] ?? 0) - cx[2],
+  ])
+  const yc = y.map((p) => [
+    (p[0] ?? 0) - cy[0],
+    (p[1] ?? 0) - cy[1],
+    (p[2] ?? 0) - cy[2],
+  ])
+
+  // Cross-covariance H = Xc^T Yc (3x3).
+  const h = [
+    [0, 0, 0],
+    [0, 0, 0],
+    [0, 0, 0],
+  ]
+  let normX = 0
+  for (let i = 0; i < n; i++) {
+    normX += xc[i][0] ** 2 + xc[i][1] ** 2 + xc[i][2] ** 2
+    for (let j = 0; j < 3; j++) {
+      for (let k = 0; k < 3; k++) h[j][k] += xc[i][j] * yc[i][k]
+    }
+  }
+
+  const ht = transpose3(h)
+  const htH = matMul3(ht, h)
+  const { values, vectors } = jacobiEigenSymmetric(htH)
+  const order = values
+    .map((val, i) => ({ val, i }))
+    .sort((a, b) => b.val - a.val)
+  const sing = order.map((o) => Math.sqrt(Math.max(o.val, 0)))
+  const totalSing = sing.reduce((a, v) => a + v, 0) || 1
+  const scale = normX > 1e-12 ? totalSing / normX : 1
+
+  // V = eigenvectors of H^T H (columns in vectors[][col]).
+  const v: number[][] = [
+    [0, 0, 0],
+    [0, 0, 0],
+    [0, 0, 0],
+  ]
+  for (let k = 0; k < 3; k++) {
+    const col = order[k].i
+    for (let i = 0; i < 3; i++) v[i][k] = vectors[i][col]
+  }
+
+  // U = H V S^{-1}.
+  const u = matMul3(h, v)
+  for (let k = 0; k < 3; k++) {
+    const s = sing[k] > 1e-12 ? sing[k] : 1
+    for (let i = 0; i < 3; i++) u[i][k] /= s
+  }
+
+  // R = U V^T; fix improper rotation if det(R) < 0.
+  let rmat = matMul3(u, transpose3(v))
+  if (det3(rmat) < 0) {
+    for (let i = 0; i < 3; i++) u[i][2] *= -1
+    rmat = matMul3(u, transpose3(v))
+  }
+
+  return xc.map((p) => {
+    const rx = p[0] * rmat[0][0] + p[1] * rmat[0][1] + p[2] * rmat[0][2]
+    const ry = p[0] * rmat[1][0] + p[1] * rmat[1][1] + p[2] * rmat[1][2]
+    const rz = p[0] * rmat[2][0] + p[1] * rmat[2][1] + p[2] * rmat[2][2]
+    return [scale * rx + cy[0], scale * ry + cy[1], scale * rz + cy[2]]
+  })
+}
+
 /** Shannon/von Neumann entropy (in nats) from a list of probabilities/eigenvalues. */
 export function entropyFromEigenvalues(eigs: number[]): number {
   let s = 0

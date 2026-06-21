@@ -16,7 +16,7 @@ import {
   makeZeroState,
   normalize,
 } from '../src/sim/quantum.ts'
-import { tfimChain, tfimGrid, randomNonlocal } from '../src/sim/models.ts'
+import { tfimChain, tfimGrid, tfimCube, randomNonlocal } from '../src/sim/models.ts'
 import {
   analyzeEmergentGeometry,
   entropyOfRegion,
@@ -26,7 +26,7 @@ import {
 } from '../src/sim/geometry.ts'
 import { buildSpacetime } from '../src/sim/spacetime.ts'
 import { analyzeHolography, analyzeRtMassDeformation } from '../src/sim/holography.ts'
-import { runRelationalTime } from '../src/sim/runner.ts'
+import { runRelationalTime, runUniverse3D } from '../src/sim/runner.ts'
 
 function approx(a: number, b: number, tol = 1e-6): string {
   return Math.abs(a - b) < tol ? 'OK' : `MISMATCH (got ${a}, want ${b})`
@@ -242,6 +242,58 @@ const rng = makeRng(12345)
   console.log(
     `  mass R^2     = ${heavy.mass.rtR2.toFixed(3)}`,
     heavy.mass.rtR2 > 0.85 ? 'OK (relation still holds roughly)' : 'BROKEN',
+  )
+}
+
+// --- TFIM cube 2x2x2 (emergent 3D) ---
+{
+  const model = tfimCube(2, 2, 2, 1, 1.5)
+  const { state, energy } = groundState(model.hamiltonian, makeRng(42), {
+    maxIters: 4000,
+  })
+  console.log(`\n${model.label}: energy=${energy.toFixed(4)}`)
+  const report = analyzeEmergentGeometry(state, 1, 3)
+  summarize(model.label, report)
+  const mi = report.mi
+  const nn = mi[0][1]
+  let far = 0
+  for (let j = 0; j < 8; j++) if (j !== 0) far = Math.max(far, mi[0][j])
+  console.log(
+    '  MI(neighbour) vs MI(far):',
+    nn.toFixed(4),
+    far.toFixed(4),
+    nn >= far * 0.5 ? 'OK (local structure)' : 'WEAK',
+  )
+}
+
+// --- 3+1 universe lab (cube quench, 3D coords) ---
+{
+  const uni = runUniverse3D({
+    lx: 2,
+    ly: 2,
+    lz: 2,
+    field: 1,
+    dt: 0.25,
+    steps: 12,
+  })
+  const slice = uni.spacetime.slices[0]
+  const dim3 = slice.coords.every((c) => c.length >= 3)
+  console.log('\n3+1 universe (2x2x2 cube quench):')
+  console.log(
+    '  3D coords per site:',
+    dim3 ? 'OK' : 'NO',
+    'sample:',
+    slice.coords[0].map((v) => v.toFixed(2)).join(','),
+  )
+  console.log(
+    '  energy drift:',
+    uni.spacetime.energyDrift.toExponential(2),
+    uni.spacetime.energyDrift < 1e-2 ? 'OK' : 'HIGH',
+  )
+  console.log(
+    '  LR velocity:',
+    uni.lightCone.velocity.toFixed(3),
+    uni.lightCone.velocity > 0 ? 'OK (finite)' : 'WEAK',
   )
 }
 

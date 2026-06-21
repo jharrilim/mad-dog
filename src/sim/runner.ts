@@ -9,15 +9,25 @@ import {
   makeRandomState,
   makeRng,
   makeZeroState,
+  normalize,
+  type QuantumState,
 } from './quantum.ts'
 import {
+  cubeEdges,
   randomNonlocal,
   tfimChain,
+  tfimCube,
   tfimGrid,
   type BuiltModel,
 } from './models.ts'
 import { analyzeEmergentGeometry, type EmergenceReport } from './geometry.ts'
-import { buildSpacetime, type SpacetimeResult } from './spacetime.ts'
+import {
+  buildSpacetime,
+  evolveInterval,
+  measureLightCone,
+  type LightCone,
+  type SpacetimeResult,
+} from './spacetime.ts'
 import { analyzeHolography, analyzeRtMassDeformation, type HolographyReport, type RtMassReport } from './holography.ts'
 import { buildDualClock, type DualClockResult } from './relational-time.ts'
 
@@ -258,4 +268,106 @@ export function runRelationalTime(
     clockSite: config.clockSite,
     physicalSlices: config.physicalSlices,
   })
+}
+
+export interface Universe3DConfig {
+  lx: number
+  ly: number
+  lz: number
+  field: number
+  dt: number
+  steps: number
+}
+
+export interface Universe3DResult {
+  model: BuiltModel
+  spacetime: SpacetimeResult
+  lightCone: LightCone
+  defectSite: number
+  edges: [number, number][]
+  /** Manhattan distance from defect on the true lattice. */
+  siteDistances: number[]
+  elapsedMs: number
+}
+
+function cubeDefectSite(lx: number, ly: number, lz: number): number {
+  const cx = Math.floor(lx / 2)
+  const cy = Math.floor(ly / 2)
+  const cz = Math.floor(lz / 2)
+  return cz * (lx * ly) + cy * lx + cx
+}
+
+function latticeDistances(
+  positions: { x: number; y: number; z?: number }[],
+  center: number,
+): number[] {
+  const c = positions[center]
+  const cz = c.z ?? 0
+  return positions.map((p) =>
+    Math.abs(p.x - c.x) + Math.abs(p.y - c.y) + Math.abs((p.z ?? 0) - cz),
+  )
+}
+
+/**
+ * 3+1 universe lab: TFIM cube quench with emergent 3D MDS geometry per clock
+ * slice (Page-Wootters emergent time).
+ */
+export function runUniverse3D(config: Universe3DConfig): Universe3DResult {
+  const start = performance.now()
+  const { lx, ly, lz, field, dt, steps } = config
+  const model = tfimCube(lx, ly, lz, 1, field)
+  const n = model.hamiltonian.n
+  const defectSite = cubeDefectSite(lx, ly, lz)
+  const initial = makeZeroState(n)
+  initial.data[2 * (1 << defectSite)] = 1
+  const reference = makeZeroState(n)
+  reference.data[0] = 1
+  const siteDistances = latticeDistances(model.layout.truePositions, defectSite)
+  const spacetime = buildSpacetime({
+    hamiltonian: model.hamiltonian,
+    initial,
+    reference,
+    dt,
+    steps,
+    embedDim: 3,
+    alignTo: model.layout.truePositions,
+  })
+  const lightCone = measureLightCone(
+    spacetime,
+    0.12,
+    defectSite,
+    siteDistances,
+  )
+  return {
+    model,
+    spacetime,
+    lightCone,
+    defectSite,
+    edges: cubeEdges(lx, ly, lz),
+    siteDistances,
+    elapsedMs: performance.now() - start,
+  }
+}
+
+/** Re-evolve the quenched initial state to clock reading k (for on-demand MI). */
+export function stateAtUniverseSlice(
+  config: Universe3DConfig,
+  k: number,
+): { state: QuantumState; defectSite: number } {
+  const { lx, ly, lz, field, dt } = config
+  const model = tfimCube(lx, ly, lz, 1, field)
+  const defectSite = cubeDefectSite(lx, ly, lz)
+  const n = model.hamiltonian.n
+  const initial = makeZeroState(n)
+  initial.data[2 * (1 << defectSite)] = 1
+  const radius = Math.max(
+    model.hamiltonian.estimateSpectralRadius(() => 0.5),
+    1e-6,
+  )
+  let psi = initial
+  for (let i = 0; i < k; i++) {
+    psi = evolveInterval(model.hamiltonian, psi, dt, radius)
+    normalize(psi)
+  }
+  return { state: psi, defectSite }
 }

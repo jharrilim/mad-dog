@@ -24,7 +24,7 @@ import {
   type QuantumState,
 } from './quantum.ts'
 import { analyzeEmergentGeometry } from './geometry.ts'
-import { procrustes2D } from './linalg.ts'
+import { procrustes2D, procrustes3D } from './linalg.ts'
 
 /**
  * One micro-step of real-time Schrodinger evolution, |psi> -> e^{-i H dt}|psi>,
@@ -119,13 +119,13 @@ export interface SpacetimeConfig {
   dt: number
   /** Number of clock readings (slices). */
   steps: number
-  /** Embedding dimension for the emergent geometry (1 or 2). */
+  /** Embedding dimension for the emergent geometry (1, 2, or 3). */
   embedDim?: number
   /**
-   * Reference layout (e.g. the true grid positions) used to Procrustes-align
-   * 2D embeddings across clock readings so the sheet does not spin/flip.
+   * Reference layout used to Procrustes-align embeddings across clock readings.
+   * Include z for 3D models.
    */
-  alignTo?: { x: number; y: number }[]
+  alignTo?: { x: number; y: number; z?: number }[]
   /** Taylor order for each step. */
   order?: number
 }
@@ -147,7 +147,9 @@ export function buildSpacetime(config: SpacetimeConfig): SpacetimeResult {
     order = 6,
   } = config
   const sites = hamiltonian.n
-  const alignTarget = alignTo?.map((p) => [p.x, p.y])
+  const use3D = embedDim >= 3
+  const alignTarget2 = alignTo?.map((p) => [p.x, p.y])
+  const alignTarget3 = alignTo?.map((p) => [p.x, p.y, p.z ?? 0])
 
   const energy0 = hamiltonian.expectation(initial)
   let energyDrift = 0
@@ -165,9 +167,12 @@ export function buildSpacetime(config: SpacetimeConfig): SpacetimeResult {
 
     const report = analyzeEmergentGeometry(psi, 1, Math.max(embedDim, 1))
     let coords: number[][]
-    if (embedDim >= 2) {
+    if (use3D) {
+      const raw = report.mds.coords.map((c) => [c[0] ?? 0, c[1] ?? 0, c[2] ?? 0])
+      coords = alignTo ? procrustes3D(raw, alignTarget3!) : raw
+    } else if (embedDim >= 2) {
       const raw = report.mds.coords.map((c) => [c[0] ?? 0, c[1] ?? 0])
-      coords = alignTarget ? procrustes2D(raw, alignTarget) : raw
+      coords = alignTo ? procrustes2D(raw, alignTarget2!) : raw
     } else {
       coords = orientCoords(report.mds.coords.map((c) => c[0] ?? 0)).map((x) => [
         x,
@@ -236,9 +241,11 @@ export interface LightCone {
 export function measureLightCone(
   result: SpacetimeResult,
   thresholdFraction = 0.12,
+  centerSite?: number,
+  siteDistances?: number[],
 ): LightCone {
   const n = result.sites
-  const center = Math.floor(n / 2)
+  const center = centerSite ?? Math.floor(n / 2)
   let max = 0
   for (const s of result.slices) for (const v of s.signal) max = Math.max(max, v)
   const thr = Math.max(max * thresholdFraction, 1e-6)
@@ -256,7 +263,7 @@ export function measureLightCone(
     if (i === center) continue
     const t = arrivals[i]
     if (!isFinite(t) || t <= 0) continue
-    const d = Math.abs(i - center)
+    const d = siteDistances ? siteDistances[i] : Math.abs(i - center)
     num += d * t
     den += t * t
   }
