@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { Play, Loader2 } from 'lucide-react'
 import {
   Card,
@@ -13,11 +13,7 @@ import {
   type SpacetimeRunConfig,
 } from '@/sim/runner'
 import { runSpacetimeAsync, type SpacetimeResultWithBackend } from '@/sim/runner-async'
-import {
-  measureLightCone,
-  type LightCone,
-  type SpacetimeResult,
-} from '@/sim/spacetime'
+import type { LightCone, SpacetimeResult } from '@/sim/types'
 
 function signalColor(v: number) {
   // v in [0,1] -> from transparent to bright primary.
@@ -30,7 +26,7 @@ function SpacetimeDiagram({
   selected,
   onSelect,
 }: {
-  result: SpacetimeResult
+  result: SpacetimeResultWithBackend
   cone: LightCone
   selected: number
   onSelect: (k: number) => void
@@ -182,10 +178,7 @@ export function SpacetimeViz() {
     value: SpacetimeRunConfig[K],
   ) => setConfig((c) => ({ ...c, [key]: value }))
 
-  const cone = useMemo(
-    () => (result ? measureLightCone(result) : null),
-    [result],
-  )
+  const cone = result?.lightCone ?? null
 
   return (
     <Card>

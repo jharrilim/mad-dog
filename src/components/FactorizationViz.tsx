@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { Play, Loader2 } from 'lucide-react'
 import {
   Card,
@@ -9,11 +9,19 @@ import {
 } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { MiHeatmap } from '@/components/factorization/MiHeatmap'
+import { CouplingGraph } from '@/components/factorization/CouplingGraph'
 import {
   runFactorizationSearchAsync,
   type FactorizationSearchResultWithBackend,
 } from '@/sim/runner-async'
-import type { FactorizationKind } from '@/sim/factorization'
+import { FactorizationCostBanner } from '@/components/factorization/FactorizationCostBanner'
+import { estimateFactorizationSearchCost } from '@/sim/factorization-warnings'
+import type {
+  FactorizationInputMode,
+  FactorizationKind,
+  FactorizationSearchConfig,
+} from '@/sim/types'
 
 function permLabel(perm: number[]): string {
   return perm.map((p) => String(p)).join('→')
@@ -21,32 +29,50 @@ function permLabel(perm: number[]): string {
 
 export function FactorizationViz() {
   const [kind, setKind] = useState<FactorizationKind>('shuffled_chain')
+  const [inputMode, setInputMode] = useState<FactorizationInputMode>('pauli')
   const [result, setResult] = useState<FactorizationSearchResultWithBackend | null>(
     null,
   )
   const [loading, setLoading] = useState(false)
 
-  const run = useCallback(() => {
-    setLoading(true)
-    void runFactorizationSearchAsync({
+  const searchConfig = useMemo((): FactorizationSearchConfig => {
+    return {
       kind,
-      n: 6,
+      n: kind === 'shuffled_grid' ? 9 : 6,
       field: 1.5,
       seed: 4242,
       topK: 5,
-    })
+      inputMode,
+      rows: kind === 'shuffled_grid' ? 3 : undefined,
+      cols: kind === 'shuffled_grid' ? 3 : undefined,
+      graphKind: kind === 'shuffled_grid' ? 'grid' : 'line',
+      eigenstateCount: inputMode === 'spectrum' ? 3 : 1,
+      searchMethod:
+        kind === 'shuffled_chain' && inputMode === 'pauli' ? 'exact' : undefined,
+    }
+  }, [kind, inputMode])
+
+  const costWarning = useMemo(
+    () => estimateFactorizationSearchCost(searchConfig),
+    [searchConfig],
+  )
+
+  const run = useCallback(() => {
+    setLoading(true)
+    void runFactorizationSearchAsync(searchConfig)
       .then(setResult)
       .finally(() => setLoading(false))
-  }, [kind])
+  }, [searchConfig])
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Locality from the spectrum (prototype)</CardTitle>
+        <CardTitle>Locality from H and low-energy states</CardTitle>
         <CardDescription>
-          Given a Hamiltonian and its ground state, search qubit label permutations
-          that make coupling look nearest-neighbour on a line. Score blends H
-          locality with MI dominance between line neighbours.
+          Search qubit label permutations that make coupling look local on a line
+          (or grid). <strong>Pauli mode</strong> uses Ĥ structure + MI;{' '}
+          <strong>spectrum mode</strong> scores from eigenvectors only (no Pauli
+          terms in the search).
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -60,12 +86,37 @@ export function FactorizationViz() {
           </Button>
           <Button
             size="sm"
+            variant={kind === 'shuffled_grid' ? 'default' : 'outline'}
+            onClick={() => setKind('shuffled_grid')}
+          >
+            Shuffled grid
+          </Button>
+          <Button
+            size="sm"
             variant={kind === 'random' ? 'default' : 'outline'}
             onClick={() => setKind('random')}
           >
             Random non-local
           </Button>
         </div>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            size="sm"
+            variant={inputMode === 'pauli' ? 'default' : 'outline'}
+            onClick={() => setInputMode('pauli')}
+          >
+            Pauli + MI
+          </Button>
+          <Button
+            size="sm"
+            variant={inputMode === 'spectrum' ? 'default' : 'outline'}
+            onClick={() => setInputMode('spectrum')}
+          >
+            Spectrum only
+          </Button>
+        </div>
+
+        <FactorizationCostBanner warning={costWarning} />
 
         <Button onClick={run} disabled={loading} size="sm">
           {loading ? (
@@ -83,6 +134,10 @@ export function FactorizationViz() {
               <Badge variant="outline">
                 {result.elapsedMs.toFixed(0)} ms · {result.backend}
               </Badge>
+              <Badge variant="outline">{result.scorerUsed}</Badge>
+              <Badge variant="outline">
+                {result.searchMethod} ({result.searchIters} iters)
+              </Badge>
               <Badge variant={result.recoveredIdentity ? 'secondary' : 'destructive'}>
                 {result.recoveredIdentity ? 'local factorization found' : 'weak recovery'}
               </Badge>
@@ -96,18 +151,10 @@ export function FactorizationViz() {
                   <dd className="text-foreground tabular-nums">
                     {(result.baseline.localityFraction * 100).toFixed(0)}%
                   </dd>
-                  <dt>MI nn ratio</dt>
-                  <dd className="text-foreground tabular-nums">
-                    {result.baseline.miNnRatio.toFixed(2)}
-                  </dd>
+                  <dt>emergent dim</dt>
+                  <dd className="text-foreground tabular-nums">{result.baseline.emergentDim}</dd>
                   <dt>score</dt>
-                  <dd className="text-foreground tabular-nums">
-                    {result.baseline.score.toFixed(3)}
-                  </dd>
-                  <dt>non-local terms</dt>
-                  <dd className="text-foreground tabular-nums">
-                    {result.baseline.nonlocalTerms}
-                  </dd>
+                  <dd className="text-foreground tabular-nums">{result.baseline.score.toFixed(3)}</dd>
                 </dl>
               </div>
               <div className="rounded-md border p-3 space-y-2">
@@ -120,39 +167,31 @@ export function FactorizationViz() {
                   <dd className="text-foreground tabular-nums">
                     {(result.best.localityFraction * 100).toFixed(0)}%
                   </dd>
-                  <dt>MI nn ratio</dt>
-                  <dd className="text-foreground tabular-nums">
-                    {result.best.miNnRatio.toFixed(2)}
-                  </dd>
+                  <dt>emergent dim</dt>
+                  <dd className="text-foreground tabular-nums">{result.best.emergentDim}</dd>
                   <dt>score</dt>
-                  <dd className="text-foreground tabular-nums">
-                    {result.best.score.toFixed(3)}
-                  </dd>
-                  <dt>non-local terms</dt>
-                  <dd className="text-foreground tabular-nums">
-                    {result.best.nonlocalTerms}
-                  </dd>
+                  <dd className="text-foreground tabular-nums">{result.best.score.toFixed(3)}</dd>
                 </dl>
               </div>
             </div>
 
-            {result.topCandidates.length > 1 && (
-              <div className="text-xs text-muted-foreground space-y-1">
-                <p className="font-medium text-foreground text-sm">Top candidates</p>
-                {result.topCandidates.map((c, i) => (
-                  <p key={i} className="font-mono">
-                    #{i + 1} score={c.score.toFixed(3)} locality=
-                    {(c.localityFraction * 100).toFixed(0)}% perm=
-                    {permLabel(c.permutation)}
-                  </p>
-                ))}
-              </div>
+            <div className="grid sm:grid-cols-2 gap-6">
+              <MiHeatmap title="MI — baseline labeling" mi={result.baselineMi} />
+              <MiHeatmap title="MI — best permutation" mi={result.bestMi} />
+            </div>
+
+            {result.couplingEdges.length > 0 && (
+              <CouplingGraph
+                title="Two-body couplings (best labeling)"
+                n={result.n}
+                edges={result.couplingEdges}
+              />
             )}
 
             <p className="text-sm text-muted-foreground leading-relaxed">
-              {kind === 'shuffled_chain'
-                ? 'A local TFIM chain with randomly permuted qubit labels. A successful search recovers a line factorization (locality ≈ 100%).'
-                : 'A fully non-local random Hamiltonian — the best line factorization may still score poorly; this probes how much locality the spectrum admits.'}
+              {kind === 'random'
+                ? 'A fully non-local Hamiltonian — the best line factorization may still score poorly.'
+                : 'A local model with hidden qubit labels. Successful search recovers high locality on the target graph.'}
             </p>
           </>
         )}

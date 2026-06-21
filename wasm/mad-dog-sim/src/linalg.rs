@@ -75,7 +75,11 @@ pub fn jacobi_eigen_symmetric(input: &[Vec<f64>]) -> EigenResult {
     }
 }
 
-pub fn hermitian_eigenvalues(re: &[Vec<f64>], im: &[Vec<f64>]) -> Vec<f64> {
+/// Full Hermitian eigendecomposition; eigenvectors as interleaved amplitude data.
+pub fn hermitian_eigen_decomposition(
+    re: &[Vec<f64>],
+    im: &[Vec<f64>],
+) -> (Vec<f64>, Vec<Vec<f64>>) {
     let n = re.len();
     let mut m = vec![vec![0.0; 2 * n]; 2 * n];
     for i in 0..n {
@@ -88,10 +92,29 @@ pub fn hermitian_eigenvalues(re: &[Vec<f64>], im: &[Vec<f64>]) -> Vec<f64> {
     }
     let result = jacobi_eigen_symmetric(&m);
     let mut eigs = Vec::with_capacity(n);
-    for i in (0..2 * n).step_by(2) {
-        eigs.push(result.values[i]);
+    let mut states = Vec::with_capacity(n);
+    for k in 0..n {
+        eigs.push(result.values[2 * k]);
+        let mut data = vec![0.0; 2 * n];
+        for i in 0..n {
+            data[2 * i] = result.vectors[i][2 * k];
+            data[2 * i + 1] = result.vectors[i + n][2 * k];
+        }
+        let mut norm = 0.0;
+        for i in 0..n {
+            norm += data[2 * i] * data[2 * i] + data[2 * i + 1] * data[2 * i + 1];
+        }
+        norm = norm.sqrt().max(1e-300);
+        for v in &mut data {
+            *v /= norm;
+        }
+        states.push(data);
     }
-    eigs
+    (eigs, states)
+}
+
+pub fn hermitian_eigenvalues(re: &[Vec<f64>], im: &[Vec<f64>]) -> Vec<f64> {
+    hermitian_eigen_decomposition(re, im).0
 }
 
 pub fn entropy_from_eigenvalues(eigs: &[f64]) -> f64 {

@@ -135,6 +135,94 @@ pub fn tfim_grid(rows: usize, cols: usize, j: f64, h: f64) -> BuiltModel {
     }
 }
 
+/// 2D TFIM on a torus (periodic wrap) — negative control for cross-graph factorization.
+pub fn tfim_torus(rows: usize, cols: usize, j: f64, h: f64) -> BuiltModel {
+    let n = rows * cols;
+    let idx = |r: usize, c: usize| r * cols + c;
+    let mut terms = Vec::new();
+    for r in 0..rows {
+        for c in 0..cols {
+            let c2 = (c + 1) % cols;
+            let r2 = (r + 1) % rows;
+            terms.push(PauliTerm {
+                coeff: -j,
+                ops: vec![
+                    PauliOp {
+                        qubit: idx(r, c),
+                        letter: PauliLetter::Z,
+                    },
+                    PauliOp {
+                        qubit: idx(r, c2),
+                        letter: PauliLetter::Z,
+                    },
+                ],
+            });
+            terms.push(PauliTerm {
+                coeff: -j,
+                ops: vec![
+                    PauliOp {
+                        qubit: idx(r, c),
+                        letter: PauliLetter::Z,
+                    },
+                    PauliOp {
+                        qubit: idx(r2, c),
+                        letter: PauliLetter::Z,
+                    },
+                ],
+            });
+        }
+    }
+    for i in 0..n {
+        terms.push(PauliTerm {
+            coeff: -h,
+            ops: vec![PauliOp {
+                qubit: i,
+                letter: PauliLetter::X,
+            }],
+        });
+    }
+    let mut true_positions = Vec::new();
+    for r in 0..rows {
+        for c in 0..cols {
+            true_positions.push(TruePosition {
+                x: c as f64,
+                y: r as f64,
+                z: None,
+            });
+        }
+    }
+    BuiltModel {
+        hamiltonian: Hamiltonian::new(n, terms),
+        layout: LatticeLayout {
+            true_positions,
+            expected_dim: 2,
+        },
+        label: format!("TFIM torus ({rows}x{cols})"),
+    }
+}
+
+/// Fraction of two-body terms that are nearest-neighbour on a line labeling.
+pub fn line_locality_fraction(h: &Hamiltonian) -> f64 {
+    let mut local = 0usize;
+    let mut total = 0usize;
+    for term in &h.terms {
+        if term.ops.len() != 2 {
+            continue;
+        }
+        let i = term.ops[0].qubit;
+        let j = term.ops[1].qubit;
+        if i.abs_diff(j) == 1 {
+            local += 1;
+        }
+        total += 1;
+    }
+    if total > 0 {
+        local as f64 / total as f64
+    } else {
+        0.0
+    }
+}
+
 pub fn random_nonlocal(n: usize, rng: &mut Rng) -> BuiltModel {
     let letters = [PauliLetter::X, PauliLetter::Y, PauliLetter::Z];
     let mut terms = Vec::new();

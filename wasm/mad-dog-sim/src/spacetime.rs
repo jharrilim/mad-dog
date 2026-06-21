@@ -24,6 +24,8 @@ pub struct SpacetimeResult {
     pub sites: usize,
     pub slices: Vec<SpacetimeSlice>,
     pub energy_drift: f64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub light_cone: Option<LightCone>,
     pub elapsed_ms: f64,
 }
 
@@ -37,6 +39,8 @@ pub struct SpacetimeConfig<'a> {
     pub embed_dim: usize,
     pub align_to: Option<&'a [TruePosition]>,
     pub order: usize,
+    /// When false, skip MI/MDS per slice (light-cone signal only).
+    pub include_geometry: bool,
 }
 
 fn orient_coords(coords: &[f64]) -> Vec<f64> {
@@ -88,47 +92,51 @@ pub fn build_spacetime(config: SpacetimeConfig<'_>) -> SpacetimeResult {
         let energy = hamiltonian.expectation(&psi);
         energy_drift = energy_drift.max((energy - energy0).abs());
 
-        let report = analyze_emergent_geometry(&psi, 1.0, embed_dim.max(1));
-        let coords = if use_3d {
-            let raw: Vec<Vec<f64>> = report
-                .mds
-                .coords
-                .iter()
-                .map(|c| {
-                    vec![
-                        c.first().copied().unwrap_or(0.0),
-                        c.get(1).copied().unwrap_or(0.0),
-                        c.get(2).copied().unwrap_or(0.0),
-                    ]
-                })
-                .collect();
-            if let Some(ref target) = align_target_3 {
-                procrustes_3d(&raw, target)
-            } else {
-                raw
-            }
-        } else if use_2d {
-            let raw: Vec<Vec<f64>> = report
-                .mds
-                .coords
-                .iter()
-                .map(|c| vec![c.first().copied().unwrap_or(0.0), c.get(1).copied().unwrap_or(0.0)])
-                .collect();
-            if let Some(ref target) = align_target_2 {
-                procrustes_2d(&raw, target)
-            } else {
-                raw
-            }
-        } else {
-            let oriented = orient_coords(
-                &report
+        let coords = if config.include_geometry {
+            let report = analyze_emergent_geometry(&psi, 1.0, embed_dim.max(1));
+            if use_3d {
+                let raw: Vec<Vec<f64>> = report
                     .mds
                     .coords
                     .iter()
-                    .map(|c| c.first().copied().unwrap_or(0.0))
-                    .collect::<Vec<_>>(),
-            );
-            oriented.into_iter().map(|x| vec![x]).collect()
+                    .map(|c| {
+                        vec![
+                            c.first().copied().unwrap_or(0.0),
+                            c.get(1).copied().unwrap_or(0.0),
+                            c.get(2).copied().unwrap_or(0.0),
+                        ]
+                    })
+                    .collect();
+                if let Some(ref target) = align_target_3 {
+                    procrustes_3d(&raw, target)
+                } else {
+                    raw
+                }
+            } else if use_2d {
+                let raw: Vec<Vec<f64>> = report
+                    .mds
+                    .coords
+                    .iter()
+                    .map(|c| vec![c.first().copied().unwrap_or(0.0), c.get(1).copied().unwrap_or(0.0)])
+                    .collect();
+                if let Some(ref target) = align_target_2 {
+                    procrustes_2d(&raw, target)
+                } else {
+                    raw
+                }
+            } else {
+                let oriented = orient_coords(
+                    &report
+                        .mds
+                        .coords
+                        .iter()
+                        .map(|c| c.first().copied().unwrap_or(0.0))
+                        .collect::<Vec<_>>(),
+                );
+                oriented.into_iter().map(|x| vec![x]).collect()
+            }
+        } else {
+            vec![Vec::new(); sites]
         };
 
         let z_expectation: Vec<f64> = (0..sites).map(|q| expectation_z(&psi, q)).collect();
@@ -164,8 +172,15 @@ pub fn build_spacetime(config: SpacetimeConfig<'_>) -> SpacetimeResult {
         sites,
         slices,
         energy_drift,
+        light_cone: None,
         elapsed_ms: 0.0,
     }
+}
+
+/// Light-cone trajectory without per-slice MI/MDS (scattering, sweeps).
+pub fn build_light_cone_trajectory(mut config: SpacetimeConfig<'_>) -> SpacetimeResult {
+    config.include_geometry = false;
+    build_spacetime(config)
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -229,5 +244,84 @@ pub fn measure_light_cone(
         arrivals,
         center,
         dt,
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LightConeComparison {
+    pub lattice: LightCone,
+    pub mi: LightCone,
+    pub mi_time_avg: LightCone,
+    pub velocity_ratio: f64,
+}
+
+fn chain_distances(n: usize, center: usize) -> Vec<f64> {
+    (0..n).map(|i| ((i as i32) - (center as i32)).abs() as f64).collect()
+}
+
+pub fn average_mi_distances_from_trajectory(
+    hamiltonian: &crate::quantum::Hamiltonian,
+    initial: &crate::quantum::QuantumState,
+    center: usize,
+    dt: f64,
+    steps: usize,
+    order: usize,
+) -> Vec<f64> {
+    use crate::geometry::mi_distances_from_state;
+    use crate::quantum::evolve_interval;
+    use crate::rng::Rng;
+
+    let n = hamiltonian.n;
+    let mut sums = vec![0.0; n];
+    let mut psi = initial.clone();
+    let mut rng = Rng::new(42);
+    let radius = hamiltonian
+        .estimate_spectral_radius(&mut rng, 30)
+        .max(1e-6);
+    let count = steps.max(1) as f64;
+    for k in 0..steps {
+        let d = mi_distances_from_state(&psi, center, 1.0);
+        for i in 0..n {
+            sums[i] += d[i];
+        }
+        if k + 1 < steps {
+            psi = evolve_interval(hamiltonian, &psi, dt, radius, order);
+            psi.normalize();
+        }
+    }
+    sums.iter().map(|s| s / count).collect()
+}
+
+pub fn compare_light_cone_velocities(
+    result: &SpacetimeResult,
+    threshold_fraction: f64,
+    center_site: Option<usize>,
+    mi_distances: Option<&[f64]>,
+    mi_distances_time_avg: Option<&[f64]>,
+) -> LightConeComparison {
+    let center = center_site.unwrap_or(result.sites / 2);
+    let lattice_d = chain_distances(result.sites, center);
+    let lattice = measure_light_cone(
+        result,
+        threshold_fraction,
+        Some(center),
+        Some(&lattice_d),
+    );
+    let mi_d = mi_distances.unwrap_or(&lattice_d);
+    let mi_time_d = mi_distances_time_avg.unwrap_or(mi_d);
+    let mi = measure_light_cone(result, threshold_fraction, Some(center), Some(mi_d));
+    let mi_time_avg =
+        measure_light_cone(result, threshold_fraction, Some(center), Some(mi_time_d));
+    let velocity_ratio = if lattice.velocity > 1e-9 {
+        mi.velocity / lattice.velocity
+    } else {
+        0.0
+    };
+    LightConeComparison {
+        lattice,
+        mi,
+        mi_time_avg,
+        velocity_ratio,
     }
 }

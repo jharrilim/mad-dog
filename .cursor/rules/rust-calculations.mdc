@@ -1,0 +1,38 @@
+---
+description: All simulator calculations in Rust/WASM — never new TypeScript math
+alwaysApply: true
+---
+
+# Rust-first calculations (WASM-only)
+
+All **numerical / quantum simulation work** belongs in Rust (`wasm/mad-dog-sim/`), compiled to WASM and called from the UI via the worker (`src/sim/wasm/simWorker.ts` → `runner-async.ts`).
+
+TypeScript is too slow for state-vector evolution, MDS, factorization search, etc. Do **not** add calculation logic in TypeScript. The TypeScript oracle has been retired — there is no TS fallback.
+
+## New features
+
+1. Implement in Rust under `wasm/mad-dog-sim/src/`.
+2. Expose `run_*_json` from `lib.rs` and register in `simWorker.ts`.
+3. Add config/result types to `src/sim/types.ts`; re-export from `src/sim/runner.ts` if needed.
+4. Wire async UI via `runner-async.ts` (`callWasm` only — fail fast if WASM missing).
+5. Validate with `npm run check:wasm`, `node scripts/sim-check.ts`, and domain scripts as appropriate.
+
+## TypeScript is fine for
+
+- React UI (`src/components/`, `src/pages/`)
+- Types (`src/sim/types.ts`) and async wiring (`runner-async.ts`, `wasm/client.ts`)
+- Cost warnings (`factorization-warnings.ts` — estimates only, no math)
+- Scripts that *call* WASM (`scripts/wasm-check.ts`, `scripts/scattering-sweep.ts`, etc.)
+- Docs and config
+
+## Anti-patterns
+
+```typescript
+// ❌ BAD — new entropy loop in TS
+export function newDiagnostic(state: QuantumState) { /* heavy math */ }
+
+// ✅ GOOD — Rust module + WASM export
+// wasm/mad-dog-sim/src/my_diagnostic.rs → run_my_diagnostic_json
+```
+
+If unsure whether something is “calculation”: if it loops over amplitudes, builds RDMs, diagonalizes, searches permutations, or evolves |ψ⟩, it belongs in Rust.

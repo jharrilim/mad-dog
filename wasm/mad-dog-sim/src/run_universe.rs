@@ -119,6 +119,7 @@ pub fn run_universe_3d(config: &Universe3DConfig) -> Universe3DResult {
         embed_dim: 3,
         align_to: Some(&model.layout.true_positions),
         order: 6,
+        include_geometry: true,
     });
     let light_cone = measure_light_cone(&spacetime, 0.12, Some(defect_site), Some(&site_distances));
     Universe3DResult {

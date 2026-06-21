@@ -3,7 +3,7 @@ import { Canvas } from '@react-three/fiber'
 import { OrbitControls, Line } from '@react-three/drei'
 import * as THREE from 'three'
 import type { Universe3DResult } from '@/sim/runner'
-import type { SpacetimeSlice } from '@/sim/spacetime'
+import type { SpacetimeSlice } from '@/sim/types'
 
 interface Bounds {
   cx: number

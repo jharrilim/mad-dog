@@ -44,7 +44,9 @@ Slope ≈ 1 is what the essay predicts. Relation holds strongly in the gapped gr
 | 0 (vacuum) | 0.94 | 0.993 |
 | 1.0 (quench time) | 1.40 | 0.929 |
 
-Slope **tilts upward**; linear fit degrades but does not collapse. Interpretation: concentrated entanglement makes entropy exceed the boundary-area prediction — a discrete hint of **curvature / stress** in the emergent metric language. Not a proof of Einstein equations.
+Slope **tilts upward**; linear fit degrades but does not collapse.
+
+**Honest interpretation:** the discrete RT identity \(S_A \approx \frac{1}{2}\sum I(a{:}b)\) holds for redundancy-constrained states, not arbitrary excitations. Slope \(\approx 1.4\) means the state left that class — the formula broke down — not that we measured emergent scalar curvature. See [falsification.md](./falsification.md).
 
 ## Implementation notes
 

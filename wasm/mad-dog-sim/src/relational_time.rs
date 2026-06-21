@@ -233,7 +233,7 @@ fn physical_clock_indices(
     (indices, times)
 }
 
-fn fit_affine(xs: &[f64], ys: &[f64]) -> (f64, f64, f64) {
+pub fn fit_affine(xs: &[f64], ys: &[f64]) -> (f64, f64, f64) {
     if xs.len() < 2 {
         return (1.0, 0.0, 1.0);
     }
@@ -339,6 +339,7 @@ pub fn build_dual_clock(config: DualClockConfig<'_>) -> DualClockResult {
                 sites,
                 slices: uniform_slice_list,
                 energy_drift,
+                light_cone: None,
                 elapsed_ms: 0.0,
             },
         },
@@ -349,6 +350,7 @@ pub fn build_dual_clock(config: DualClockConfig<'_>) -> DualClockResult {
                 sites,
                 slices: physical_slice_list,
                 energy_drift,
+                light_cone: None,
                 elapsed_ms: 0.0,
             },
         },

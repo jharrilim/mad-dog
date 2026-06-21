@@ -7,6 +7,11 @@ import { HolographyViz } from '@/components/HolographyViz'
 import { RtMassViz } from '@/components/RtMassViz'
 import { RefinementViz } from '@/components/RefinementViz'
 import { FactorizationViz } from '@/components/FactorizationViz'
+import { FactorizationRefinementViz } from '@/components/FactorizationRefinementViz'
+import { LightConeCompareViz } from '@/components/LightConeCompareViz'
+import { ModularClockViz } from '@/components/ModularClockViz'
+import { ScatteringViz } from '@/components/ScatteringViz'
+import { FalsificationViz } from '@/components/FalsificationViz'
 
 function Experiments() {
   return (
@@ -53,6 +58,9 @@ function Experiments() {
           </div>
           <SpacetimeViz />
           <Spacetime2DViz />
+          <LightConeCompareViz />
+          <ModularClockViz />
+          <ScatteringViz />
           <RelationalTimeViz />
         </section>
 
@@ -73,6 +81,20 @@ function Experiments() {
           <RtMassViz />
           <RefinementViz />
           <FactorizationViz />
+          <FactorizationRefinementViz />
+        </section>
+
+        <Separator />
+
+        <section className="space-y-6">
+          <div>
+            <h2 className="text-2xl font-semibold mb-2">Falsification Tests</h2>
+            <p className="text-muted-foreground">
+              Automated checks for claims specific to the Mad-Dog emergence
+              program — what would disprove them if they failed.
+            </p>
+          </div>
+          <FalsificationViz />
         </section>
       </main>
     </div>

@@ -6,7 +6,7 @@ Dated bullets for decisions future agents should not relitigate without cause.
 
 - **Correctness-first TS engine** over WebGPU first: need auditable physics before GPU speed; `runner.ts` as swap boundary.
 - **Pauli-sum TFIM models** (chain / grid / cube): local Hamiltonians where geometry *should* emerge vs `randomNonlocal` as negative control.
-- **`sim-check.ts` as regression oracle**: numerical claims (Bell entropy, emergent dim, light cone, RT slope) must pass before we trust UI demos.
+- **`sim-check.ts` as regression oracle**: numerical claims (emergent dim, light cone, RT slope) must pass against WASM before we trust UI demos.
 
 ## Emergent space
 
@@ -40,8 +40,8 @@ Dated bullets for decisions future agents should not relitigate without cause.
 ## 2026 — Rust WASM backend (GitHub Pages)
 
 - **Single-threaded Rust/WASM in a Web Worker** — no `SharedArrayBuffer` / COOP-COEP; works on GitHub Pages.
-- **TypeScript sim stays the oracle** — `scripts/wasm-check.ts` compares energy, emergent dim, MI to TS.
-- **Emergence demo wired first** — `runEmergenceAsync` uses WASM with TS fallback; extend to other runners later.
+- **WASM-only calculations (v0.7.0)** — TypeScript oracle retired; `src/sim/types.ts` + `runner-async.ts` wire JSON only; scripts validate Rust golden assertions.
+- **Scattering fast path** — geometry-free light-cone evolution (`include_geometry: false`); sweeps use `lite: true` + `scripts/scattering-sweep.ts` with worker-thread parallelism.
 
 ## Documentation
 

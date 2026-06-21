@@ -10,6 +10,9 @@
     "build": "npm run build:wasm && tsc -b && vite build",
     "build:pages": "GITHUB_PAGES=true npm run build",
     "check:wasm": "npm run build:wasm && node scripts/wasm-check.ts",
+    "bench:factorization": "npm run build:wasm && node scripts/factorization-bench.ts",
+    "check:falsification": "npm run ensure:wasm && node scripts/falsification-check.ts",
+    "sweep:scattering": "npm run build:wasm && node scripts/scattering-sweep.ts",
     "lint": "eslint .",
     "preview": "vite preview"
   },

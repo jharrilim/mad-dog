@@ -4,7 +4,7 @@ Speculative extension of [open-questions.md](./open-questions.md#mad-dog-native-
 
 ## What we built
 
-`src/sim/refinement.ts` implements a **refinement pressure** score (0–1) from:
+`wasm/mad-dog-sim/src/refinement.rs` implements a **refinement pressure** score (0–1) from:
 
 | Ingredient | Source | Failure mode |
 |------------|--------|--------------|
@@ -22,6 +22,8 @@ UI: `RefinementViz` on the essay page (holographic section).
 CLI: `scripts/sim-check.ts` block prints vacuum vs late pressure and n vs n+2 comparison.
 
 **WASM:** `runRefinementQuenchAsync` / `runRefinementNCompareAsync` in `runner-async.ts` (validated in `scripts/wasm-check.ts`).
+
+See also [factorization.md](./factorization.md) — joint quench + factorization drift study (`FactorizationRefinementViz`).
 
 ## What we did *not* build
 

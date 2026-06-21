@@ -2,7 +2,7 @@
 
 use crate::models::{tfim_chain, tfim_grid};
 use crate::quantum::QuantumState;
-use crate::spacetime::{build_spacetime, SpacetimeConfig, SpacetimeResult};
+use crate::spacetime::{build_spacetime, measure_light_cone, SpacetimeConfig, SpacetimeResult};
 use serde::Deserialize;
 
 #[derive(Clone, Debug, Deserialize)]
@@ -43,7 +43,7 @@ pub fn run_spacetime(config: &SpacetimeRunConfig) -> SpacetimeResult {
     let center = config.n / 2;
     let initial = defect_initial(config.n, center);
     let reference = reference_initial(config.n);
-    build_spacetime(SpacetimeConfig {
+    let mut result = build_spacetime(SpacetimeConfig {
         hamiltonian: &model.hamiltonian,
         initial,
         reference: Some(reference),
@@ -52,7 +52,10 @@ pub fn run_spacetime(config: &SpacetimeRunConfig) -> SpacetimeResult {
         embed_dim: 1,
         align_to: None,
         order: 6,
-    })
+        include_geometry: true,
+    });
+    result.light_cone = Some(measure_light_cone(&result, 0.12, Some(center), None));
+    result
 }
 
 pub fn run_spacetime_2d(config: &Spacetime2DConfig) -> SpacetimeResult {
@@ -61,7 +64,7 @@ pub fn run_spacetime_2d(config: &Spacetime2DConfig) -> SpacetimeResult {
     let center = (config.rows / 2) * config.cols + config.cols / 2;
     let initial = defect_initial(n, center);
     let reference = reference_initial(n);
-    build_spacetime(SpacetimeConfig {
+    let mut result = build_spacetime(SpacetimeConfig {
         hamiltonian: &model.hamiltonian,
         initial,
         reference: Some(reference),
@@ -70,5 +73,8 @@ pub fn run_spacetime_2d(config: &Spacetime2DConfig) -> SpacetimeResult {
         embed_dim: 2,
         align_to: Some(&model.layout.true_positions),
         order: 6,
-    })
+        include_geometry: true,
+    });
+    result.light_cone = Some(measure_light_cone(&result, 0.12, Some(center), None));
+    result
 }

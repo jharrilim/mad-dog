@@ -43,15 +43,20 @@ function getWorker(): Worker {
 export type WasmMethod =
   | 'emergence'
   | 'spacetime'
+  | 'lightConeCompare'
   | 'spacetime2d'
   | 'holography'
   | 'rtMass'
   | 'refinementQuench'
   | 'refinementNCompare'
   | 'relationalTime'
+  | 'modularDualClock'
+  | 'scattering'
   | 'universe3d'
   | 'universeSlice'
   | 'factorizationSearch'
+  | 'factorizationRefinement'
+  | 'falsificationBattery'
 
 export function callWasm<T>(method: WasmMethod, config: unknown): Promise<T> {
   const id = nextId++

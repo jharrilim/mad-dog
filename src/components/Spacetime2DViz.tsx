@@ -11,7 +11,6 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { type Spacetime2DConfig } from '@/sim/runner'
 import { runSpacetime2DAsync, type SpacetimeResultWithBackend } from '@/sim/runner-async'
-import { measureLightCone, type SpacetimeResult } from '@/sim/spacetime'
 
 function signalColor(v: number) {
   return `oklch(0.72 0.16 290 / ${0.12 + v * 0.88})`
@@ -23,7 +22,7 @@ function GridEmbedding({
   cols,
   selected,
 }: {
-  result: SpacetimeResult
+  result: SpacetimeResultWithBackend
   rows: number
   cols: number
   selected: number
@@ -142,7 +141,7 @@ export function Spacetime2DViz() {
     value: Spacetime2DConfig[K],
   ) => setConfig((c) => ({ ...c, [key]: value }))
 
-  const cone = result ? measureLightCone(result) : null
+  const cone = result?.lightCone ?? null
 
   return (
     <Card>

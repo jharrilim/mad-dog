@@ -1,0 +1,452 @@
+/** WASM JSON contract types — mirror `wasm/mad-dog-sim` serde structs. */
+
+export type SimBackend = 'wasm'
+
+export type ModelKind = 'chain' | 'grid' | 'random'
+
+export interface RunConfig {
+  kind: ModelKind
+  n: number
+  rows: number
+  cols: number
+  field: number
+  seed: number
+}
+
+export interface MdsResult {
+  coords: number[][]
+  eigenvalues: number[]
+  emergentDim: number
+  explainedVariance: number[]
+}
+
+export interface EmergenceReport {
+  mi: number[][]
+  distance: number[][]
+  mds: MdsResult
+}
+
+export interface RunResult {
+  label: string
+  qubits: number
+  energy: number
+  iters: number
+  expectedDim: number
+  report: EmergenceReport
+  truePositions: { x: number; y: number }[]
+  elapsedMs: number
+  backend?: SimBackend
+}
+
+export interface SpacetimeSlice {
+  k: number
+  t: number
+  coords: number[][]
+  zExpectation: number[]
+  signal: number[]
+  energy: number
+}
+
+export interface LightCone {
+  velocity: number
+  arrivals: number[]
+  center: number
+  dt: number
+}
+
+export interface SpacetimeResult {
+  sites: number
+  slices: SpacetimeSlice[]
+  energyDrift: number
+  lightCone?: LightCone
+  elapsedMs: number
+  backend?: SimBackend
+}
+
+export interface SpacetimeRunConfig {
+  n: number
+  field: number
+  dt: number
+  steps: number
+  seed?: number
+}
+
+export interface Spacetime2DConfig {
+  rows: number
+  cols: number
+  field: number
+  dt: number
+  steps: number
+}
+
+export interface LightConeComparison {
+  lattice: LightCone
+  mi: LightCone
+  miTimeAvg: LightCone
+  velocityRatio: number
+}
+
+export interface LightConeCompareResult {
+  spacetime: SpacetimeResult
+  comparison: LightConeComparison
+  elapsedMs: number
+  backend?: SimBackend
+}
+
+export interface AreaLawPoint {
+  size: number
+  sGround: number
+  sRandom: number
+}
+
+export interface RtPoint {
+  entropy: number
+  cut: number
+  size: number
+  start: number
+  distFromMass?: number
+}
+
+export interface HolographyReport {
+  n: number
+  areaLaw: AreaLawPoint[]
+  rtPoints: RtPoint[]
+  rtSlope: number
+  rtR2: number
+}
+
+export interface HolographyRunConfig {
+  n: number
+  field: number
+  seed?: number
+}
+
+export interface HolographyRunResult {
+  label: string
+  report: HolographyReport
+  elapsedMs: number
+  backend?: SimBackend
+}
+
+export interface RtFit {
+  rtPoints: RtPoint[]
+  rtSlope: number
+  rtR2: number
+}
+
+export interface RtMassReport {
+  n: number
+  massSite: number
+  strength: number
+  vacuum: RtFit
+  mass: RtFit
+  sweep: { strength: number; slope: number; r2: number }[]
+}
+
+export interface RtMassRunConfig {
+  n: number
+  field: number
+  strength: number
+  seed?: number
+}
+
+export interface RtMassRunResult {
+  label: string
+  report: RtMassReport
+  elapsedMs: number
+  backend?: SimBackend
+}
+
+export interface RefinementBaselines {
+  groundAreaGrowth: number
+  randomAreaGrowth: number
+}
+
+export interface RefinementReasons {
+  rtFit: boolean
+  rtSlope: boolean
+  areaLaw: boolean
+  emergentDim: boolean
+}
+
+export interface RefinementDiagnostics {
+  n: number
+  rtSlope: number
+  rtR2: number
+  emergentDim: number
+  areaGrowth: number
+  areaPressure: number
+  pressure: number
+  needsRefinement: boolean
+  reasons: RefinementReasons
+}
+
+export interface RefinementQuenchSlice {
+  t: number
+  step: number
+  diagnostics: RefinementDiagnostics
+}
+
+export interface RefinementQuenchConfig {
+  n: number
+  field: number
+  dt: number
+  steps: number
+  seed: number
+}
+
+export interface RefinementQuenchResult {
+  n: number
+  field: number
+  dt: number
+  baselines: RefinementBaselines
+  slices: RefinementQuenchSlice[]
+  decouplingLag: number
+  elapsedMs: number
+  backend?: SimBackend
+}
+
+export interface RefinementNCompareConfig {
+  n: number
+  deltaN?: number
+  field: number
+  dt: number
+  quenchStep: number
+  seed: number
+}
+
+export interface RefinementNCompareResult {
+  n: number
+  nLarge: number
+  field: number
+  quenchStep: number
+  dt: number
+  small: RefinementDiagnostics
+  large: RefinementDiagnostics
+  largerRelieves: boolean
+  elapsedMs: number
+  backend?: SimBackend
+}
+
+export interface RelationalTimeConfig {
+  n: number
+  field: number
+  dt: number
+  steps: number
+  clockSite: number
+  physicalSlices: number
+}
+
+export interface ClockHistory {
+  label: string
+  clockSite: number | null
+  result: SpacetimeResult
+}
+
+export interface TimeMapPoint {
+  tauUniform: number
+  tauPhysical: number
+}
+
+export interface DualClockResult {
+  sites: number
+  uniform: ClockHistory
+  physical: ClockHistory
+  timeMap: TimeMapPoint[]
+  syncR2: number
+  syncSlope: number
+  syncIntercept: number
+  elapsedMs: number
+  backend?: SimBackend
+}
+
+export interface ModularDualClockConfig {
+  n: number
+  field: number
+  dt: number
+  steps: number
+  modularSlices?: number
+}
+
+export interface ModularDualClockResult {
+  n: number
+  center: number
+  regionA: number[]
+  regionB: number[]
+  modularTauA: number[]
+  modularTauB: number[]
+  tickA: number[]
+  tickB: number[]
+  syncR2Modular: number
+  syncR2Z: number
+  elapsedMs: number
+  backend?: SimBackend
+}
+
+export interface ScatteringConfig {
+  n: number
+  field: number
+  dt: number
+  steps: number
+  defectSites?: [number, number]
+  lite?: boolean
+  taylorOrder?: number
+}
+
+export interface WorldlinePoint {
+  t: number
+  site: number
+  amplitude: number
+}
+
+export interface ScatteringResult {
+  n: number
+  field: number
+  defectSites: [number, number]
+  slices: SpacetimeSlice[]
+  worldlines: [WorldlinePoint[], WorldlinePoint[]]
+  crossed: boolean
+  minSeparation: number
+  elapsedMs: number
+  backend?: SimBackend
+}
+
+export interface Universe3DConfig {
+  lx: number
+  ly: number
+  lz: number
+  field: number
+  dt: number
+  steps: number
+}
+
+export interface UniverseModelSummary {
+  label: string
+  layout: {
+    truePositions: { x: number; y: number; z?: number }[]
+    expectedDim: number
+  }
+}
+
+export interface Universe3DResult {
+  model: UniverseModelSummary
+  spacetime: SpacetimeResult
+  lightCone: LightCone
+  defectSite: number
+  edges: [number, number][]
+  siteDistances: number[]
+  elapsedMs: number
+  backend?: SimBackend
+}
+
+export interface UniverseSliceConfig extends Universe3DConfig {
+  k: number
+}
+
+export interface UniverseSliceResult {
+  report: EmergenceReport
+  defectSite: number
+  elapsedMs: number
+  backend?: SimBackend
+}
+
+export interface CouplingEdge {
+  i: number
+  j: number
+  dist: number
+}
+
+export interface FactorizationCandidate {
+  permutation: number[]
+  localityFraction: number
+  miNnRatio: number
+  score: number
+  nonlocalTerms: number
+  emergentDim: number
+}
+
+export type FactorizationKind = 'shuffled_chain' | 'random' | 'shuffled_grid'
+export type FactorizationInputMode = 'pauli' | 'spectrum'
+export type FactorizationSearchMethod = 'exact' | 'annealing' | 'greedy'
+export type FactorizationGraphKind = 'line' | 'grid'
+
+export interface FactorizationSearchConfig {
+  kind: FactorizationKind
+  n: number
+  field: number
+  seed: number
+  topK?: number
+  inputMode?: FactorizationInputMode
+  searchMethod?: FactorizationSearchMethod
+  eigenstateCount?: number
+  graphKind?: FactorizationGraphKind
+  rows?: number
+  cols?: number
+  distanceDecay?: number
+  annealingSteps?: number
+}
+
+export interface FactorizationSearchResult {
+  label: string
+  n: number
+  energy: number
+  baseline: FactorizationCandidate
+  best: FactorizationCandidate
+  topCandidates: FactorizationCandidate[]
+  recoveredIdentity: boolean
+  trueShuffle?: number[]
+  baselineMi: number[][]
+  bestMi: number[][]
+  couplingEdges: CouplingEdge[]
+  inputMode: string
+  scorerUsed: string
+  searchMethod: string
+  searchIters: number
+  elapsedMs: number
+  backend?: SimBackend
+}
+
+export interface FactorizationRefinementConfig {
+  n: number
+  field: number
+  dt: number
+  steps: number
+  seed: number
+  annealingSteps?: number
+}
+
+export interface FactorizationRefinementSlice {
+  t: number
+  step: number
+  refinementPressure: number
+  factorizationScore: number
+  localityFraction: number
+  permutation: number[]
+  permDrift: number
+  diagnostics: RefinementDiagnostics
+}
+
+export interface FactorizationRefinementResult {
+  n: number
+  field: number
+  dt: number
+  slices: FactorizationRefinementSlice[]
+  initialPermutation: number[]
+  elapsedMs: number
+  backend?: SimBackend
+}
+
+export interface FalsificationTest {
+  id: string
+  name: string
+  passed: boolean
+  detail: string
+}
+
+export interface FalsificationBatteryResult {
+  tests: FalsificationTest[]
+  passed: number
+  total: number
+  elapsedMs: number
+  backend?: SimBackend
+}

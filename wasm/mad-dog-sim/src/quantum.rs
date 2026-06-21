@@ -206,6 +206,80 @@ pub fn ground_state(
     (state, energy, iters)
 }
 
+fn inner_product(a: &QuantumState, b: &QuantumState) -> f64 {
+    let mut re = 0.0;
+    for i in 0..a.dim {
+        let ar = a.data[2 * i];
+        let ai = a.data[2 * i + 1];
+        let br = b.data[2 * i];
+        let bi = b.data[2 * i + 1];
+        re += ar * br + ai * bi;
+    }
+    re
+}
+
+fn project_orthogonal(state: &mut QuantumState, basis: &[QuantumState]) {
+    for b in basis {
+        let inner = inner_product(state, b);
+        for i in 0..state.dim {
+            state.data[2 * i] -= inner * b.data[2 * i];
+            state.data[2 * i + 1] -= inner * b.data[2 * i + 1];
+        }
+    }
+    state.normalize();
+}
+
+/// Low-energy eigenstates via imaginary-time descent with Gram–Schmidt deflation.
+pub fn low_energy_states(h: &Hamiltonian, k: usize, seed: u32) -> Vec<(QuantumState, f64)> {
+    let dim = 1usize << h.n;
+    let k = k.max(1).min(dim);
+    let mut rng = Rng::new(seed);
+    let radius = h.estimate_spectral_radius(&mut rng, 30).max(1e-6);
+    let dt = 0.5 / radius;
+    let mut found: Vec<(QuantumState, f64)> = Vec::new();
+
+    for _ in 0..k {
+        let mut state = make_random_state(h.n, &mut rng);
+        let prior: Vec<QuantumState> = found.iter().map(|(s, _)| s.clone_state()).collect();
+        project_orthogonal(&mut state, &prior);
+
+        let mut prev_energy = f64::INFINITY;
+        for _ in 0..4000 {
+            let h_psi = h.apply(&state);
+            for i in 0..state.dim {
+                state.data[2 * i] -= dt * h_psi.data[2 * i];
+                state.data[2 * i + 1] -= dt * h_psi.data[2 * i + 1];
+            }
+            project_orthogonal(&mut state, &prior);
+            let energy = h.expectation(&state);
+            if (prev_energy - energy).abs() < 1e-8 {
+                break;
+            }
+            prev_energy = energy;
+        }
+        let energy = h.expectation(&state);
+        found.push((state, energy));
+    }
+    found
+}
+
+/// Dense matrix representation (re, im) in computational basis.
+pub fn hamiltonian_dense(h: &Hamiltonian) -> (Vec<Vec<f64>>, Vec<Vec<f64>>) {
+    let dim = 1usize << h.n;
+    let mut re = vec![vec![0.0; dim]; dim];
+    let mut im = vec![vec![0.0; dim]; dim];
+    for col in 0..dim {
+        let mut basis = QuantumState::zero(h.n);
+        basis.data[2 * col] = 1.0;
+        let h_psi = h.apply(&basis);
+        for row in 0..dim {
+            re[row][col] = h_psi.data[2 * row];
+            im[row][col] = h_psi.data[2 * row + 1];
+        }
+    }
+    (re, im)
+}
+
 pub fn expectation_z(state: &QuantumState, q: usize) -> f64 {
     let mut sum = 0.0;
     for s in 0..state.dim {

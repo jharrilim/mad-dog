@@ -10,7 +10,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { runRelationalTimeAsync, type DualClockResultWithBackend } from '@/sim/runner-async'
-import type { DualClockResult } from '@/sim/relational-time'
+import type { DualClockResult } from '@/sim/types'
 
 function signalColor(v: number) {
   return `oklch(0.72 0.16 290 / ${0.06 + v * 0.94})`

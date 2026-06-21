@@ -1,1 +1,1 @@
-export type SimBackend = 'wasm' | 'typescript'
+export type SimBackend = 'wasm'

@@ -4,7 +4,7 @@ use crate::models::tfim_chain;
 use crate::quantum::evolve_interval;
 use crate::refinement::{
     compute_refinement_baselines, defect_initial_state, measure_refinement_diagnostics,
-    RefinementBaselines, RefinementDiagnostics, RefinementThresholds,
+    refinement_decoupling_lag, RefinementBaselines, RefinementDiagnostics, RefinementThresholds,
 };
 use crate::rng::Rng;
 use serde::{Deserialize, Serialize};
@@ -35,6 +35,7 @@ pub struct RefinementQuenchResult {
     pub dt: f64,
     pub baselines: RefinementBaselines,
     pub slices: Vec<RefinementQuenchSlice>,
+    pub decoupling_lag: usize,
     pub elapsed_ms: f64,
     pub backend: &'static str,
 }
@@ -111,12 +112,20 @@ pub fn run_refinement_quench(config: &RefinementQuenchConfig) -> RefinementQuenc
         }
     }
 
+    let decoupling_lag = refinement_decoupling_lag(
+        &slices
+            .iter()
+            .map(|s| (s.step, s.diagnostics.clone()))
+            .collect::<Vec<_>>(),
+    );
+
     RefinementQuenchResult {
         n: config.n,
         field: config.field,
         dt: config.dt,
         baselines,
         slices,
+        decoupling_lag,
         elapsed_ms: 0.0,
         backend: "wasm",
     }

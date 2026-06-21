@@ -44,18 +44,16 @@ In simulator terms: instead of hand-picking `tfimChain(n+1)`, detect failure of 
 - Monitor RT slope and area-law saturation as entanglement grows under a quench; ask at what effective complexity a larger `n` would be *required* to restore area-law scaling in the MDS embedding.
 - Compare factorizations of the same |ψ⟩ with different `n` (tensor network truncation) and measure when holography breaks.
 
-**Prototype (2025):** see [factorization.md](./factorization.md) — permutation search over line factorizations in `src/sim/factorization.ts` / WASM `factorization.rs`.
-
-**Prototype (2025):** see [refinement.md](./refinement.md) — quench pressure tracker + n vs n+Δ comparison in `src/sim/refinement.ts` and `RefinementViz`. Still no dynamic factor splitting.
+**Prototype:** see [factorization.md](./factorization.md) — permutation search (line/grid), multi-eigenstate + spectrum modes, annealing for n>8, joint quench study with [refinement.md](./refinement.md).
 
 **Ranking (honest):**
 
 | Hypothesis | In the paper today | In our sim today |
 |------------|-------------------|------------------|
 | Fixed ℋ, fixed `n` | Yes | Yes (by design) |
-| Factorization from spectrum | Open | **Prototype search** (line graph, n≤8 exact) |
+| Factorization from spectrum | Open | **Search prototype** (Pauli/spectrum, line/grid, annealing) |
 | Holographic bound on factor count | Thematic only | Baby RT / area law only |
-| Adaptive refinement | Extension | **Prototype diagnostics** (no splitting) |
+| Adaptive refinement | Extension | **Diagnostics** + quench/factorization joint study |
 
 ## From our experiments
 

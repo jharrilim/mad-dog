@@ -59,7 +59,7 @@ pub fn entropy_two_site(state: &QuantumState, i: usize, j: usize) -> f64 {
     entropy_from_eigenvalues(&hermitian_eigenvalues(&re, &im))
 }
 
-pub fn entropy_of_region(state: &QuantumState, region: &[usize]) -> f64 {
+pub fn region_eigenvalues(state: &QuantumState, region: &[usize]) -> Vec<f64> {
     let n = state.n;
     let dim = state.dim;
     let data = &state.data;
@@ -81,7 +81,7 @@ pub fn entropy_of_region(state: &QuantumState, region: &[usize]) -> f64 {
 
     let k = keep.len();
     if k == 0 {
-        return 0.0;
+        return vec![1.0];
     }
     let dim_a = 1usize << k;
     let dim_e = 1usize << trace.len();
@@ -119,7 +119,11 @@ pub fn entropy_of_region(state: &QuantumState, region: &[usize]) -> f64 {
             }
         }
     }
-    entropy_from_eigenvalues(&hermitian_eigenvalues(&rho_re, &rho_im))
+    hermitian_eigenvalues(&rho_re, &rho_im)
+}
+
+pub fn entropy_of_region(state: &QuantumState, region: &[usize]) -> f64 {
+    entropy_from_eigenvalues(&region_eigenvalues(state, region))
 }
 
 /** Full mutual-information matrix between all single-qubit factors. */
@@ -179,6 +183,11 @@ pub fn mi_to_distance(mi: &[Vec<f64>], xi: f64) -> Vec<Vec<f64>> {
         }
     }
     dist
+}
+
+pub fn mi_distances_from_state(state: &QuantumState, center: usize, xi: f64) -> Vec<f64> {
+    let dist = mi_to_distance(&mutual_information_matrix(state), xi);
+    dist[center].clone()
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

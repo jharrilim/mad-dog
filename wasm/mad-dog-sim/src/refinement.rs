@@ -168,3 +168,31 @@ pub fn measure_refinement_diagnostics(
         reasons,
     }
 }
+
+fn trace_slope_deficit(d: &RefinementDiagnostics, thresholds: &RefinementThresholds) -> f64 {
+    clamp01((d.rt_slope - 1.0).abs() / thresholds.max_rt_slope_dev)
+}
+
+/// Clock-step lag between peak slope deficit and peak area pressure.
+pub fn refinement_decoupling_lag(steps_and_diag: &[(usize, RefinementDiagnostics)]) -> usize {
+    if steps_and_diag.is_empty() {
+        return 0;
+    }
+    let thresholds = RefinementThresholds::default();
+    let mut slope_peak = 0;
+    let mut area_peak = 0;
+    let mut max_slope = -1.0;
+    let mut max_area = -1.0;
+    for &(step, ref d) in steps_and_diag {
+        let slope = trace_slope_deficit(d, &thresholds);
+        if slope > max_slope {
+            max_slope = slope;
+            slope_peak = step;
+        }
+        if d.area_pressure > max_area {
+            max_area = d.area_pressure;
+            area_peak = step;
+        }
+    }
+    slope_peak.abs_diff(area_peak)
+}
