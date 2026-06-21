@@ -8,6 +8,51 @@
 - **Locality from spectrum** — search for factorizations that make a given Ĥ look local.
 - **Factor count and Hilbert-space growth** — Mad-Dog takes ℋ = ⊗ₐ ℋₐ and the number of micro-factors as primitive. It does not explain why *this* factorization, *this* dimension, or whether new fundamental degrees of freedom can appear over time (cosmological “creation” of qubits, growing Hilbert space in quantum gravity, etc.). Our simulator fixes `n` at model-build time; it never adds a tensor factor.
 
+## Factor count: hypotheses (speculative)
+
+Mad-Dog does not answer factor count; these are plausible directions from prior art, plus one extension native to this project’s toolkit (entanglement geometry, locality-from-spectrum, baby holography).
+
+### Prior art (grouped)
+
+| Family | Idea | Fit with Carroll–Singh |
+|--------|------|------------------------|
+| **Static ℋ** | All factors exist from the start; “creation” is excitation and entanglement redistribution, not new ⊗ factors. | Closest to the paper as written. |
+| **Spectrum-first** | Only {Eₙ} and {ψₙ} are primitive; the tensor product and factor count are *derived* by finding a factorization where Ĥ looks local. | Explicit open direction (“locality from the spectrum”). |
+| **Scale-dependent decomposition** | “How many qubits?” changes under coarse-graining; same global state, different effective site count. | Consistent with non-unique factorization. |
+| **QFT creation** | Particles are excitations of modes already in ℋ, not new fundamental factors. | Matches emergent-particle / quench demos. |
+| **Environmental branching** | Effective dimension grows for subsystems as they entangle with environments; global ℋ may stay fixed. | Related to emergent classicality, not new ℋₐ. |
+| **Dynamic Hilbert space (QG)** | Cosmology, causal sets, spin foams: combinatorial structure — and Hilbert space dimension — grows over time. | Not developed in the paper; different formalism. |
+| **Holographic bounds** | Degrees of freedom in a region track boundary area (covariant entropy bound), not a pre-labeled qubit lattice. | Thematic fit via area law / RT tests; factor count tied to emergent geometry. |
+| **Emergent Fock space** | Second quantization and occupation numbers are IR effective; ties to QECC / EFT subspace question. | Open question in the paper. |
+
+### Mad-Dog-native extension: adaptive holographic refinement
+
+**Claim (speculative):** factor count is not primitive. It is the size of the *minimal* local factorization that can represent the current |ψ⟩ while satisfying holographic-style constraints.
+
+Sketch:
+
+1. Primitive data stay |ψ⟩ and Ĥ (or spectrum + state components).
+2. Among factorizations where Ĥ is approximately local (graph-like), prefer those that minimize factor count subject to:
+   - emergent MI geometry being low-dimensional (MDS / emergent-dim detector), and
+   - region entropies obeying an area law and a discrete RT-type relation (see [holography.md](./holography.md)).
+3. **Cosmological “new qubit”** means: no factorization with the *old* count can simultaneously keep Ĥ local, satisfy those entanglement inequalities, and represent |ψ(t)⟩ with bounded effective bond dimension. The universe **refines** the tensor network — splits a factor, adds a link — like adaptive mesh refinement.
+
+In simulator terms: instead of hand-picking `tfimChain(n+1)`, detect failure of area-law / RT / emergent-dim diagnostics on the current state under a fixed `n`, then add a factor by a dynamical splitting rule. “Expansion” becomes growth of the minimal holographically consistent factor graph.
+
+**What we could test (not built):**
+
+- Monitor RT slope and area-law saturation as entanglement grows under a quench; ask at what effective complexity a larger `n` would be *required* to restore area-law scaling in the MDS embedding.
+- Compare factorizations of the same |ψ⟩ with different `n` (tensor network truncation) and measure when holography breaks.
+
+**Ranking (honest):**
+
+| Hypothesis | In the paper today | In our sim today |
+|------------|-------------------|------------------|
+| Fixed ℋ, fixed `n` | Yes | Yes (by design) |
+| Factorization from spectrum | Open | No search implemented |
+| Holographic bound on factor count | Thematic only | Baby RT / area law only |
+| Adaptive refinement | Extension | Would need new engine feature |
+
 ## From our experiments
 
 | Question | Status |
