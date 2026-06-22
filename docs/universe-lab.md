@@ -35,6 +35,7 @@ A separate page (`/lab`) showing **three emergent spatial dimensions + one emerg
 | Node position | MDS coords (3D), globally scaled |
 | Node size/glow | `signal` (disturbance) |
 | Edge opacity | MI between neighbours at selected slice |
+| Purple trail | Defect worldline in emergent coords, truncated at selected `k` |
 | Heatmap | sites × time, signal intensity |
 | WebGL | Three.js / react-three-fiber, OrbitControls |
 

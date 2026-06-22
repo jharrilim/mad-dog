@@ -5,6 +5,7 @@ import { Layout } from '@/components/Layout'
 const Home = lazy(() => import('@/pages/Home'))
 const Experiments = lazy(() => import('@/pages/Experiments'))
 const Lab = lazy(() => import('@/pages/Lab'))
+const Glossary = lazy(() => import('@/pages/Glossary'))
 
 /** GitHub Pages serves from `/mad-dog/`; local dev uses `/`. */
 const basename =
@@ -46,6 +47,14 @@ export default function App() {
             element={
               <Suspense fallback={<PageLoader />}>
                 <Lab />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/glossary"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <Glossary />
               </Suspense>
             }
           />

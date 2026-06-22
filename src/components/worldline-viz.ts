@@ -32,8 +32,10 @@ export function worldlinePolylinePoints(
 export function worldlineEmergentPath(
   worldline: WorldlinePoint[],
   slices: { coords: number[][] }[],
+  maxSlice?: number,
 ): [number, number, number][] {
-  return worldline.map((p, k) => {
+  const end = Math.min(maxSlice ?? worldline.length - 1, worldline.length - 1)
+  return worldline.slice(0, end + 1).map((p, k) => {
     const c = slices[k]?.coords[p.site] ?? [0, 0, 0]
     return [c[0], c[1] ?? 0, c[2] ?? 0]
   })

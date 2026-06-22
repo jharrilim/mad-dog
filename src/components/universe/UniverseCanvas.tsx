@@ -86,12 +86,15 @@ function UniverseScene({
 
   const coneThr = maxSig * 0.15
 
+  const trackedSite =
+    result.spacetime.worldline?.[selected]?.site ?? result.defectSite
+
   const worldlinePath = useMemo(() => {
     const wl = result.spacetime.worldline
-    if (!wl || wl.length < 2) return null
-    const raw = worldlineEmergentPath(wl, result.spacetime.slices)
+    if (!wl || wl.length === 0) return null
+    const raw = worldlineEmergentPath(wl, result.spacetime.slices, selected)
     return raw.map(([x, y, z]) => toScene(x, y, z, bounds))
-  }, [result.spacetime.worldline, result.spacetime.slices, bounds])
+  }, [result.spacetime.worldline, result.spacetime.slices, bounds, selected])
 
   return (
     <>
@@ -117,22 +120,23 @@ function UniverseScene({
         )
       })}
 
-      {worldlinePath && (
+      {worldlinePath && worldlinePath.length > 1 && (
         <Line
           points={worldlinePath}
-          color="#c4a8ff"
-          lineWidth={2}
+          color="#9b6dff"
+          lineWidth={2.5}
           transparent
-          opacity={0.85}
+          opacity={0.9}
         />
       )}
 
       {slice.coords.map((c, i) => {
         const intensity = slice.signal[i] / maxSig
         const pos = toScene(c[0], c[1] ?? 0, c[2] ?? 0, bounds)
-        const isDefect = i === result.defectSite
+        const isTrackHead = i === trackedSite
         const inCone = intensity > coneThr
-        const radius = (isDefect ? 0.14 : 0.09) + intensity * 0.1
+        const radius =
+          (isTrackHead ? 0.16 : 0.09) + intensity * (isTrackHead ? 0.12 : 0.1)
         return (
           <group key={i} position={pos}>
             {inCone && (

@@ -239,7 +239,9 @@ export function UniverseLab() {
                 <strong className="text-foreground">3D universe view</strong>{' '}
                 &mdash; one <em>spatial</em> snapshot at the selected clock
                 reading. Node positions come from entanglement (MDS) at that
-                instant; glow tracks the defect spreading.
+                instant; glow tracks the defect spreading. A purple trail shows
+                where the peak signal has traveled in emergent space up to that
+                reading.
               </li>
               <li>
                 <strong className="text-foreground">Slider / Play</strong>{' '}
@@ -418,7 +420,10 @@ export function UniverseLab() {
                 </div>
                 <p className="text-xs text-muted-foreground leading-relaxed">
                   Edge opacity = mutual information at this slice. Node glow =
-                  light-cone signal from the central defect.
+                  light-cone signal from the central defect. Purple trail =
+                  defect worldline through emergent space up to the selected
+                  clock reading (grows as you scrub{' '}
+                  <code className="font-mono text-[10px]">k</code>).
                 </p>
               </aside>
             </div>
