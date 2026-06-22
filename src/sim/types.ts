@@ -942,7 +942,11 @@ export interface EftDimensionResult {
   windowSites: number
   measuredDofPerSite: number
   predictedDofPerSite: number
+  independentDofPerSite: number
   relativeError: number
+  measuredPredictedAgree: boolean
+  measuredIndependentAgree: boolean
+  predictedIndependentAgree: boolean
   dofAgreement: boolean
   stabilizer: StabilizerSearchReport
   elapsedMs: number

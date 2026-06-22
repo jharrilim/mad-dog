@@ -2,7 +2,7 @@
 
 Dated backlog for testing whether systems **behave Mad-Dog-ly** — recoverable locality, relational time, holographic entanglement, excitations, branches, and (eventually) Lorentz-ish causality — without claiming to derive our universe from axioms.
 
-**Last updated:** 2026-06-21
+**Last updated:** 2026-06-22
 
 See also: [falsification.md](./falsification.md) (automated battery), [open-questions.md](./open-questions.md) (honest limits).
 
@@ -21,9 +21,9 @@ Operational checklist — each maps to falsification tests and roadmap phases.
 | **S5** | Holographic entanglement | C, C′, F, F′, H, **R′** | **Shipped** — RT quench series, predictive split, geodesic proxy |
 | **S6** | Particles = excitations | E, **S′** | **Shipped** — ordered-phase defect localization |
 | **S7** | Classical branches | I, **T′** | **Shipped** — Born-weight / distinguishability correlation |
-| **S8** | IR subspace / code-like | I, **I′**, **U′** | **Shipped** — stabilizer search + EFT DOF counting |
+| **S8** | IR subspace / code-like | I, **I′**, **U′** | **Shipped** — stabilizer search + two-of-three EFT DOF |
 | **S9** | Lorentz-ish IR causality | **L**, **L′**, **O**, **P** | **Shipped** — scaling, dispersion, boost invariance |
-| **S10** | Factor count not arbitrary | F, H, **V′**, **W′** | **Shipped** — in-place split + holographic n_min |
+| **S10** | Factor count not arbitrary | F, H, **V′**, **W′** | **Shipped** — in-place split + blind-locality holographic n_min |
 
 **Progress metric:** signatures pass on **models we didn’t hand-tune**, at **growing n**, with **negative controls** failing loudly.
 
@@ -74,15 +74,15 @@ Operational checklist — each maps to falsification tests and roadmap phases.
 | Pauli stabilizer search on branch window | `run_stabilizer_search_json`; falsification **I′** |
 | Defect lifetime ordered vs disordered | `run_particle_stability_json`; falsification **S′** |
 | Branch Born-weight consistency | `run_branch_born_json`; falsification **T′** |
-| EFT DOF vs stabilizer code rate | `run_eft_dimension_json`; falsification **U′** |
+| EFT DOF two-of-three agreement | `run_eft_dimension_json`; falsification **U′** (participation-ratio third estimator) |
 | Matter bench | `npm run bench:matter` |
 
 ### Phase 7 — Factor count dynamics (S10) — shipped 2026-06-21
 
 | Item | Notes |
 |------|-------|
-| In-place tensor split | `run_inplace_split_json`; falsification **V′** |
-| Holographic bound on n | `run_holographic_bound_json`; falsification **W′** |
+| In-place tensor split | `run_inplace_split_json`; falsification **V′** (hold-out hardened Phase 9) |
+| Holographic bound on n | `run_holographic_bound_json`; falsification **W′** (blind factorization locality) |
 | Factor dynamics bench | `npm run bench:factor` |
 
 ### Phase 8 — Observational bridge — shipped 2026-06-21
@@ -96,13 +96,29 @@ Operational checklist — each maps to falsification tests and roadmap phases.
 | Orchestrator | `npm run bench:observational` |
 | Doc | [observational-bridge.md](./observational-bridge.md) |
 
+### Phase 9 — Circularity hardening — partial (3/5) — 2026-06-22
+
+| Item | Notes |
+|------|-------|
+| W′ blind locality on \|ψ⟩ | `holographic_bound.rs` — factorization search, not native Ĥ |
+| F′/V′/R′/C′ hold-out grid | `refinement_holdout.rs`; battery pass on 3/3 hold-outs; relabeled diagnostic |
+| U′ third DOF estimator | `eft_dof.rs` — participation ratio; two-of-three agreement |
+| Circularity index (partial) | [circularity-audit.md](./circularity-audit.md) — W′, F′ family, U′ indexed |
+
+**Remaining:** T′/I′ hold-outs (priority 4); complete audit rows for all **′** tests (priority 5).
+
 ---
 
 ## Next up (ranked execution order)
 
-_(Phase 8 complete — see deferred engineering items below.)_
+### Phase 9 — Circularity hardening (remaining)
 
----
+| Priority | Item | Affected tests | Deliverable | Pass / done criterion |
+|----------|------|----------------|-------------|------------------------|
+| 4 | **Born / stabilizer hold-outs** | **T′**, **I′** | Fix pass bands on calibration quenches; evaluate on held-out `(coupling, windowRadius)` sweep | Significant ρ / generator count on hold-out without retuning thresholds |
+| 5 | **Circularity index doc** | All | Complete [circularity-audit.md](./circularity-audit.md) rows for every **′** test; link from falsification table | F, H, I, S, T′, I′, etc. indexed |
+
+**Not in scope:** Phase 8 observational bridge (external literature caps — category-error risk only).
 
 ## Deferred (not rejected)
 
@@ -120,4 +136,4 @@ _(Phase 8 complete — see deferred engineering items below.)_
 - Move rows to **Shipped** with a date when done.
 - Add falsification letters when a claim becomes automated (**K**, **L** added 2026-06-21).
 - Cross-link detailed notes in `docs/`; keep `sim-check.ts` / falsification battery aligned with any **OK** claims.
-- **Winning** looks like: more signatures on non-TFIM models, pass rates improving with n, negative controls failing, observational thresholds documented.
+- **Winning** looks like: more signatures on non-TFIM models, pass rates improving with n, negative controls failing, observational thresholds documented, **circularity audit complete** (Phase 9 items 4–5).

@@ -5,6 +5,7 @@
 mod branch_born;
 mod curvature_proxy;
 mod decoherence;
+mod eft_dof;
 mod emergence;
 mod excitation_subspace;
 mod factorization;
@@ -17,6 +18,7 @@ mod quantum;
 mod relational_time;
 mod rng;
 mod refinement;
+mod refinement_holdout;
 mod run_decoherence;
 mod run_excitation_subspace;
 mod run_geometry_dim_sweep;

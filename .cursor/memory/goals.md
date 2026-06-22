@@ -11,4 +11,4 @@
 
 See phased signature program in [roadmap.md](../docs/roadmap.md) (S1–S10). **Phase 8 shipped.**
 
-- **Next:** deferred engineering (WebGPU, `/lab` bundle); extend observational exports as literature refs sharpen.
+- **Phase 9 (3/5):** W′ blind locality, F′ hold-outs, U′ third DOF shipped; T′/I′ hold-outs + full circularity audit remain.

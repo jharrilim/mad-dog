@@ -23,6 +23,10 @@ use crate::run_factor_dynamics::{
 };
 use crate::holographic_bound::HolographicBoundConfig;
 use crate::tensor_split::InplaceSplitConfig;
+use crate::refinement_holdout::{
+    eval_c_prime_holdout, eval_f_prime_holdout, eval_r_prime_holdout, eval_v_prime_holdout,
+    REFINEMENT_TUNING_DEFAULT,
+};
 use crate::run_rt_quench::{run_curvature_proxy_quench, run_rt_quench, CurvatureProxyQuenchConfig, RtQuenchConfig};
 use crate::excitation_subspace::ExcitationSubspaceConfig;
 use crate::run_excitation_subspace::run_excitation_subspace_probe;
@@ -637,65 +641,79 @@ pub fn run_falsification_battery() -> FalsificationBatteryResult {
         });
     }
 
-    // R′ — RT deviation tracks excitation density under quench
+    // R′ — RT deviation tracks excitation density (hold-out grid; tuning default is calibration only)
     {
+        let cal = REFINEMENT_TUNING_DEFAULT;
         let r = run_rt_quench(&RtQuenchConfig {
-            n: 10,
-            field: 1.5,
-            dt: 0.2,
-            steps: 16,
-            seed: 7711,
+            n: cal.n,
+            field: cal.field,
+            dt: cal.dt,
+            steps: cal.steps_rt,
+            seed: cal.seed,
         });
+        let holdout = eval_r_prime_holdout();
         tests.push(FalsificationTest {
             id: "R′".to_string(),
-            name: "RT slope deficit structured vs excitation density under quench".to_string(),
-            passed: r.structured_deviation,
+            name: "RT slope deficit structured vs excitation density (prototype diagnostic)".to_string(),
+            passed: holdout.all_passed(),
             detail: format!(
-                "devDensityCorr={:.3}, structured={}",
-                r.deviation_density_corr, r.structured_deviation
+                "{}; cal devDensityCorr={:.3} structured={}",
+                holdout.summary(),
+                r.deviation_density_corr,
+                r.structured_deviation
             ),
         });
     }
 
-    // F′ — predictive early warning precedes refinement failure
+    // F′ — predictive early warning (hold-out grid; prototype diagnostic self-consistency)
     {
+        let cal = REFINEMENT_TUNING_DEFAULT;
         let p = run_predictive_refinement(&AdaptiveRefinementConfig {
-            n: 10,
-            field: 1.5,
-            dt: 0.2,
-            steps: 18,
-            seed: 7711,
+            n: cal.n,
+            field: cal.field,
+            dt: cal.dt,
+            steps: cal.steps_adaptive,
+            seed: cal.seed,
             delta_n: Some(2),
         });
-        let passed = p.lead_time > 0 && p.late_split_recoverable;
+        let holdout = eval_f_prime_holdout();
         tests.push(FalsificationTest {
             id: "F′".to_string(),
-            name: "Predictive RT warning precedes failure; late split recovers".to_string(),
-            passed,
+            name: "Predictive RT warning precedes failure (prototype diagnostic)".to_string(),
+            passed: holdout.all_passed(),
             detail: format!(
-                "leadTime={}, lateRecoverable={}, warnStep={:?}, failStep={:?}",
-                p.lead_time, p.late_split_recoverable, p.early_warning_step, p.failure_step
+                "{}; cal leadTime={} lateRecoverable={} warnStep={:?} failStep={:?}",
+                holdout.summary(),
+                p.lead_time,
+                p.late_split_recoverable,
+                p.early_warning_step,
+                p.failure_step
             ),
         });
     }
 
-    // C′ — geodesic deviation proxy consistent with RT slope deficit
+    // C′ — geodesic deviation proxy suite (hold-out grid; prototype diagnostic)
     {
+        let cal = REFINEMENT_TUNING_DEFAULT;
         let c = run_curvature_proxy_quench(&CurvatureProxyQuenchConfig {
-            n: 10,
-            field: 1.5,
-            dt: 0.2,
-            steps: 16,
-            seed: 7711,
+            n: cal.n,
+            field: cal.field,
+            dt: cal.dt,
+            steps: cal.steps_rt,
+            seed: cal.seed,
             xi: 1.0,
         });
+        let holdout = eval_c_prime_holdout();
         tests.push(FalsificationTest {
             id: "C′".to_string(),
-            name: "Curvature proxy suite internally consistent under quench".to_string(),
-            passed: c.internally_consistent,
+            name: "Curvature proxy suite internally consistent (prototype diagnostic)".to_string(),
+            passed: holdout.all_passed(),
             detail: format!(
-                "geoDensityCorr={:.3}, crossCorr={:.3}, consistent={}",
-                c.geo_density_corr, c.proxy_correlation, c.internally_consistent
+                "{}; cal geoDensityCorr={:.3} crossCorr={:.3} consistent={}",
+                holdout.summary(),
+                c.geo_density_corr,
+                c.proxy_correlation,
+                c.internally_consistent
             ),
         });
     }
@@ -763,7 +781,7 @@ pub fn run_falsification_battery() -> FalsificationBatteryResult {
         });
     }
 
-    // U′ — EFT DOF per site tracks code rate from stabilizers
+    // U′ — EFT DOF per site: two-of-three (branch rank, code rate, participation ratio)
     {
         let e = run_eft_dimension_probe(&EftDimensionConfig {
             excitation: ExcitationSubspaceConfig {
@@ -779,51 +797,52 @@ pub fn run_falsification_battery() -> FalsificationBatteryResult {
         });
         tests.push(FalsificationTest {
             id: "U′".to_string(),
-            name: "EFT dimension counting agrees with stabilizer code rate".to_string(),
+            name: "EFT DOF two-of-three: rank, code rate, participation ratio".to_string(),
             passed: e.dof_agreement,
             detail: format!(
-                "measured={:.3} predicted={:.3} relErr={:.3}",
-                e.measured_dof_per_site, e.predicted_dof_per_site, e.relative_error
+                "meas={:.3} pred={:.3} indep={:.3} pairs mp={} mi={} pi={}",
+                e.measured_dof_per_site,
+                e.predicted_dof_per_site,
+                e.independent_dof_per_site,
+                e.measured_predicted_agree,
+                e.measured_independent_agree,
+                e.predicted_independent_agree,
             ),
         });
     }
 
-    // V′ — in-place tensor split relieves pressure without full re-quench
+    // V′ — in-place tensor split relieves pressure (hold-out grid; prototype diagnostic)
     {
+        let cal = REFINEMENT_TUNING_DEFAULT;
         let v = run_inplace_split_probe(&InplaceSplitConfig {
-            n: 10,
-            field: 1.5,
-            dt: 0.2,
-            steps: 18,
-            seed: 7711,
+            n: cal.n,
+            field: cal.field,
+            dt: cal.dt,
+            steps: cal.steps_adaptive,
+            seed: cal.seed,
             delta_n: Some(2),
         });
-        let passed = v
-            .inner
-            .split_event
-            .as_ref()
-            .map(|e| e.in_place_improves)
-            .unwrap_or(false);
-        let detail = v
+        let holdout = eval_v_prime_holdout();
+        let cal_detail = v
             .inner
             .split_event
             .as_ref()
             .map(|e| {
                 format!(
-                    "step={}, preP={:.3}, inPlaceP={:.3}, delta={:.3}",
+                    "step={} preP={:.3} inPlaceP={:.3} delta={:.3}",
                     e.trigger_step, e.pre.pressure, e.in_place.pressure, e.pressure_delta
                 )
             })
             .unwrap_or_else(|| "no split trigger".to_string());
         tests.push(FalsificationTest {
             id: "V′".to_string(),
-            name: "In-place tensor split relieves refinement pressure".to_string(),
-            passed,
-            detail,
+            name: "In-place tensor split relieves refinement pressure (prototype diagnostic)".to_string(),
+            passed: holdout.all_passed(),
+            detail: format!("{}; cal {}", holdout.summary(), cal_detail),
         });
     }
 
-    // W′ — holographic signatures saturate at finite n on TFIM chain
+    // W′ — holographic signatures saturate at finite n on TFIM chain (blind locality on |ψ⟩)
     {
         let w = run_holographic_bound_probe(&HolographicBoundConfig {
             field: 1.5,
@@ -831,13 +850,23 @@ pub fn run_falsification_battery() -> FalsificationBatteryResult {
             n_max: 12,
         });
         let passed = w.inner.n_min.is_some() && w.inner.bound_scales;
+        let locality_at_nmin = w
+            .inner
+            .n_min
+            .and_then(|n| w.inner.points.iter().find(|p| p.n == n))
+            .map(|p| p.locality_fraction);
         tests.push(FalsificationTest {
             id: "W′".to_string(),
             name: "Holographic bound n_min finite with scaling plateau".to_string(),
             passed,
             detail: format!(
-                "nMin={:?}, saturation={}, scales={}",
-                w.inner.n_min, w.inner.n_saturation, w.inner.bound_scales
+                "nMin={:?}, saturation={}, scales={}, blindLocalityAtNMin={}",
+                w.inner.n_min,
+                w.inner.n_saturation,
+                w.inner.bound_scales,
+                locality_at_nmin
+                    .map(|l| format!("{l:.2}"))
+                    .unwrap_or_else(|| "n/a".to_string())
             ),
         });
     }

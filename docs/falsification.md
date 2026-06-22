@@ -38,24 +38,35 @@ Run: `npm run check:falsification` or **Experiments → Falsification Tests**.
 | **O** | Dispersion ω(k) linear at small k | Wavepacket v_g CoV < 0.35 and ω∝k fit R² > 0.85 |
 | **P** | Weak boost invariance | Uniform vs edge-clock light-cone speed relΔ < 0.20 |
 | **Q** | Scattering exchange phase stable | Detrended post-interaction phase residual std < 0.55 |
-| **R′** | RT slope deficit structured vs density under quench | `structuredDeviation` on defect quench |
-| **F′** | Predictive RT warning precedes failure; late split recovers | leadTime > 0 and late split accepted |
-| **C′** | Curvature proxy suite internally consistent | Geodesic deviation tracks density or cross-proxy |
+| **R′** | RT slope deficit structured vs density under quench *(prototype diagnostic)* | `structuredDeviation` on hold-out `(n, field, seed)` grid (3/3); calibration `n=10, h=1.5, seed=7711` informational |
+| **F′** | Predictive RT warning precedes failure; late split recovers *(prototype diagnostic)* | hold-out grid: `leadTime > 0` and late split accepted (3/3) |
+| **C′** | Curvature proxy suite internally consistent *(prototype diagnostic)* | hold-out grid: geodesic deviation tracks density or cross-proxy (3/3) |
 | **I′** | Pauli stabilizer generators on branch subspace | ≥1 generator, distance ≥1, window scaling |
 | **S′** | Defect more localized in ordered phase | `orderedLongerLived` on h=0.5 vs 2.5 |
 | **T′** | Branch Born weights co-move with distinguishability | Env-entropy vs overlap ρ or strong imbalance ρ |
-| **U′** | EFT DOF per site vs stabilizer code rate | `dofAgreement` within tolerance |
-| **V′** | In-place tensor split relieves pressure | `inPlaceImproves` at peak-pressure trigger |
-| **W′** | Holographic bound n_min finite with plateau | `nMin` Some and `boundScales` on chain sweep |
+| **U′** | EFT DOF per site: two-of-three agreement | Branch effective rank, stabilizer code rate, and window participation ratio — ≥2 pairs agree within tolerance |
+| **V′** | In-place tensor split relieves pressure *(prototype diagnostic)* | hold-out grid: `inPlaceImproves` at peak-pressure trigger (3/3) |
+| **W′** | Holographic bound n_min finite with plateau | `nMin` Some and `boundScales` on chain sweep; `localityOk` from blind factorization on \|ψ⟩ (not native Ĥ) |
 | **M** | Negative controls reject fake locality | `random` n=6 and scrambled-spectrum shuffled chain do not recover |
 
 **K**, **L**, **L′**, **O**, **P**, **Q**, **R′**, **F′**, **C′**, **I′**, **S′**, **T′**, **U′**, **V′**, **W′**, and **M** target [roadmap.md](./roadmap.md) signatures **S1**, **S4**, **S5**, **S6–S8**, **S9**, and **S10**.
+
+## Known circularity (Phase 9 backlog)
+
+Several **′** tests are **diagnostic self-consistency** checks, not independent physics verification. See [roadmap.md](./roadmap.md) Phase 9.
+
+| ID | Issue | Planned fix |
+|----|-------|-------------|
+| ~~**W′**~~ | ~~`locality_ok` uses native chain Ĥ — tautological~~ | **Done (2026-06-22)** — blind factorization on \|ψ⟩ |
+| ~~**F′**, **V′**, **R′**, **C′**~~ | ~~Same refinement pressure / MI stack end-to-end~~ | **Done (2026-06-22)** — hold-out quench grid; relabeled prototype diagnostic in docs |
+| ~~**U′**~~ | ~~Measured and predicted DOF from same branch window~~ | **Done (2026-06-22)** — third estimator: participation ratio on window spectrum; two-of-three pass |
+| **T′**, **I′** | Thresholds tuned on demo quench | Hold-out coupling / window sweep |
 
 ## Planned extensions
 
 | ID | Signature | Target criterion (not yet in battery) |
 |----|-----------|----------------------------------------|
-| _(none — V′/W′ shipped)_ | | |
+| _(Phase 9 — circularity hardening)_ | | See roadmap Phase 9 |
 
 ## Implementation
 
@@ -65,3 +76,5 @@ Run: `npm run check:falsification` or **Experiments → Falsification Tests**.
 - UI: [`FalsificationViz`](../src/components/FalsificationViz.tsx) (async WASM worker)
 
 Thresholds are hand-tuned on TFIM demos; treat failures as research signals, not theorem violations.
+
+**Refinement diagnostics (F′, V′, R′, C′):** pass criteria use a hold-out `(n, field, seed)` grid defined in [`refinement_holdout.rs`](../wasm/mad-dog-sim/src/refinement_holdout.rs) — distinct from the calibration demo (`n=10, h=1.5, seed=7711`). These tests verify **diagnostic self-consistency** of the refinement stack, not independent physics. See [circularity-audit.md](./circularity-audit.md).

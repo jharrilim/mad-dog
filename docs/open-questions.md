@@ -13,7 +13,7 @@ We are **not** trying to prove Mad-Dog from axioms or solve the measurement prob
 
 Automated today: full falsification battery **A–W′** (31 tests). Signature program **S1–S10** complete through Phase 8.
 
-**Phases 1–8 shipped (2026-06).** Next ranked: deferred engineering (WebGPU, full Poincaré), extend observational caps as refs sharpen.
+**Phases 1–8 shipped (2026-06).** Next ranked: **Phase 9** circularity hardening (see [roadmap.md](./roadmap.md)); deferred engineering (WebGPU, full Poincaré).
 
 ## From the paper (not yet simulated)
 

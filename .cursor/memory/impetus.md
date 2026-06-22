@@ -139,3 +139,11 @@ Dated bullets for decisions future agents should not relitigate without cause.
 - **Time export** — multi-clock desync JSON for frozen-formalism metaphor.
 - **IR noise floors** — code rate vs surface-code / gate fidelity order-of-magnitude.
 - **`bench:observational`** — orchestrator → `exports/observational/*.json`.
+
+## 2026-06-22 — Phase 9 planned (circularity hardening)
+
+- **W′** — **Done** — blind factorization on |ψ⟩; hold-out ground seeds.
+- **F′/V′/R′/C′** — **Done** — `refinement_holdout.rs` hold-out grid; battery pass on 3/3; relabeled prototype diagnostic.
+- **U′** — **Done** — participation ratio (1/Σλ²) on branch window spectrum as third DOF estimate; two-of-three pass (rel=0.5, abs=0.35); `eft_dof.rs`.
+- **T′/I′** — hold-out coupling/window bands.
+- **`docs/circularity-audit.md`** — per-test independence index (F′ family section started).
