@@ -4,7 +4,8 @@ import { OrbitControls, Line } from '@react-three/drei'
 import * as THREE from 'three'
 import type { Universe3DResult } from '@/sim/runner'
 import type { SpacetimeSlice } from '@/sim/types'
-import { worldlineEmergentPath } from '@/components/worldline-viz'
+import { worldlineEmergentPathTweened } from '@/components/worldline-viz'
+import { interpolateSlice } from '@/components/universe/slice-interp'
 
 interface Bounds {
   cx: number
@@ -57,21 +58,23 @@ function signalColor(intensity: number): THREE.Color {
 
 function UniverseScene({
   result,
-  selected,
+  displayK,
   mi,
 }: {
   result: Universe3DResult
-  selected: number
+  displayK: number
   mi: number[][] | null
 }) {
-  const slice = result.spacetime.slices[selected]
-  const bounds = useMemo(
-    () => computeBounds(result.spacetime.slices),
-    [result.spacetime.slices],
+  const slices = result.spacetime.slices
+  const frame = useMemo(
+    () => interpolateSlice(slices, displayK),
+    [slices, displayK],
   )
 
+  const bounds = useMemo(() => computeBounds(slices), [slices])
+
   let maxSig = 1e-9
-  for (const s of result.spacetime.slices) {
+  for (const s of slices) {
     for (const v of s.signal) maxSig = Math.max(maxSig, v)
   }
 
@@ -86,15 +89,16 @@ function UniverseScene({
 
   const coneThr = maxSig * 0.15
 
+  const wl = result.spacetime.worldline
   const trackedSite =
-    result.spacetime.worldline?.[selected]?.site ?? result.defectSite
+    wl?.[Math.min(Math.round(displayK), wl.length - 1)]?.site ??
+    result.defectSite
 
   const worldlinePath = useMemo(() => {
-    const wl = result.spacetime.worldline
     if (!wl || wl.length === 0) return null
-    const raw = worldlineEmergentPath(wl, result.spacetime.slices, selected)
+    const raw = worldlineEmergentPathTweened(wl, slices, displayK)
     return raw.map(([x, y, z]) => toScene(x, y, z, bounds))
-  }, [result.spacetime.worldline, result.spacetime.slices, bounds, selected])
+  }, [wl, slices, displayK, bounds])
 
   return (
     <>
@@ -103,8 +107,8 @@ function UniverseScene({
       <directionalLight position={[-3, -2, -4]} intensity={0.35} />
 
       {result.edges.map(([i, j], e) => {
-        const a = slice.coords[i]
-        const b = slice.coords[j]
+        const a = frame.coords[i]
+        const b = frame.coords[j]
         const pa = toScene(a[0], a[1] ?? 0, a[2] ?? 0, bounds)
         const pb = toScene(b[0], b[1] ?? 0, b[2] ?? 0, bounds)
         const miVal = mi ? mi[i][j] / maxMi : 0.35
@@ -130,8 +134,8 @@ function UniverseScene({
         />
       )}
 
-      {slice.coords.map((c, i) => {
-        const intensity = slice.signal[i] / maxSig
+      {frame.coords.map((c, i) => {
+        const intensity = frame.signal[i] / maxSig
         const pos = toScene(c[0], c[1] ?? 0, c[2] ?? 0, bounds)
         const isTrackHead = i === trackedSite
         const inCone = intensity > coneThr
@@ -174,16 +178,15 @@ function UniverseScene({
 
 export function UniverseCanvas({
   result,
-  selected,
+  displayK,
   mi,
 }: {
   result: Universe3DResult
-  selected: number
+  displayK: number
   mi: number[][] | null
 }) {
   const containerRef = useRef<HTMLDivElement>(null)
 
-  // Keep OrbitControls zoom from chaining into page scroll.
   useEffect(() => {
     const el = containerRef.current
     if (!el) return
@@ -203,7 +206,7 @@ export function UniverseCanvas({
         gl={{ antialias: true }}
         style={{ width: '100%', height: '100%', display: 'block' }}
       >
-        <UniverseScene result={result} selected={selected} mi={mi} />
+        <UniverseScene result={result} displayK={displayK} mi={mi} />
       </Canvas>
     </div>
   )

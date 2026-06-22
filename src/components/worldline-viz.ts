@@ -41,6 +41,33 @@ export function worldlineEmergentPath(
   })
 }
 
+/** Worldline path with a fractional tip between slices k₀ and k₀+1. */
+export function worldlineEmergentPathTweened(
+  worldline: WorldlinePoint[],
+  slices: { coords: number[][] }[],
+  k: number,
+): [number, number, number][] {
+  const k0 = Math.min(Math.floor(k), worldline.length - 1)
+  const path = worldlineEmergentPath(worldline, slices, k0)
+  if (k0 >= worldline.length - 1 || k <= k0) return path
+
+  const alpha = k - k0
+  const next = worldline[k0 + 1]
+  const c = slices[k0 + 1]?.coords[next.site] ?? [0, 0, 0]
+  const tip: [number, number, number] = [c[0], c[1] ?? 0, c[2] ?? 0]
+  if (path.length === 0) return [tip]
+
+  const prev = path[path.length - 1]
+  return [
+    ...path,
+    [
+      prev[0] + (tip[0] - prev[0]) * alpha,
+      prev[1] + (tip[1] - prev[1]) * alpha,
+      prev[2] + (tip[2] - prev[2]) * alpha,
+    ],
+  ]
+}
+
 /** Mini SVG separation-vs-time chart for two-defect scattering. */
 export function separationChartPath(
   series: number[],

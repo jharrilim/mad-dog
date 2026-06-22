@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Play, Pause, Loader2, RotateCcw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -11,6 +11,8 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { UniverseCanvas } from '@/components/universe/UniverseCanvas'
+import { interpolateSlice, lerpMiMatrix } from '@/components/universe/slice-interp'
+import { useSliceTween } from '@/components/universe/use-slice-tween'
 import {
   runUniverse3DAsync,
   runUniverseSliceAsync,
@@ -133,11 +135,26 @@ export function UniverseLab() {
   const [sliceReport, setSliceReport] = useState<
     Awaited<ReturnType<typeof runUniverseSliceAsync>> | null
   >(null)
+  const [miEpoch, setMiEpoch] = useState(0)
+  const miCache = useRef(new Map<number, number[][]>())
   const timer = useRef<number | null>(null)
+
+  const fetchSlice = useCallback(
+    (k: number) => {
+      const { preset: _, ...cfg } = config
+      return runUniverseSliceAsync({ ...cfg, k }).then((r) => {
+        miCache.current.set(k, r.report.mi)
+        setMiEpoch((e) => e + 1)
+        return r
+      })
+    },
+    [config],
+  )
 
   const run = useCallback(() => {
     setRunning(true)
     setPlaying(false)
+    miCache.current.clear()
     const { preset: _, ...cfg } = config
     void runUniverse3DAsync(cfg)
       .then((r) => {
@@ -152,11 +169,39 @@ export function UniverseLab() {
       setSliceReport(null)
       return
     }
-    const { preset: _, ...cfg } = config
-    void runUniverseSliceAsync({ ...cfg, k: selected }).then(setSliceReport)
-  }, [result, selected, config])
+    void fetchSlice(selected).then(setSliceReport)
+  }, [result, selected, fetchSlice])
 
-  const sliceMi = sliceReport?.report.mi ?? null
+  useEffect(() => {
+    if (!result) return
+    const next = selected + 1
+    if (next < result.spacetime.slices.length && !miCache.current.has(next)) {
+      void fetchSlice(next)
+    }
+  }, [result, selected, fetchSlice])
+
+  const displayK = useSliceTween(selected, playing ? 360 : 280, result)
+
+  const displayMi = useMemo(() => {
+    void miEpoch
+    if (!result) return null
+    const k0 = Math.floor(displayK)
+    const k1 = Math.min(k0 + 1, result.spacetime.slices.length - 1)
+    const alpha = displayK - k0
+    return lerpMiMatrix(
+      miCache.current.get(k0) ?? null,
+      miCache.current.get(k1) ?? null,
+      alpha,
+    )
+  }, [displayK, miEpoch, result])
+
+  const displayFrame = useMemo(
+    () =>
+      result ? interpolateSlice(result.spacetime.slices, displayK) : null,
+    [result, displayK],
+  )
+
+  const sliceMi = displayMi
   const sliceAnalysis = sliceReport?.report ?? null
 
   useEffect(() => {
@@ -310,7 +355,7 @@ export function UniverseLab() {
               <div className="space-y-4 min-w-0">
                 <UniverseCanvas
                   result={result}
-                  selected={selected}
+                  displayK={displayK}
                   mi={sliceMi}
                 />
                 <div className="flex items-center gap-3">
@@ -349,7 +394,7 @@ export function UniverseLab() {
                     className="flex-1 accent-primary"
                   />
                   <span className="text-xs text-muted-foreground whitespace-nowrap font-mono">
-                    k={selected} t={slice.t.toFixed(2)}
+                    k={displayK.toFixed(2)} t={(displayK * config.dt).toFixed(2)}
                   </span>
                 </div>
               </div>
@@ -372,13 +417,15 @@ export function UniverseLab() {
                   <div className="flex justify-between gap-2">
                     <dt>Energy</dt>
                     <dd className="font-mono text-foreground">
-                      {slice.energy.toFixed(4)}
+                      {displayFrame?.energy.toFixed(4) ?? '—'}
                     </dd>
                   </div>
                   <div className="flex justify-between gap-2">
                     <dt>Max signal</dt>
                     <dd className="font-mono text-foreground">
-                      {Math.max(...slice.signal).toFixed(3)}
+                      {displayFrame
+                        ? Math.max(...displayFrame.signal).toFixed(3)
+                        : '—'}
                     </dd>
                   </div>
                   <div className="flex justify-between gap-2">
