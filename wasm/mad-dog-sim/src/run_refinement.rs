@@ -3,7 +3,8 @@
 use crate::models::tfim_chain;
 use crate::quantum::{evolve_interval, QuantumState};
 use crate::refinement::{
-    compute_refinement_baselines, defect_initial_state, first_split_trigger_from_diag,
+    compute_refinement_baselines, defect_initial_state, early_warning_lead_time,
+    first_early_warning_step, first_failure_step, first_split_trigger_from_diag,
     measure_refinement_diagnostics, refinement_decoupling_lag, suggest_split_site,
     RefinementBaselines, RefinementDiagnostics, RefinementThresholds, SplitEvent,
 };
@@ -270,6 +271,123 @@ pub fn run_adaptive_refinement(config: &AdaptiveRefinementConfig) -> AdaptiveRef
         peak_step,
         peak_pressure,
         split_event,
+        elapsed_ms: 0.0,
+        backend: "wasm",
+    }
+}
+
+#[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PredictiveRefinementResult {
+    pub n: usize,
+    pub delta_n: usize,
+    pub field: f64,
+    pub dt: f64,
+    pub steps: usize,
+    pub baselines: RefinementBaselines,
+    pub early_warning_step: Option<usize>,
+    pub failure_step: Option<usize>,
+    pub lead_time: usize,
+    pub peak_step: usize,
+    pub early_split_event: Option<SplitEvent>,
+    pub late_split_event: Option<SplitEvent>,
+    pub early_warning_recoverable: bool,
+    pub late_split_recoverable: bool,
+    pub elapsed_ms: f64,
+    pub backend: &'static str,
+}
+
+fn split_event_at_step(
+    trigger_step: usize,
+    n: usize,
+    delta_n: usize,
+    field: f64,
+    dt: f64,
+    seed: u32,
+) -> SplitEvent {
+    let trigger_t = trigger_step as f64 * dt;
+    let (state, pre) = state_after_quench_with_site(n, field, dt, trigger_step, seed);
+    let split_site = suggest_split_site(&state);
+    let post = state_after_quench(n + delta_n, field, dt, trigger_step, seed);
+    let pressure_delta = pre.pressure - post.pressure;
+    let accepted = post.pressure < pre.pressure - 1e-6;
+    SplitEvent {
+        trigger_step,
+        trigger_t,
+        pre_n: n,
+        post_n: n + delta_n,
+        suggested_split_site: split_site,
+        pre,
+        post,
+        accepted,
+        pressure_delta,
+    }
+}
+
+pub fn run_predictive_refinement(config: &AdaptiveRefinementConfig) -> PredictiveRefinementResult {
+    let quench = run_refinement_quench(&RefinementQuenchConfig {
+        n: config.n,
+        field: config.field,
+        dt: config.dt,
+        steps: config.steps,
+        seed: config.seed,
+    });
+    let delta_n = config.delta_n.unwrap_or(2);
+    let thresholds = RefinementThresholds::default();
+    let diag_steps: Vec<(usize, RefinementDiagnostics)> = quench
+        .slices
+        .iter()
+        .map(|s| (s.step, s.diagnostics.clone()))
+        .collect();
+
+    let early_warning_step = first_early_warning_step(&diag_steps, &thresholds);
+    let failure_step = first_failure_step(&diag_steps);
+    let lead_time = early_warning_lead_time(early_warning_step, failure_step);
+
+    let (peak_step, _) = diag_steps
+        .iter()
+        .fold((0usize, 0.0_f64), |acc, (step, d)| {
+            if d.pressure > acc.1 {
+                (*step, d.pressure)
+            } else {
+                acc
+            }
+        });
+
+    let early_split_event = early_warning_step.map(|step| {
+        split_event_at_step(step, config.n, delta_n, config.field, config.dt, config.seed)
+    });
+
+    let late_split_event =
+        first_split_trigger_from_diag(&diag_steps, &thresholds).map(|step| {
+            split_event_at_step(step, config.n, delta_n, config.field, config.dt, config.seed)
+        });
+
+    let early_warning_recoverable = early_split_event
+        .as_ref()
+        .map(|ev| ev.accepted)
+        .unwrap_or(false);
+
+    let late_split_recoverable = late_split_event
+        .as_ref()
+        .map(|ev| ev.accepted)
+        .unwrap_or(false);
+
+    PredictiveRefinementResult {
+        n: config.n,
+        delta_n,
+        field: config.field,
+        dt: config.dt,
+        steps: config.steps,
+        baselines: quench.baselines,
+        early_warning_step,
+        failure_step,
+        lead_time,
+        peak_step,
+        early_split_event,
+        late_split_event,
+        early_warning_recoverable,
+        late_split_recoverable,
         elapsed_ms: 0.0,
         backend: "wasm",
     }

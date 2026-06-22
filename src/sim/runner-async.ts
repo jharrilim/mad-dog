@@ -26,7 +26,12 @@ import type {
   RefinementQuenchResult,
   AdaptiveRefinementConfig,
   AdaptiveRefinementResult,
+  CurvatureProxyQuenchConfig,
+  CurvatureProxyQuenchResult,
+  PredictiveRefinementResult,
   RelationalTimeConfig,
+  RtQuenchConfig,
+  RtQuenchResult,
   RtMassRunConfig,
   RtMassRunResult,
   RunConfig,
@@ -164,6 +169,34 @@ export async function runAdaptiveRefinementAsync(
   config: AdaptiveRefinementConfig,
 ): Promise<AdaptiveRefinementResultWithBackend> {
   return runWasm('adaptiveRefinement', config)
+}
+
+export type PredictiveRefinementResultWithBackend = PredictiveRefinementResult & {
+  backend: SimBackend
+}
+
+export async function runPredictiveRefinementAsync(
+  config: AdaptiveRefinementConfig,
+): Promise<PredictiveRefinementResultWithBackend> {
+  return runWasm('predictiveRefinement', config)
+}
+
+export type RtQuenchResultWithBackend = RtQuenchResult & { backend: SimBackend }
+
+export async function runRtQuenchAsync(
+  config: RtQuenchConfig,
+): Promise<RtQuenchResultWithBackend> {
+  return runWasm('rtQuench', config)
+}
+
+export type CurvatureProxyQuenchResultWithBackend = CurvatureProxyQuenchResult & {
+  backend: SimBackend
+}
+
+export async function runCurvatureProxyQuenchAsync(
+  config: CurvatureProxyQuenchConfig,
+): Promise<CurvatureProxyQuenchResultWithBackend> {
+  return runWasm('curvatureProxyQuench', config)
 }
 
 export async function runRelationalTimeAsync(

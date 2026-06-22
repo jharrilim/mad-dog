@@ -18,7 +18,7 @@ Operational checklist — each maps to falsification tests and roadmap phases.
 | **S2** | Low-dim MI geometry | B, J, **J′** | 2 | **Shipped** — chain + 2×2×3 cube; dim sweep bench |
 | **S3** | Relational time (no global clock) | D, D′, G, G′, **N** | **Shipped** — grid/cube clocks; modular vs uniform; simultaneity bend |
 | **S4** | Causal light cones | E, B, **Q** | **Shipped** — scattering phase + grid isotropy |
-| **S5** | Holographic entanglement | C, F, H | 5 | Ground RT OK; quench dynamics partial |
+| **S5** | Holographic entanglement | C, C′, F, F′, H, **R′** | **Shipped** — RT quench series, predictive split, geodesic proxy |
 | **S6** | Particles = excitations | E | 6 | Shipped (domain walls + scatter) |
 | **S7** | Classical branches | I | 6 | Proto (decoherence quench) |
 | **S8** | IR subspace / code-like | I, I′ (planned) | 6 | Sharpness heuristic; stabilizer search next |
@@ -58,17 +58,18 @@ Operational checklist — each maps to falsification tests and roadmap phases.
 | Weak boost invariance (clock subset) | Falsification **P** |
 | Scattering exchange phase stability | Falsification **Q** |
 
+### Phase 5 — Holography under dynamics (S5) — shipped 2026-06-21
+
+| Item | Notes |
+|------|-------|
+| RT time series under defect quench | `run_rt_quench_json`; falsification **R′** |
+| Predictive refinement early warning | `run_predictive_refinement_json`; falsification **F′** |
+| Geodesic deviation curvature proxy | `run_curvature_proxy_quench_json`; falsification **C′** |
+| Holography dynamics bench | `npm run bench:holography` |
+
 ---
 
 ## Next up (ranked execution order)
-
-### Phase 5 — Holography under dynamics (S5)
-
-| Priority | Item | Deliverable | Pass criterion |
-|----------|------|-------------|----------------|
-| 1 | RT time series under quench | S_A / boundary MI during propagation | Structured deviation vs ρ |
-| 2 | Predictive refinement | Split triggers before RT fails badly | Early warning → recovery |
-| 3 | Curvature proxy honesty | Second diagnostic (e.g. geodesic deviation in MI space) | Internal consistency of proxy suite |
 
 ### Phase 6 — Matter and classicality (S6–S8)
 

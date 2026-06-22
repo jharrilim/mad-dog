@@ -10,6 +10,7 @@ import { HolographyViz } from '@/components/HolographyViz'
 import { RtMassViz } from '@/components/RtMassViz'
 import { RefinementViz } from '@/components/RefinementViz'
 import { AdaptiveRefinementViz } from '@/components/AdaptiveRefinementViz'
+import { HolographyDynamicsViz } from '@/components/HolographyDynamicsViz'
 import { FactorizationViz } from '@/components/FactorizationViz'
 import { FactorizationRefinementViz } from '@/components/FactorizationRefinementViz'
 import { LightConeCompareViz } from '@/components/LightConeCompareViz'
@@ -94,6 +95,7 @@ function Experiments() {
           <RtMassViz />
           <RefinementViz />
           <AdaptiveRefinementViz />
+          <HolographyDynamicsViz />
           <FactorizationViz />
           <FactorizationRefinementViz />
         </section>

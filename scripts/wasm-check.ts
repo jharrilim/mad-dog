@@ -16,6 +16,9 @@ import {
   run_refinement_quench_json,
   run_refinement_n_compare_json,
   run_adaptive_refinement_json,
+  run_predictive_refinement_json,
+  run_rt_quench_json,
+  run_curvature_proxy_quench_json,
   run_relational_time_json,
   run_universe_3d_json,
   run_universe_slice_json,
@@ -159,6 +162,41 @@ for (const config of [
     if (!r.splitEvent.accepted) fail('split should relieve pressure')
     else ok(`Δpressure=${r.splitEvent.pressureDelta.toFixed(3)}`)
   }
+}
+
+{
+  const r = JSON.parse(
+    run_rt_quench_json(
+      JSON.stringify({ n: 10, field: 1.5, dt: 0.2, steps: 16, seed: 7711 }),
+    ),
+  )
+  console.log('\nRT quench:')
+  if (!r.structuredDeviation) fail('expected structured RT deviation')
+  else ok(`devDensityCorr=${r.deviationDensityCorr.toFixed(3)}`)
+}
+
+{
+  const r = JSON.parse(
+    run_predictive_refinement_json(
+      JSON.stringify({ n: 10, field: 1.5, dt: 0.2, steps: 18, seed: 7711, deltaN: 2 }),
+    ),
+  )
+  console.log('\npredictive refinement:')
+  if (r.leadTime <= 0) fail('expected positive lead time')
+  else ok(`leadTime=${r.leadTime}`)
+  if (!r.lateSplitRecoverable) fail('late split should relieve pressure')
+  else ok('late split recoverable')
+}
+
+{
+  const r = JSON.parse(
+    run_curvature_proxy_quench_json(
+      JSON.stringify({ n: 10, field: 1.5, dt: 0.2, steps: 16, seed: 7711, xi: 1.0 }),
+    ),
+  )
+  console.log('\ncurvature proxy:')
+  if (!r.internallyConsistent) fail('proxy suite inconsistent')
+  else ok(`geoDensityCorr=${r.geoDensityCorr.toFixed(3)}`)
 }
 
 // --- Relational time ---

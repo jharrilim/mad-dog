@@ -10,9 +10,10 @@ use crate::run_light_cone_compare::{run_light_cone_compare, LightConeCompareConf
 use crate::modular_time::ModularDualClockConfig;
 use crate::run_modular_dual_clock::run_modular_dual_clock;
 use crate::run_refinement::{
-    run_adaptive_refinement, run_refinement_quench, AdaptiveRefinementConfig,
-    RefinementQuenchConfig,
+    run_adaptive_refinement, run_predictive_refinement, run_refinement_quench,
+    AdaptiveRefinementConfig, RefinementQuenchConfig,
 };
+use crate::run_rt_quench::{run_curvature_proxy_quench, run_rt_quench, CurvatureProxyQuenchConfig, RtQuenchConfig};
 use crate::run_excitation_subspace::{run_excitation_subspace_probe, ExcitationSubspaceConfig};
 use crate::run_geometry_stability::{run_geometry_stability, GeometryStabilityConfig};
 use crate::run_multi_clock::{run_multi_clock, MultiClockRunConfig};
@@ -621,6 +622,69 @@ pub fn run_falsification_battery() -> FalsificationBatteryResult {
             detail: format!(
                 "postPhaseStd={:.3}, minSep={:.1}",
                 s.post_interaction_phase_std, s.min_separation
+            ),
+        });
+    }
+
+    // R′ — RT deviation tracks excitation density under quench
+    {
+        let r = run_rt_quench(&RtQuenchConfig {
+            n: 10,
+            field: 1.5,
+            dt: 0.2,
+            steps: 16,
+            seed: 7711,
+        });
+        tests.push(FalsificationTest {
+            id: "R′".to_string(),
+            name: "RT slope deficit structured vs excitation density under quench".to_string(),
+            passed: r.structured_deviation,
+            detail: format!(
+                "devDensityCorr={:.3}, structured={}",
+                r.deviation_density_corr, r.structured_deviation
+            ),
+        });
+    }
+
+    // F′ — predictive early warning precedes refinement failure
+    {
+        let p = run_predictive_refinement(&AdaptiveRefinementConfig {
+            n: 10,
+            field: 1.5,
+            dt: 0.2,
+            steps: 18,
+            seed: 7711,
+            delta_n: Some(2),
+        });
+        let passed = p.lead_time > 0 && p.late_split_recoverable;
+        tests.push(FalsificationTest {
+            id: "F′".to_string(),
+            name: "Predictive RT warning precedes failure; late split recovers".to_string(),
+            passed,
+            detail: format!(
+                "leadTime={}, lateRecoverable={}, warnStep={:?}, failStep={:?}",
+                p.lead_time, p.late_split_recoverable, p.early_warning_step, p.failure_step
+            ),
+        });
+    }
+
+    // C′ — geodesic deviation proxy consistent with RT slope deficit
+    {
+        let c = run_curvature_proxy_quench(&CurvatureProxyQuenchConfig {
+            n: 10,
+            field: 1.5,
+            dt: 0.2,
+            steps: 16,
+            seed: 7711,
+            xi: 1.0,
+        });
+        tests.push(FalsificationTest {
+            id: "C′".to_string(),
+            name: "Curvature proxy suite internally consistent under quench".to_string(),
+            passed: c.internally_consistent,
+            detail: format!(
+                "geoDensityCorr={:.3}, crossCorr={:.3}, consistent={}",
+                c.geo_density_corr, c.proxy_correlation, c.internally_consistent
             ),
         });
     }

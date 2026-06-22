@@ -2,6 +2,7 @@
 
 #![allow(clippy::needless_range_loop)] // index loops are intentional in numerical kernels
 
+mod curvature_proxy;
 mod decoherence;
 mod emergence;
 mod excitation_subspace;
@@ -34,6 +35,8 @@ mod run_lorentz_scaling;
 mod run_multi_clock;
 mod run_modular_dual_clock;
 mod run_refinement;
+mod run_rt_quench;
+mod rt_quench;
 mod scattering;
 mod run_relational_time;
 mod run_simultaneity;
@@ -65,8 +68,12 @@ use run_modular_dual_clock::run_modular_dual_clock;
 use modular_time::ModularDualClockConfig;
 use scattering::{run_two_defect_scattering, ScatteringConfig};
 use run_refinement::{
-    run_adaptive_refinement, run_refinement_n_compare, run_refinement_quench,
-    AdaptiveRefinementConfig, RefinementNCompareConfig, RefinementQuenchConfig,
+    run_adaptive_refinement, run_predictive_refinement, run_refinement_n_compare,
+    run_refinement_quench, AdaptiveRefinementConfig, RefinementNCompareConfig,
+    RefinementQuenchConfig,
+};
+use run_rt_quench::{
+    run_curvature_proxy_quench, run_rt_quench, CurvatureProxyQuenchConfig, RtQuenchConfig,
 };
 use run_relational_time::{run_relational_time, RelationalTimeConfig};
 use run_simultaneity::{run_simultaneity, SimultaneityRunConfig};
@@ -182,6 +189,36 @@ pub fn run_adaptive_refinement_json(config_json: &str) -> Result<String, JsValue
     let config: AdaptiveRefinementConfig =
         serde_json::from_str(config_json).map_err(|e| JsValue::from_str(&e.to_string()))?;
     let mut result = run_adaptive_refinement(&config);
+    result.elapsed_ms = js_sys::Date::now() - start;
+    serde_json::to_string(&result).map_err(|e| JsValue::from_str(&e.to_string()))
+}
+
+#[wasm_bindgen]
+pub fn run_predictive_refinement_json(config_json: &str) -> Result<String, JsValue> {
+    let start = js_sys::Date::now();
+    let config: AdaptiveRefinementConfig =
+        serde_json::from_str(config_json).map_err(|e| JsValue::from_str(&e.to_string()))?;
+    let mut result = run_predictive_refinement(&config);
+    result.elapsed_ms = js_sys::Date::now() - start;
+    serde_json::to_string(&result).map_err(|e| JsValue::from_str(&e.to_string()))
+}
+
+#[wasm_bindgen]
+pub fn run_rt_quench_json(config_json: &str) -> Result<String, JsValue> {
+    let start = js_sys::Date::now();
+    let config: RtQuenchConfig =
+        serde_json::from_str(config_json).map_err(|e| JsValue::from_str(&e.to_string()))?;
+    let mut result = run_rt_quench(&config);
+    result.elapsed_ms = js_sys::Date::now() - start;
+    serde_json::to_string(&result).map_err(|e| JsValue::from_str(&e.to_string()))
+}
+
+#[wasm_bindgen]
+pub fn run_curvature_proxy_quench_json(config_json: &str) -> Result<String, JsValue> {
+    let start = js_sys::Date::now();
+    let config: CurvatureProxyQuenchConfig =
+        serde_json::from_str(config_json).map_err(|e| JsValue::from_str(&e.to_string()))?;
+    let mut result = run_curvature_proxy_quench(&config);
     result.elapsed_ms = js_sys::Date::now() - start;
     serde_json::to_string(&result).map_err(|e| JsValue::from_str(&e.to_string()))
 }
@@ -340,7 +377,7 @@ pub fn run_falsification_battery_json(_config_json: &str) -> Result<String, JsVa
 
 #[wasm_bindgen]
 pub fn wasm_sim_version() -> String {
-    "0.7.7".to_string()
+    "0.7.8".to_string()
 }
 
 #[cfg(test)]

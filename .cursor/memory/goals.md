@@ -9,6 +9,6 @@
 
 ## Near-term directions
 
-See phased signature program in [roadmap.md](../docs/roadmap.md) (S1–S10). **Phase 4 shipped.**
+See phased signature program in [roadmap.md](../docs/roadmap.md) (S1–S10). **Phase 5 shipped.**
 
-- **Phase 5:** holography under quench dynamics (RT time series).
+- **Phase 6:** matter and classicality (stabilizer search, branch Born weights).

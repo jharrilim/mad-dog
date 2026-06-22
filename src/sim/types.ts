@@ -282,6 +282,85 @@ export interface AdaptiveRefinementResult {
   backend?: SimBackend
 }
 
+export interface RtQuenchSlice {
+  t: number
+  step: number
+  rtSlope: number
+  rtR2: number
+  meanRtRatioDev: number
+  slopeDeviation: number
+  areaPressure: number
+}
+
+export interface RtQuenchConfig {
+  n: number
+  field: number
+  dt: number
+  steps: number
+  seed: number
+}
+
+export interface RtQuenchResult {
+  n: number
+  field: number
+  dt: number
+  baselines: RefinementBaselines
+  slices: RtQuenchSlice[]
+  deviationDensityCorr: number
+  structuredDeviation: boolean
+  elapsedMs: number
+  backend?: SimBackend
+}
+
+export interface CurvatureProxySlice {
+  t: number
+  step: number
+  areaPressure: number
+  geodesicDeviation: number
+  rtSlopeDeviation: number
+}
+
+export interface CurvatureProxyQuenchConfig {
+  n: number
+  field: number
+  dt: number
+  steps: number
+  seed: number
+  xi?: number
+}
+
+export interface CurvatureProxyQuenchResult {
+  n: number
+  field: number
+  dt: number
+  xi: number
+  slices: CurvatureProxySlice[]
+  proxyCorrelation: number
+  geoDensityCorr: number
+  internallyConsistent: boolean
+  elapsedMs: number
+  backend?: SimBackend
+}
+
+export interface PredictiveRefinementResult {
+  n: number
+  deltaN: number
+  field: number
+  dt: number
+  steps: number
+  baselines: RefinementBaselines
+  earlyWarningStep: number | null
+  failureStep: number | null
+  leadTime: number
+  peakStep: number
+  earlySplitEvent: SplitEvent | null
+  lateSplitEvent: SplitEvent | null
+  earlyWarningRecoverable: boolean
+  lateSplitRecoverable: boolean
+  elapsedMs: number
+  backend?: SimBackend
+}
+
 export interface RelationalTimeConfig {
   n: number
   field: number

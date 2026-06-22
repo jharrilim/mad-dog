@@ -38,9 +38,12 @@ Run: `npm run check:falsification` or **Experiments → Falsification Tests**.
 | **O** | Dispersion ω(k) linear at small k | Wavepacket v_g CoV < 0.35 and ω∝k fit R² > 0.85 |
 | **P** | Weak boost invariance | Uniform vs edge-clock light-cone speed relΔ < 0.20 |
 | **Q** | Scattering exchange phase stable | Detrended post-interaction phase residual std < 0.55 |
+| **R′** | RT slope deficit structured vs density under quench | `structuredDeviation` on defect quench |
+| **F′** | Predictive RT warning precedes failure; late split recovers | leadTime > 0 and late split accepted |
+| **C′** | Curvature proxy suite internally consistent | Geodesic deviation tracks density or cross-proxy |
 | **M** | Negative controls reject fake locality | `random` n=6 and scrambled-spectrum shuffled chain do not recover |
 
-**K**, **L**, **L′**, **O**, **P**, **Q**, and **M** target [roadmap.md](./roadmap.md) signatures **S1**, **S4**, and **S9**.
+**K**, **L**, **L′**, **O**, **P**, **Q**, **R′**, **F′**, **C′**, and **M** target [roadmap.md](./roadmap.md) signatures **S1**, **S4**, **S5**, and **S9**.
 
 ## Planned extensions
 

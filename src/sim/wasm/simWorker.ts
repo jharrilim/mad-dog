@@ -12,6 +12,9 @@ import init, {
   run_refinement_quench_json,
   run_refinement_n_compare_json,
   run_adaptive_refinement_json,
+  run_predictive_refinement_json,
+  run_rt_quench_json,
+  run_curvature_proxy_quench_json,
   run_relational_time_json,
   run_multi_clock_json,
   run_modular_dual_clock_json,
@@ -43,6 +46,9 @@ export type WasmMethod =
   | 'refinementQuench'
   | 'refinementNCompare'
   | 'adaptiveRefinement'
+  | 'predictiveRefinement'
+  | 'rtQuench'
+  | 'curvatureProxyQuench'
   | 'relationalTime'
   | 'multiClock'
   | 'modularDualClock'
@@ -82,6 +88,9 @@ const runners: Record<WasmMethod, (json: string) => string> = {
   refinementQuench: run_refinement_quench_json,
   refinementNCompare: run_refinement_n_compare_json,
   adaptiveRefinement: run_adaptive_refinement_json,
+  predictiveRefinement: run_predictive_refinement_json,
+  rtQuench: run_rt_quench_json,
+  curvatureProxyQuench: run_curvature_proxy_quench_json,
   relationalTime: run_relational_time_json,
   multiClock: run_multi_clock_json,
   modularDualClock: run_modular_dual_clock_json,

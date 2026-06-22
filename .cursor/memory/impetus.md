@@ -110,3 +110,10 @@ Dated bullets for decisions future agents should not relitigate without cause.
 - **`dimStable`** — emergent dim does not collapse on quench (cube 2×2×3).
 - **Falsification J′** — cube gauge-free geometry + dim stability.
 - **`bench:geometry`** — dim vs manifold sweep (`run_geometry_dim_sweep_json`).
+
+## 2026-06-21 — Phase 5 S5 (holography under dynamics)
+
+- **RT quench time series** — per-step slope deficit + mean |S/cut − 1|; Spearman vs area pressure (**R′**).
+- **Predictive refinement** — early warning when RT fit degrades before `needsRefinement`; split at warning step (**F′**).
+- **Geodesic deviation proxy** — triangle defect in MI distance; consistency via geo–density or cross-proxy ρ (**C′**).
+- **`bench:holography`** — RT quench + predictive + curvature proxy smoke.

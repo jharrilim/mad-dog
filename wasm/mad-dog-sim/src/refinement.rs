@@ -215,6 +215,45 @@ pub fn suggest_split_site(state: &QuantumState) -> usize {
     site
 }
 
+/// First step where RT fit degrades but overall refinement has not yet failed.
+pub fn first_early_warning_step(
+    steps_and_diag: &[(usize, RefinementDiagnostics)],
+    thresholds: &RefinementThresholds,
+) -> Option<usize> {
+    let failure = first_failure_step(steps_and_diag);
+    let mut peak_r2 = 0.0_f64;
+    for &(step, ref d) in steps_and_diag {
+        if failure.is_some_and(|f| step >= f) {
+            break;
+        }
+        peak_r2 = peak_r2.max(d.rt_r2);
+        let r2_drop = peak_r2 - d.rt_r2;
+        if d.reasons.rt_fit || d.reasons.rt_slope {
+            return Some(step);
+        }
+        if (r2_drop > 0.035 || d.rt_r2 < 0.95) && d.pressure < thresholds.pressure {
+            return Some(step);
+        }
+    }
+    None
+}
+
+/// First step where full refinement failure is flagged.
+pub fn first_failure_step(steps_and_diag: &[(usize, RefinementDiagnostics)]) -> Option<usize> {
+    steps_and_diag
+        .iter()
+        .find(|(_, d)| d.needs_refinement)
+        .map(|(step, _)| *step)
+}
+
+/// Clock steps between early RT warning and full refinement failure.
+pub fn early_warning_lead_time(warning: Option<usize>, failure: Option<usize>) -> usize {
+    match (warning, failure) {
+        (Some(w), Some(f)) if f >= w => f - w,
+        _ => 0,
+    }
+}
+
 /// Split trigger at peak-pressure step when the quench ends in refinement failure.
 pub fn first_split_trigger_from_diag(
     steps: &[(usize, RefinementDiagnostics)],
