@@ -18,6 +18,7 @@ import { ModularClockViz } from '@/components/ModularClockViz'
 import { ScatteringViz } from '@/components/ScatteringViz'
 import { DecoherenceQuenchViz } from '@/components/DecoherenceQuenchViz'
 import { ExcitationSubspaceViz } from '@/components/ExcitationSubspaceViz'
+import { MatterClassicalityViz } from '@/components/MatterClassicalityViz'
 import { GeometryStabilityViz } from '@/components/GeometryStabilityViz'
 import { FalsificationViz } from '@/components/FalsificationViz'
 
@@ -71,6 +72,7 @@ function Experiments() {
           <ScatteringViz />
           <DecoherenceQuenchViz />
           <ExcitationSubspaceViz />
+          <MatterClassicalityViz />
           <GeometryStabilityViz />
           <RelationalTimeViz />
           <MultiClockViz />

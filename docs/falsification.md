@@ -41,15 +41,20 @@ Run: `npm run check:falsification` or **Experiments → Falsification Tests**.
 | **R′** | RT slope deficit structured vs density under quench | `structuredDeviation` on defect quench |
 | **F′** | Predictive RT warning precedes failure; late split recovers | leadTime > 0 and late split accepted |
 | **C′** | Curvature proxy suite internally consistent | Geodesic deviation tracks density or cross-proxy |
+| **I′** | Pauli stabilizer generators on branch subspace | ≥1 generator, distance ≥1, window scaling |
+| **S′** | Defect more localized in ordered phase | `orderedLongerLived` on h=0.5 vs 2.5 |
+| **T′** | Branch Born weights co-move with distinguishability | Env-entropy vs overlap ρ or strong imbalance ρ |
+| **U′** | EFT dimension counting vs stabilizer code rate | `dofAgreement` within tolerance |
+| **U′** | EFT DOF per site vs stabilizer code rate | `dofAgreement` within tolerance |
 | **M** | Negative controls reject fake locality | `random` n=6 and scrambled-spectrum shuffled chain do not recover |
 
-**K**, **L**, **L′**, **O**, **P**, **Q**, **R′**, **F′**, **C′**, and **M** target [roadmap.md](./roadmap.md) signatures **S1**, **S4**, **S5**, and **S9**.
+**K**, **L**, **L′**, **O**, **P**, **Q**, **R′**, **F′**, **C′**, **I′**, **S′**, **T′**, **U′**, and **M** target [roadmap.md](./roadmap.md) signatures **S1**, **S4**, **S5**, **S6–S8**, and **S9**.
 
 ## Planned extensions
 
 | ID | Signature | Target criterion (not yet in battery) |
 |----|-----------|----------------------------------------|
-| **I′** | S8 — stabilizer identification | Pauli generating set on branch subspace |
+| _(none — I′ shipped)_ | | |
 
 ## Implementation
 

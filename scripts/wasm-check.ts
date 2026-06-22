@@ -32,6 +32,10 @@ import {
   run_scattering_json,
   run_decoherence_quench_json,
   run_excitation_subspace_json,
+  run_stabilizer_search_json,
+  run_particle_stability_json,
+  run_branch_born_json,
+  run_eft_dimension_json,
   run_geometry_stability_json,
   run_geometry_dim_sweep_json,
   run_factorization_search_json,
@@ -477,6 +481,51 @@ for (const config of [
     ok(
       `gain=${r.sharpnessGain.toFixed(2)} rankRed=${r.rankReduction.toFixed(2)} overlap=${r.branchOverlap.toFixed(3)}`,
     )
+}
+
+const excitationCfg = {
+  n: 8,
+  field: 1.2,
+  dt: 0.2,
+  steps: 22,
+  coupleStep: 7,
+  coupling: 0.9,
+  seed: 4242,
+  windowRadius: 2,
+}
+
+{
+  const r = JSON.parse(run_stabilizer_search_json(JSON.stringify(excitationCfg)))
+  console.log('\nstabilizer search:')
+  if (!r.stabilizer.stabilizerFound) fail('no stabilizer generators')
+  else ok(`generators=${r.stabilizer.generatorCount} distance=${r.stabilizer.codeDistance}`)
+}
+
+{
+  const r = JSON.parse(
+    run_particle_stability_json(JSON.stringify({ n: 10, dt: 0.2, steps: 24 })),
+  )
+  console.log('\nparticle stability:')
+  if (!r.orderedLongerLived) fail('ordered phase not more localized')
+  else ok(`ordered=${r.ordered.localizationFraction.toFixed(2)}`)
+}
+
+{
+  const r = JSON.parse(
+    run_branch_born_json(
+      JSON.stringify({ n: 8, field: 1.2, dt: 0.2, steps: 22, coupleStep: 7 }),
+    ),
+  )
+  console.log('\nbranch Born:')
+  if (!r.bornConsistent) fail('Born weights inconsistent')
+  else ok(`entropyCorr=${r.entropyOverlapCorr.toFixed(2)}`)
+}
+
+{
+  const r = JSON.parse(run_eft_dimension_json(JSON.stringify(excitationCfg)))
+  console.log('\nEFT dimension:')
+  if (!r.dofAgreement) fail('EFT DOF mismatch')
+  else ok(`measured=${r.measuredDofPerSite.toFixed(2)} predicted=${r.predictedDofPerSite.toFixed(2)}`)
 }
 
 // --- Gauge-free geometry stability ---

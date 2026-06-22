@@ -117,3 +117,11 @@ Dated bullets for decisions future agents should not relitigate without cause.
 - **Predictive refinement** — early warning when RT fit degrades before `needsRefinement`; split at warning step (**F′**).
 - **Geodesic deviation proxy** — triangle defect in MI distance; consistency via geo–density or cross-proxy ρ (**C′**).
 - **`bench:holography`** — RT quench + predictive + curvature proxy smoke.
+
+## 2026-06-21 — Phase 6 S6–S8 (matter and classicality)
+
+- **Stabilizer search** — Pauli sharpened on branches vs mixed; falsification **I′**.
+- **Particle stability** — localization fraction h=0.5 vs 2.5; **S′**.
+- **Branch Born** — env entropy vs overlap correlation; **T′**.
+- **EFT DOF** — measured rank/site vs stabilizer code rate; **U′**.
+- **`bench:matter`** — all four probes smoke-tested.

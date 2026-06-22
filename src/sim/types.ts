@@ -858,6 +858,97 @@ export interface ExcitationSubspaceResult {
   backend?: SimBackend
 }
 
+export interface StabilizerGenerator {
+  label: string
+  weight: number
+  mixedExpectation: number
+  branch0Expectation: number
+  branch1Expectation: number
+}
+
+export interface StabilizerSearchReport {
+  windowSites: number[]
+  generators: StabilizerGenerator[]
+  generatorCount: number
+  codeDistance: number
+  codeRate: number
+  stabilizerFound: boolean
+}
+
+export interface StabilizerSearchConfig extends ExcitationSubspaceConfig {}
+
+export interface StabilizerSearchResult {
+  excitation: ExcitationSubspaceResult
+  stabilizer: StabilizerSearchReport
+  distanceScales: boolean
+  elapsedMs: number
+  backend?: SimBackend
+}
+
+export interface ParticleStabilityConfig {
+  n: number
+  dt: number
+  steps: number
+}
+
+export interface ParticleLifetimeCase {
+  field: number
+  localizationFraction: number
+  meanPeakWidth: number
+  worldlineJitter: number
+}
+
+export interface ParticleStabilityResult {
+  n: number
+  dt: number
+  steps: number
+  ordered: ParticleLifetimeCase
+  disordered: ParticleLifetimeCase
+  orderedLongerLived: boolean
+  elapsedMs?: number
+  backend?: SimBackend
+}
+
+export interface BranchBornPoint {
+  coupling: number
+  envP0: number
+  envP1: number
+  weightImbalance: number
+  branchOverlap: number
+}
+
+export interface BranchBornConfig {
+  n: number
+  field: number
+  dt: number
+  steps: number
+  coupleStep: number
+}
+
+export interface BranchBornResult {
+  n: number
+  field: number
+  points: BranchBornPoint[]
+  imbalanceOverlapCorr: number
+  entropyOverlapCorr: number
+  bornConsistent: boolean
+  elapsedMs?: number
+  backend?: SimBackend
+}
+
+export interface EftDimensionConfig extends ExcitationSubspaceConfig {}
+
+export interface EftDimensionResult {
+  windowSites: number
+  measuredDofPerSite: number
+  predictedDofPerSite: number
+  relativeError: number
+  dofAgreement: boolean
+  stabilizer: StabilizerSearchReport
+  elapsedMs: number
+  backend?: SimBackend
+}
+
 export type GeometryStabilityKind = 'chain' | 'grid' | 'cube'
 
 export interface GeometryStabilityConfig {

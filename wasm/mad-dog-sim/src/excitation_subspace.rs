@@ -87,14 +87,14 @@ fn pauli_sharpness(state: &QuantumState, sites: &[usize]) -> f64 {
     sum / (2.0 * sites.len() as f64)
 }
 
-fn mixed_expectation_z(psi: &QuantumState, n_chain: usize, env_q: usize, q: usize) -> f64 {
+pub(crate) fn mixed_expectation_z(psi: &QuantumState, n_chain: usize, env_q: usize, q: usize) -> f64 {
     let (p0, p1) = env_branch_weights(psi, env_q);
     let c0 = chain_conditional_state(psi, n_chain, env_q, 0);
     let c1 = chain_conditional_state(psi, n_chain, env_q, 1);
     p0 * expectation_z(&c0, q) + p1 * expectation_z(&c1, q)
 }
 
-fn mixed_expectation_x(psi: &QuantumState, n_chain: usize, env_q: usize, q: usize) -> f64 {
+pub(crate) fn mixed_expectation_x(psi: &QuantumState, n_chain: usize, env_q: usize, q: usize) -> f64 {
     let (p0, p1) = env_branch_weights(psi, env_q);
     let c0 = chain_conditional_state(psi, n_chain, env_q, 0);
     let c1 = chain_conditional_state(psi, n_chain, env_q, 1);
@@ -207,7 +207,7 @@ fn window_marginal_eigenvalues(
     hermitian_eigenvalues(&re, &im)
 }
 
-fn branch_overlap(c0: &QuantumState, c1: &QuantumState) -> f64 {
+pub(crate) fn branch_overlap(c0: &QuantumState, c1: &QuantumState) -> f64 {
     let mut re = 0.0;
     let mut im = 0.0;
     for i in 0..c0.dim {

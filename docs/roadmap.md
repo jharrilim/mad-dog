@@ -19,9 +19,9 @@ Operational checklist — each maps to falsification tests and roadmap phases.
 | **S3** | Relational time (no global clock) | D, D′, G, G′, **N** | **Shipped** — grid/cube clocks; modular vs uniform; simultaneity bend |
 | **S4** | Causal light cones | E, B, **Q** | **Shipped** — scattering phase + grid isotropy |
 | **S5** | Holographic entanglement | C, C′, F, F′, H, **R′** | **Shipped** — RT quench series, predictive split, geodesic proxy |
-| **S6** | Particles = excitations | E | 6 | Shipped (domain walls + scatter) |
-| **S7** | Classical branches | I | 6 | Proto (decoherence quench) |
-| **S8** | IR subspace / code-like | I, I′ (planned) | 6 | Sharpness heuristic; stabilizer search next |
+| **S6** | Particles = excitations | E, **S′** | **Shipped** — ordered-phase defect localization |
+| **S7** | Classical branches | I, **T′** | **Shipped** — Born-weight / distinguishability correlation |
+| **S8** | IR subspace / code-like | I, **I′**, **U′** | **Shipped** — stabilizer search + EFT DOF counting |
 | **S9** | Lorentz-ish IR causality | **L**, **L′**, **O**, **P** | **Shipped** — scaling, dispersion, boost invariance |
 | **S10** | Factor count not arbitrary | F, H | 7 | Split heuristic; in-place split deferred |
 
@@ -67,18 +67,19 @@ Operational checklist — each maps to falsification tests and roadmap phases.
 | Geodesic deviation curvature proxy | `run_curvature_proxy_quench_json`; falsification **C′** |
 | Holography dynamics bench | `npm run bench:holography` |
 
+### Phase 6 — Matter and classicality (S6–S8) — shipped 2026-06-21
+
+| Item | Notes |
+|------|-------|
+| Pauli stabilizer search on branch window | `run_stabilizer_search_json`; falsification **I′** |
+| Defect lifetime ordered vs disordered | `run_particle_stability_json`; falsification **S′** |
+| Branch Born-weight consistency | `run_branch_born_json`; falsification **T′** |
+| EFT DOF vs stabilizer code rate | `run_eft_dimension_json`; falsification **U′** |
+| Matter bench | `npm run bench:matter` |
+
 ---
 
 ## Next up (ranked execution order)
-
-### Phase 6 — Matter and classicality (S6–S8)
-
-| Priority | Item | Deliverable | Pass criterion |
-|----------|------|-------------|----------------|
-| 1 | **I′** — stabilizer search | Pauli-group scan on branch subspace | Generating set found; distance scales |
-| 2 | Particle stability | Defect lifetime vs h, dimension | Long-lived quasiparticles in ordered phase |
-| 3 | Branch Born weights | Branch overlap vs \|c_branch\|² | Correlation above threshold |
-| 4 | EFT dimension counting | Effective DOF per site after tracing env | Matches code-rate prediction |
 
 ### Phase 7 — Factor count dynamics (S10)
 

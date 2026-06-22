@@ -405,6 +405,22 @@ pub fn expectation_x(state: &QuantumState, q: usize) -> f64 {
     sum
 }
 
+/// Expectation value ⟨ψ|P|ψ⟩ for a product of Pauli operators.
+pub fn pauli_expectation(state: &QuantumState, ops: &[(usize, PauliLetter)]) -> f64 {
+    if ops.is_empty() {
+        return 1.0;
+    }
+    let term = PauliTerm {
+        coeff: 1.0,
+        ops: ops
+            .iter()
+            .map(|&(qubit, letter)| PauliOp { qubit, letter })
+            .collect(),
+    };
+    let h = Hamiltonian::new(state.n, vec![term]);
+    h.expectation(state)
+}
+
 /// All ⟨Z_q⟩ in one pass over the state vector.
 pub fn expectation_z_all(state: &QuantumState) -> Vec<f64> {
     let n = state.n;

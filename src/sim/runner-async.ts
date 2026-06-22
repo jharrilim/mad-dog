@@ -49,6 +49,14 @@ import type {
   DecoherenceQuenchResult,
   ExcitationSubspaceConfig,
   ExcitationSubspaceResult,
+  StabilizerSearchConfig,
+  StabilizerSearchResult,
+  ParticleStabilityConfig,
+  ParticleStabilityResult,
+  BranchBornConfig,
+  BranchBornResult,
+  EftDimensionConfig,
+  EftDimensionResult,
   GeometryStabilityConfig,
   GeometryStabilityResult,
   SimBackend,
@@ -259,6 +267,32 @@ export async function runExcitationSubspaceAsync(
   config: ExcitationSubspaceConfig,
 ): Promise<ExcitationSubspaceResultWithBackend> {
   return runWasm('excitationSubspace', config)
+}
+
+export type StabilizerSearchResultWithBackend = StabilizerSearchResult & { backend: SimBackend }
+
+export async function runStabilizerSearchAsync(
+  config: StabilizerSearchConfig,
+): Promise<StabilizerSearchResultWithBackend> {
+  return runWasm('stabilizerSearch', config)
+}
+
+export async function runParticleStabilityAsync(
+  config: ParticleStabilityConfig,
+): Promise<ParticleStabilityResult & { backend: SimBackend }> {
+  return runWasm('particleStability', config)
+}
+
+export async function runBranchBornAsync(
+  config: BranchBornConfig,
+): Promise<BranchBornResult & { backend: SimBackend }> {
+  return runWasm('branchBorn', config)
+}
+
+export async function runEftDimensionAsync(
+  config: EftDimensionConfig,
+): Promise<EftDimensionResult & { backend: SimBackend }> {
+  return runWasm('eftDimension', config)
 }
 
 export async function runGeometryStabilityAsync(

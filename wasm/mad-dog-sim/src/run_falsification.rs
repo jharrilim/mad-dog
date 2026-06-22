@@ -13,8 +13,14 @@ use crate::run_refinement::{
     run_adaptive_refinement, run_predictive_refinement, run_refinement_quench,
     AdaptiveRefinementConfig, RefinementQuenchConfig,
 };
+use crate::run_matter::{
+    run_branch_born_probe, run_eft_dimension_probe, run_particle_stability_probe,
+    run_stabilizer_search, BranchBornConfig, EftDimensionConfig, ParticleStabilityConfig,
+    StabilizerSearchConfig,
+};
 use crate::run_rt_quench::{run_curvature_proxy_quench, run_rt_quench, CurvatureProxyQuenchConfig, RtQuenchConfig};
-use crate::run_excitation_subspace::{run_excitation_subspace_probe, ExcitationSubspaceConfig};
+use crate::excitation_subspace::ExcitationSubspaceConfig;
+use crate::run_excitation_subspace::run_excitation_subspace_probe;
 use crate::run_geometry_stability::{run_geometry_stability, GeometryStabilityConfig};
 use crate::run_multi_clock::{run_multi_clock, MultiClockRunConfig};
 use crate::boost_invariance::{run_boost_invariance, BoostInvarianceConfig};
@@ -685,6 +691,94 @@ pub fn run_falsification_battery() -> FalsificationBatteryResult {
             detail: format!(
                 "geoDensityCorr={:.3}, crossCorr={:.3}, consistent={}",
                 c.geo_density_corr, c.proxy_correlation, c.internally_consistent
+            ),
+        });
+    }
+
+    // I′ — Pauli stabilizer generators on branch excitation window
+    {
+        let s = run_stabilizer_search(&StabilizerSearchConfig {
+            excitation: ExcitationSubspaceConfig {
+                n: 8,
+                field: 1.2,
+                dt: 0.2,
+                steps: 22,
+                couple_step: 7,
+                coupling: 0.9,
+                seed: 4242,
+                window_radius: 2,
+            },
+        });
+        tests.push(FalsificationTest {
+            id: "I′".to_string(),
+            name: "Pauli stabilizer generators on branch subspace".to_string(),
+            passed: s.stabilizer.stabilizer_found && s.distance_scales,
+            detail: format!(
+                "generators={}, distance={}, scales={}",
+                s.stabilizer.generator_count, s.stabilizer.code_distance, s.distance_scales
+            ),
+        });
+    }
+
+    // S′ — defect localization longer-lived in ordered phase
+    {
+        let p = run_particle_stability_probe(&ParticleStabilityConfig {
+            n: 10,
+            dt: 0.2,
+            steps: 24,
+        });
+        tests.push(FalsificationTest {
+            id: "S′".to_string(),
+            name: "Defect more localized in ordered vs disordered phase".to_string(),
+            passed: p.inner.ordered_longer_lived,
+            detail: format!(
+                "ordered={:.3} disordered={:.3}",
+                p.inner.ordered.localization_fraction, p.inner.disordered.localization_fraction
+            ),
+        });
+    }
+
+    // T′ — env branch weights track distinguishability
+    {
+        let b = run_branch_born_probe(&BranchBornConfig {
+            n: 8,
+            field: 1.2,
+            dt: 0.2,
+            steps: 22,
+            couple_step: 7,
+        });
+        tests.push(FalsificationTest {
+            id: "T′".to_string(),
+            name: "Branch Born weights co-move with distinguishability".to_string(),
+            passed: b.inner.born_consistent,
+            detail: format!(
+                "entropyCorr={:.3}, imbalanceCorr={:.3}",
+                b.inner.entropy_overlap_corr, b.inner.imbalance_overlap_corr
+            ),
+        });
+    }
+
+    // U′ — EFT DOF per site tracks code rate from stabilizers
+    {
+        let e = run_eft_dimension_probe(&EftDimensionConfig {
+            excitation: ExcitationSubspaceConfig {
+                n: 8,
+                field: 1.2,
+                dt: 0.2,
+                steps: 22,
+                couple_step: 7,
+                coupling: 0.9,
+                seed: 4242,
+                window_radius: 2,
+            },
+        });
+        tests.push(FalsificationTest {
+            id: "U′".to_string(),
+            name: "EFT dimension counting agrees with stabilizer code rate".to_string(),
+            passed: e.dof_agreement,
+            detail: format!(
+                "measured={:.3} predicted={:.3} relErr={:.3}",
+                e.measured_dof_per_site, e.predicted_dof_per_site, e.relative_error
             ),
         });
     }

@@ -9,6 +9,6 @@
 
 ## Near-term directions
 
-See phased signature program in [roadmap.md](../docs/roadmap.md) (S1–S10). **Phase 5 shipped.**
+See phased signature program in [roadmap.md](../docs/roadmap.md) (S1–S10). **Phase 6 shipped.**
 
-- **Phase 6:** matter and classicality (stabilizer search, branch Born weights).
+- **Phase 7:** factor count dynamics (in-place tensor split, holographic bound on n).

@@ -2,6 +2,7 @@
 
 #![allow(clippy::needless_range_loop)] // index loops are intentional in numerical kernels
 
+mod branch_born;
 mod curvature_proxy;
 mod decoherence;
 mod emergence;
@@ -34,9 +35,12 @@ mod run_light_cone_compare;
 mod run_lorentz_scaling;
 mod run_multi_clock;
 mod run_modular_dual_clock;
+mod particle_stability;
+mod run_matter;
 mod run_refinement;
 mod run_rt_quench;
 mod rt_quench;
+mod stabilizer_search;
 mod scattering;
 mod run_relational_time;
 mod run_simultaneity;
@@ -71,6 +75,11 @@ use run_refinement::{
     run_adaptive_refinement, run_predictive_refinement, run_refinement_n_compare,
     run_refinement_quench, AdaptiveRefinementConfig, RefinementNCompareConfig,
     RefinementQuenchConfig,
+};
+use run_matter::{
+    run_branch_born_probe, run_eft_dimension_probe, run_particle_stability_probe,
+    run_stabilizer_search, BranchBornConfig, EftDimensionConfig, ParticleStabilityConfig,
+    StabilizerSearchConfig,
 };
 use run_rt_quench::{
     run_curvature_proxy_quench, run_rt_quench, CurvatureProxyQuenchConfig, RtQuenchConfig,
@@ -368,6 +377,46 @@ pub fn run_boost_invariance_json(config_json: &str) -> Result<String, JsValue> {
 }
 
 #[wasm_bindgen]
+pub fn run_stabilizer_search_json(config_json: &str) -> Result<String, JsValue> {
+    let start = js_sys::Date::now();
+    let config: StabilizerSearchConfig =
+        serde_json::from_str(config_json).map_err(|e| JsValue::from_str(&e.to_string()))?;
+    let mut result = run_stabilizer_search(&config);
+    result.elapsed_ms = js_sys::Date::now() - start;
+    serde_json::to_string(&result).map_err(|e| JsValue::from_str(&e.to_string()))
+}
+
+#[wasm_bindgen]
+pub fn run_particle_stability_json(config_json: &str) -> Result<String, JsValue> {
+    let start = js_sys::Date::now();
+    let config: ParticleStabilityConfig =
+        serde_json::from_str(config_json).map_err(|e| JsValue::from_str(&e.to_string()))?;
+    let mut result = run_particle_stability_probe(&config);
+    result.elapsed_ms = js_sys::Date::now() - start;
+    serde_json::to_string(&result).map_err(|e| JsValue::from_str(&e.to_string()))
+}
+
+#[wasm_bindgen]
+pub fn run_branch_born_json(config_json: &str) -> Result<String, JsValue> {
+    let start = js_sys::Date::now();
+    let config: BranchBornConfig =
+        serde_json::from_str(config_json).map_err(|e| JsValue::from_str(&e.to_string()))?;
+    let mut result = run_branch_born_probe(&config);
+    result.elapsed_ms = js_sys::Date::now() - start;
+    serde_json::to_string(&result).map_err(|e| JsValue::from_str(&e.to_string()))
+}
+
+#[wasm_bindgen]
+pub fn run_eft_dimension_json(config_json: &str) -> Result<String, JsValue> {
+    let start = js_sys::Date::now();
+    let config: EftDimensionConfig =
+        serde_json::from_str(config_json).map_err(|e| JsValue::from_str(&e.to_string()))?;
+    let mut result = run_eft_dimension_probe(&config);
+    result.elapsed_ms = js_sys::Date::now() - start;
+    serde_json::to_string(&result).map_err(|e| JsValue::from_str(&e.to_string()))
+}
+
+#[wasm_bindgen]
 pub fn run_falsification_battery_json(_config_json: &str) -> Result<String, JsValue> {
     let start = js_sys::Date::now();
     let mut result = run_falsification_battery();
@@ -377,7 +426,7 @@ pub fn run_falsification_battery_json(_config_json: &str) -> Result<String, JsVa
 
 #[wasm_bindgen]
 pub fn wasm_sim_version() -> String {
-    "0.7.8".to_string()
+    "0.7.9".to_string()
 }
 
 #[cfg(test)]
