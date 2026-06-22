@@ -3,8 +3,7 @@
 use crate::geometry::{classical_mds, mi_to_distance, mutual_information_matrix};
 use crate::linalg::hermitian_eigen_decomposition;
 use crate::quantum::{
-    ground_state, hamiltonian_dense, Hamiltonian, PauliOp, PauliTerm,
-    QuantumState,
+    hamiltonian_dense, Hamiltonian, PauliOp, PauliTerm, QuantumState,
 };
 use crate::rng::Rng;
 use serde::{Deserialize, Serialize};
@@ -267,15 +266,16 @@ fn state_from_data(n: usize, data: &[f64]) -> QuantumState {
     }
 }
 
-fn bandwidth_score(eigenvectors: &[Vec<f64>], perm: &[usize], n: usize) -> f64 {
-    if eigenvectors.is_empty() {
+fn line_support_bandwidth(eigenvectors: &[Vec<f64>], perm: &[usize], n: usize) -> f64 {
+    if eigenvectors.is_empty() || n < 2 {
         return 0.0;
     }
     let mut total = 0.0;
+    let max_span = (n - 1) as f64;
     for ev in eigenvectors {
-        let mut weighted = 0.0;
-        let mut mass = 0.0;
         let dim = 1 << n;
+        let mut weighted_span = 0.0;
+        let mut mass = 0.0;
         for s in 0..dim {
             let re = ev[2 * s];
             let im = ev[2 * s + 1];
@@ -283,25 +283,54 @@ fn bandwidth_score(eigenvectors: &[Vec<f64>], perm: &[usize], n: usize) -> f64 {
             if p < 1e-15 {
                 continue;
             }
-            let mut hw = 0usize;
-            for q in 0..n {
-                if (s >> q) & 1 == 1 {
-                    hw += 1;
-                }
-            }
-            let line_pos_hw: usize = (0..n)
+            let active: Vec<usize> = (0..n)
                 .filter(|&q| (s >> q) & 1 == 1)
                 .map(|q| perm[q])
-                .sum();
-            let _ = line_pos_hw;
-            weighted += p * hw as f64;
+                .collect();
+            let span = if active.len() < 2 {
+                0.0
+            } else {
+                (*active.iter().max().unwrap() - active.iter().min().unwrap()) as f64
+            };
+            weighted_span += p * span;
             mass += p;
         }
         if mass > 1e-12 {
-            total += 1.0 - (weighted / mass / n as f64).min(1.0);
+            total += 1.0 - (weighted_span / mass / max_span).min(1.0);
         }
     }
     total / eigenvectors.len() as f64
+}
+
+fn spectrum_state_weights(k: usize) -> Vec<f64> {
+    (0..k)
+        .map(|i| 1.0 / (1.0 + 0.35 * i as f64))
+        .collect()
+}
+
+fn weighted_mi_nn_ratio(
+    mi_list: &[Vec<Vec<f64>>],
+    perm: &[usize],
+    params: &SearchParams,
+    weights: Option<&[f64]>,
+) -> f64 {
+    if mi_list.is_empty() {
+        return 0.0;
+    }
+    let uniform = vec![1.0; mi_list.len()];
+    let w = weights.unwrap_or(&uniform);
+    let mut sum = 0.0;
+    let mut wsum = 0.0;
+    for (mi, &wt) in mi_list.iter().zip(w.iter()) {
+        let ratio = mean_mi_nn_ratio(std::slice::from_ref(mi), perm, params);
+        sum += wt * ratio;
+        wsum += wt;
+    }
+    if wsum > 0.0 {
+        sum / wsum
+    } else {
+        0.0
+    }
 }
 
 pub fn score_permutation(
@@ -310,6 +339,7 @@ pub fn score_permutation(
     perm: &[usize],
     params: &SearchParams,
     spectrum_eigenvectors: Option<&[Vec<f64>]>,
+    skip_mds: bool,
 ) -> FactorizationCandidate {
     let n = perm.len();
     let expected_dim = match params.graph_kind {
@@ -351,16 +381,22 @@ pub fn score_permutation(
         1.0
     };
 
-    let mi_nn_ratio = mean_mi_nn_ratio(mi_list, perm, params);
-
-    let mi_for_mds = if let Some(mi) = mi_list.first() {
-        permuted_mi(mi, perm)
+    let mi_nn_ratio = if params.input_mode == InputMode::Spectrum {
+        let weights = spectrum_state_weights(mi_list.len());
+        weighted_mi_nn_ratio(mi_list, perm, params, Some(&weights))
     } else {
-        vec![vec![0.0; n]; n]
+        mean_mi_nn_ratio(mi_list, perm, params)
     };
-    let distance = mi_to_distance(&mi_for_mds, 1.0);
-    let mds = classical_mds(&distance, 3);
-    let emergent_dim = mds.emergent_dim;
+
+    let emergent_dim = if skip_mds {
+        expected_dim
+    } else if let Some(mi) = mi_list.first() {
+        let mi_for_mds = permuted_mi(mi, perm);
+        let distance = mi_to_distance(&mi_for_mds, 1.0);
+        classical_mds(&distance, 3).emergent_dim
+    } else {
+        expected_dim
+    };
 
     let mi_term = mi_nn_ratio / (mi_nn_ratio + 1.0);
     let dim_bonus = if emergent_dim <= expected_dim {
@@ -377,9 +413,9 @@ pub fn score_permutation(
         }
         InputMode::Spectrum => {
             let bw = spectrum_eigenvectors
-                .map(|ev| bandwidth_score(ev, perm, n))
+                .map(|ev| line_support_bandwidth(ev, perm, n))
                 .unwrap_or(0.0);
-            0.7 * mi_term + 0.3 * bw
+            0.5 * mi_term + 0.35 * bw + 0.15 * dim_bonus
         }
     };
 
@@ -406,19 +442,19 @@ fn random_permutation(n: usize, rng: &mut Rng) -> Vec<usize> {
     perm
 }
 
-fn heap_permute(n: usize, a: &mut [usize], k: usize, out: &mut Vec<Vec<usize>>) {
+fn heap_permute(_n: usize, a: &mut [usize], k: usize, out: &mut Vec<Vec<usize>>) {
     if k == 1 {
         out.push(a.to_vec());
         return;
     }
-    heap_permute(n, a, k - 1, out);
+    heap_permute(_n, a, k - 1, out);
     for i in 0..(k - 1) {
-        if k % 2 == 0 {
+        if k.is_multiple_of(2) {
             a.swap(i, k - 1);
         } else {
             a.swap(0, k - 1);
         }
-        heap_permute(n, a, k - 1, out);
+        heap_permute(_n, a, k - 1, out);
     }
 }
 
@@ -438,14 +474,14 @@ fn greedy_search(
 ) -> (FactorizationCandidate, usize) {
     let n = h.map(|x| x.n).unwrap_or_else(|| mi_list[0].len());
     let mut perm = identity_perm(n);
-    let mut best = score_permutation(h, mi_list, &perm, params, spectrum_eigenvectors);
+    let mut best = score_permutation(h, mi_list, &perm, params, spectrum_eigenvectors, true);
     let mut iters = 0usize;
     for _ in 0..max_iters {
         let mut improved = false;
         for i in 0..n {
             for j in (i + 1)..n {
                 perm.swap(i, j);
-                let cand = score_permutation(h, mi_list, &perm, params, spectrum_eigenvectors);
+                let cand = score_permutation(h, mi_list, &perm, params, spectrum_eigenvectors, true);
                 iters += 1;
                 if cand.score > best.score + 1e-12 {
                     best = cand;
@@ -473,7 +509,7 @@ fn annealing_search(
     let steps = params.annealing_steps.max(100);
     let mut rng = Rng::new(seed);
     let mut perm = random_permutation(n, &mut rng);
-    let mut current = score_permutation(h, mi_list, &perm, params, spectrum_eigenvectors);
+    let mut current = score_permutation(h, mi_list, &perm, params, spectrum_eigenvectors, true);
     let mut best = current.clone();
     let t0 = 1.0_f64;
     let t1 = 0.001_f64;
@@ -485,7 +521,7 @@ fn annealing_search(
             j = (j + 1) % n;
         }
         perm.swap(i, j);
-        let cand = score_permutation(h, mi_list, &perm, params, spectrum_eigenvectors);
+        let cand = score_permutation(h, mi_list, &perm, params, spectrum_eigenvectors, true);
         let delta = cand.score - current.score;
         if delta > 1e-12 || rng.next() < (delta / t).exp() {
             current = cand;
@@ -500,7 +536,6 @@ fn annealing_search(
 }
 
 pub struct SpectrumData {
-    pub eigenvalues: Vec<f64>,
     pub eigenvectors: Vec<Vec<f64>>,
 }
 
@@ -509,16 +544,12 @@ pub fn spectrum_from_hamiltonian(h: &Hamiltonian, k: usize) -> SpectrumData {
     let (eigenvalues, eigenvectors) = hermitian_eigen_decomposition(&re, &im);
     let k = k.min(eigenvalues.len());
     SpectrumData {
-        eigenvalues: eigenvalues[..k].to_vec(),
         eigenvectors: eigenvectors[..k].to_vec(),
     }
 }
 
 fn mi_list_from_states(states: &[QuantumState]) -> Vec<Vec<Vec<f64>>> {
-    states
-        .iter()
-        .map(|s| mutual_information_matrix(s))
-        .collect()
+    states.iter().map(mutual_information_matrix).collect()
 }
 
 fn mi_list_from_eigenvectors(n: usize, eigenvectors: &[Vec<f64>]) -> Vec<Vec<Vec<f64>>> {
@@ -551,7 +582,7 @@ pub fn search_factorization(
         }
     };
 
-    let identity = score_permutation(h_ref, &mi_list, &identity_perm(n), params, spectrum_ev);
+    let identity = score_permutation(h_ref, &mi_list, &identity_perm(n), params, spectrum_ev, false);
     let scorer_used = if params.input_mode == InputMode::Spectrum {
         "spectrum+mi"
     } else {
@@ -563,10 +594,28 @@ pub fn search_factorization(
     {
         let cands: Vec<FactorizationCandidate> = all_permutations(n)
             .into_iter()
-            .map(|perm| score_permutation(h_ref, &mi_list, &perm, params, spectrum_ev))
+            .map(|perm| score_permutation(h_ref, &mi_list, &perm, params, spectrum_ev, true))
             .collect();
         let iters = cands.len();
-        ("exact".to_string(), cands, iters)
+        let mut candidates = cands;
+        candidates.sort_by(|a, b| {
+            b.score
+                .partial_cmp(&a.score)
+                .unwrap_or(std::cmp::Ordering::Equal)
+                .then_with(|| b.mi_nn_ratio.partial_cmp(&a.mi_nn_ratio).unwrap_or(std::cmp::Ordering::Equal))
+                .then_with(|| a.permutation.cmp(&b.permutation))
+        });
+        for cand in candidates.iter_mut().take(top_k.max(1)) {
+            *cand = score_permutation(
+                h_ref,
+                &mi_list,
+                &cand.permutation,
+                params,
+                spectrum_ev,
+                false,
+            );
+        }
+        ("exact".to_string(), candidates, iters)
     } else if matches!(params.search_method, SearchMethod::Greedy) {
         let (best, iters) = greedy_search(h_ref, &mi_list, params, spectrum_ev, 40);
         (
@@ -585,6 +634,7 @@ pub fn search_factorization(
                 &perm,
                 params,
                 spectrum_ev,
+                true,
             ));
         }
         let (ann, iters) = annealing_search(h_ref, &mi_list, params, spectrum_ev, 4242);
@@ -602,7 +652,15 @@ pub fn search_factorization(
         (a.score - b.score).abs() < 1e-9 && a.permutation == b.permutation
     });
 
-    let best = candidates.first().cloned().unwrap_or(identity.clone());
+    let mut best = candidates.first().cloned().unwrap_or(identity.clone());
+    best = score_permutation(
+        h_ref,
+        &mi_list,
+        &best.permutation,
+        params,
+        spectrum_ev,
+        false,
+    );
     let top: Vec<FactorizationCandidate> = candidates.into_iter().take(top_k).collect();
 
     let baseline_mi = mi_list
@@ -637,19 +695,15 @@ pub fn fast_search_on_state(
     state: &QuantumState,
     steps: usize,
 ) -> FactorizationCandidate {
-    let mut params = SearchParams::default();
-    params.search_method = SearchMethod::Annealing;
-    params.annealing_steps = steps;
-    params.eigenstate_count = 1;
+    let params = SearchParams {
+        search_method: SearchMethod::Annealing,
+        annealing_steps: steps,
+        eigenstate_count: 1,
+        ..Default::default()
+    };
     let mi_list = mi_list_from_states(&[state.clone_state()]);
     let (best, _) = annealing_search(Some(h), &mi_list, &params, None, 55);
-    best
-}
-
-pub fn ground_state_for(h: &Hamiltonian, seed: u32) -> (QuantumState, f64) {
-    let mut rng = Rng::new(seed);
-    let (state, energy, _) = ground_state(h, &mut rng, 4000, 1e-8);
-    (state, energy)
+    score_permutation(Some(h), &mi_list, &best.permutation, &params, None, false)
 }
 
 pub fn shuffle_hamiltonian(h: &Hamiltonian, seed: u32) -> (Hamiltonian, Vec<usize>) {
@@ -660,4 +714,19 @@ pub fn shuffle_hamiltonian(h: &Hamiltonian, seed: u32) -> (Hamiltonian, Vec<usiz
 
 pub fn perm_distance(a: &[usize], b: &[usize]) -> usize {
     a.iter().zip(b.iter()).filter(|(x, y)| x != y).count()
+}
+
+/// Minimum Hamming mismatch to `target`, allowing open-chain reflection (k ↦ n−1−k).
+pub fn line_equiv_distance(perm: &[usize], target: &[usize]) -> usize {
+    let n = perm.len();
+    let direct = perm_distance(perm, target);
+    if n == 0 {
+        return direct;
+    }
+    let reflected: Vec<usize> = target.iter().map(|&p| (n - 1) - p).collect();
+    direct.min(perm_distance(perm, &reflected))
+}
+
+pub fn line_equiv_match(perm: &[usize], target: &[usize]) -> bool {
+    line_equiv_distance(perm, target) == 0
 }

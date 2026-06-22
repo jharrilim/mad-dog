@@ -53,6 +53,10 @@ Same physical trajectory, two time readouts:
 
 Neither clock is "the" time; they disagree when the local physics differs.
 
+## Multi-clock networks (N ≥ 3)
+
+**2026-06:** N physical clocks on one trajectory; pairwise sync R² matrix. Defect clock syncs with uniform; edge clocks do not form a globally consistent network. See [multi-clock.md](./multi-clock.md).
+
 ## Open issue
 
-Three-or-more-clock networks and consistency conditions not yet explored.
+~~Three-or-more-clock networks and consistency conditions not yet explored.~~ Addressed for Z-threshold clocks on chains; modular/QFT-style clock graphs remain open.

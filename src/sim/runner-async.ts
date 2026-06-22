@@ -18,10 +18,14 @@ import type {
   LightConeCompareResult,
   ModularDualClockConfig,
   ModularDualClockResult,
+  MultiClockConfig,
+  MultiClockResult,
   RefinementNCompareConfig,
   RefinementNCompareResult,
   RefinementQuenchConfig,
   RefinementQuenchResult,
+  AdaptiveRefinementConfig,
+  AdaptiveRefinementResult,
   RelationalTimeConfig,
   RtMassRunConfig,
   RtMassRunResult,
@@ -29,6 +33,12 @@ import type {
   RunResult,
   ScatteringConfig,
   ScatteringResult,
+  DecoherenceQuenchConfig,
+  DecoherenceQuenchResult,
+  ExcitationSubspaceConfig,
+  ExcitationSubspaceResult,
+  GeometryStabilityConfig,
+  GeometryStabilityResult,
   SimBackend,
   Spacetime2DConfig,
   SpacetimeResult,
@@ -63,11 +73,24 @@ export type RefinementQuenchResultWithBackend = RefinementQuenchResult & {
 export type RefinementNCompareResultWithBackend = RefinementNCompareResult & {
   backend: SimBackend
 }
+export type AdaptiveRefinementResultWithBackend = AdaptiveRefinementResult & {
+  backend: SimBackend
+}
 export type DualClockResultWithBackend = DualClockResult & { backend: SimBackend }
+export type MultiClockResultWithBackend = MultiClockResult & { backend: SimBackend }
 export type ModularDualClockResultWithBackend = ModularDualClockResult & {
   backend: SimBackend
 }
 export type ScatteringResultWithBackend = ScatteringResult & { backend: SimBackend }
+export type DecoherenceQuenchResultWithBackend = DecoherenceQuenchResult & {
+  backend: SimBackend
+}
+export type ExcitationSubspaceResultWithBackend = ExcitationSubspaceResult & {
+  backend: SimBackend
+}
+export type GeometryStabilityResultWithBackend = GeometryStabilityResult & {
+  backend: SimBackend
+}
 export type Universe3DResultWithBackend = Universe3DResult & { backend: SimBackend }
 export type UniverseSliceResultWithBackend = UniverseSliceResult & {
   backend: SimBackend
@@ -130,10 +153,22 @@ export async function runRefinementNCompareAsync(
   return runWasm('refinementNCompare', config)
 }
 
+export async function runAdaptiveRefinementAsync(
+  config: AdaptiveRefinementConfig,
+): Promise<AdaptiveRefinementResultWithBackend> {
+  return runWasm('adaptiveRefinement', config)
+}
+
 export async function runRelationalTimeAsync(
   config: RelationalTimeConfig,
 ): Promise<DualClockResultWithBackend> {
   return runWasm('relationalTime', config)
+}
+
+export async function runMultiClockAsync(
+  config: MultiClockConfig,
+): Promise<MultiClockResultWithBackend> {
+  return runWasm('multiClock', config)
 }
 
 export async function runModularDualClockAsync(
@@ -146,6 +181,24 @@ export async function runScatteringAsync(
   config: ScatteringConfig,
 ): Promise<ScatteringResultWithBackend> {
   return runWasm('scattering', config)
+}
+
+export async function runDecoherenceQuenchAsync(
+  config: DecoherenceQuenchConfig,
+): Promise<DecoherenceQuenchResultWithBackend> {
+  return runWasm('decoherenceQuench', config)
+}
+
+export async function runExcitationSubspaceAsync(
+  config: ExcitationSubspaceConfig,
+): Promise<ExcitationSubspaceResultWithBackend> {
+  return runWasm('excitationSubspace', config)
+}
+
+export async function runGeometryStabilityAsync(
+  config: GeometryStabilityConfig,
+): Promise<GeometryStabilityResultWithBackend> {
+  return runWasm('geometryStability', config)
 }
 
 export async function runUniverse3DAsync(

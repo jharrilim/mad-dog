@@ -193,7 +193,58 @@ function SlopeSweepChart({ result }: { result: RtMassRunResult }) {
   )
 }
 
-const DEFAULT = { n: 10, field: 1.5, seed: 7, strength: 1.0 }
+function DensitySweepChart({ points }: { points: NonNullable<RtMassRunResult['report']['densitySweep']> }) {
+  const W = 460
+  const H = 220
+  const pad = { l: 44, r: 16, t: 16, b: 38 }
+  const plotW = W - pad.l - pad.r
+  const plotH = H - pad.t - pad.b
+  const maxX = points[points.length - 1]?.density ?? 0.5
+  const minY = Math.min(...points.map((p) => p.deltaSlope), 0)
+  const maxY = Math.max(...points.map((p) => p.deltaSlope), 0.5)
+  const yPad = (maxY - minY) * 0.15 || 0.05
+  const yLo = minY - yPad
+  const yHi = maxY + yPad
+
+  const x = (ρ: number) => pad.l + (ρ / maxX) * plotW
+  const y = (v: number) => pad.t + plotH - ((v - yLo) / (yHi - yLo)) * plotH
+  const pts = points.map((p) => `${x(p.density)},${y(p.deltaSlope)}`).join(' ')
+
+  return (
+    <svg
+      viewBox={`0 0 ${W} ${H}`}
+      className="w-full h-auto"
+      role="img"
+      aria-label="RT slope deviation versus excitation density"
+    >
+      <line x1={pad.l} y1={y(0)} x2={W - pad.r} y2={y(0)} className="stroke-border" strokeWidth={1} />
+      <polyline points={pts} fill="none" stroke="oklch(0.78 0.13 60)" strokeWidth={2} />
+      {points.map((p) => (
+        <circle
+          key={p.count}
+          cx={x(p.density)}
+          cy={y(p.deltaSlope)}
+          r={3.5}
+          fill="oklch(0.78 0.13 60)"
+        />
+      ))}
+      <text x={pad.l + plotW / 2} y={H - 4} textAnchor="middle" className="fill-muted-foreground text-[10px]">
+        excitation density ρ = (# flips) / n
+      </text>
+      <text
+        x={12}
+        y={pad.t + plotH / 2}
+        textAnchor="middle"
+        transform={`rotate(-90 12 ${pad.t + plotH / 2})`}
+        className="fill-muted-foreground text-[10px]"
+      >
+        Δslope vs vacuum
+      </text>
+    </svg>
+  )
+}
+
+const DEFAULT = { n: 10, field: 1.5, seed: 7, strength: 1.0, densitySweep: true, maxMassCount: 5 }
 
 export function RtMassViz() {
   const [config, setConfig] = useState(DEFAULT)
@@ -324,6 +375,22 @@ export function RtMassViz() {
                 </p>
               </div>
             </div>
+
+            {result.report.densitySweep && result.report.densitySweep.length > 1 && (
+              <div>
+                <h4 className="text-sm font-medium mb-2">
+                  Δslope vs. excitation density (multi-insertion)
+                </h4>
+                <DensitySweepChart points={result.report.densitySweep} />
+                <p className="text-xs text-muted-foreground mt-2">
+                  Evenly spaced X-flips at fixed quench strength; ρ is the
+                  fraction of chain sites excited. Δslope grows with ρ at
+                  moderate density; the RT fit degrades when many sites are
+                  flipped. Run <code className="font-mono bg-muted px-1 rounded">npm run sweep:mass</code> for
+                  the full table.
+                </p>
+              </div>
+            )}
           </div>
         )}
       </CardContent>

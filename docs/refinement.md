@@ -1,35 +1,61 @@
-# Adaptive holographic refinement (prototype)
+# Adaptive holographic refinement
 
 Speculative extension of [open-questions.md](./open-questions.md#mad-dog-native-extension-adaptive-holographic-refinement): factor count is not primitive but the size of the *minimal* local factorization that keeps holographic-style diagnostics healthy for the current |ψ⟩.
 
-## What we built
+## Pressure score (0–1)
 
-`wasm/mad-dog-sim/src/refinement.rs` implements a **refinement pressure** score (0–1) from:
+`wasm/mad-dog-sim/src/refinement.rs` combines:
 
 | Ingredient | Source | Failure mode |
 |------------|--------|--------------|
-| RT fit | `analyzeRtRelation` | Low R² — entropy does not track boundary “area” |
-| RT slope | same | |slope − 1| large — discrete RT relation deformed |
-| Area-law proxy | S(n/2)/S(1) vs ground/random baselines | Volume-like growth under quench |
-| Emergent dimension | `analyzeEmergentGeometry` | MI geometry higher-dimensional than expected |
+| RT fit | `analyze_rt_relation` | Low R² |
+| RT slope | same | \|slope − 1\| large |
+| Area-law proxy | S(n/2)/S(1) vs ground/random baselines | Volume-like growth |
+| Emergent dimension | `analyze_emergent_geometry` | MI geometry too high-D |
 
-**Quench study:** `runRefinementQuench` evolves a central defect under the TFIM chain and records pressure per clock step.
+`needs_refinement` fires when composite pressure or paired reason flags cross hand-tuned thresholds (`DEFAULT_REFINEMENT_THRESHOLDS`).
 
-**n comparison:** `runRefinementNCompare` runs the same quench depth at `n` and `n+Δn` and asks whether the larger chain lowers pressure (toy “add factors” test).
+## Dynamical split heuristic (2026-06)
 
-UI: `RefinementViz` on the essay page (holographic section).
+**Trigger:** peak-pressure step among a quench that ends with `needs_refinement = true` (avoids early false triggers before entanglement builds).
 
-CLI: `scripts/sim-check.ts` block prints vacuum vs late pressure and n vs n+2 comparison.
+**Split rule (toy):** at trigger depth, compare diagnostics on chain `n` vs chain `n+Δn` (same defect quench, same step count). **Accept** if `pressure(n+Δ) < pressure(n)`.
 
-**WASM:** `runRefinementQuenchAsync` / `runRefinementNCompareAsync` in `runner-async.ts` (validated in `scripts/wasm-check.ts`).
+**Split site hint:** `suggest_split_site` — lattice index where edge-anchored entropy grows fastest (not a real tensor factorization).
 
-See also [factorization.md](./factorization.md) — joint quench + factorization drift study (`FactorizationRefinementViz`).
+WASM: `run_adaptive_refinement_json` → `AdaptiveRefinementResult` with `splitEvent`.
 
-## What we did *not* build
+```ts
+import { runAdaptiveRefinementAsync } from '@/sim/runner-async'
 
-- No dynamic tensor-network splitting or bond-dimension truncation search.
-- No spectrum-driven factorization search.
+const result = await runAdaptiveRefinementAsync({
+  n: 10, field: 1.5, dt: 0.2, steps: 18, seed: 7711, deltaN: 2,
+})
+// result.splitEvent: { triggerStep, pre, post, accepted, pressureDelta, ... }
+```
+
+UI: **Experiments** → *Adaptive holographic refinement* (`AdaptiveRefinementViz`)
+
+CLI sweep: `npm run sweep:refinement` → `scripts/refinement-adaptive.ts`
+
+Falsification test **H**: split triggers and is accepted on default TFIM demo.
+
+## Earlier prototypes (still available)
+
+| Tool | Purpose |
+|------|---------|
+| `runRefinementQuenchAsync` | Pressure trace over quench |
+| `runRefinementNCompareAsync` | Manual n vs n+Δ at fixed step |
+| `runFactorizationRefinementStudyAsync` | Joint factorization drift + pressure |
 
 ## Honest limits
 
-Thresholds in `DEFAULT_REFINEMENT_THRESHOLDS` are hand-tuned on 10-site gapped chains. The n+2 comparison is suggestive, not a proof that “the universe added a qubit.” Use as a diagnostic hook for further experiments.
+- **No in-place split** — we compare independent quenches on different chain lengths, not embedding |ψ⟩ into a larger Hilbert space.
+- **No tensor-network bond truncation** — adding factors means `tfimChain(n+Δ)`, not splitting a qubit.
+- Thresholds tuned on 10-site gapped chains. Accept/reject is a diagnostic hook, not a theorem.
+
+## Typical result (n=10, h=1.5, steps=18, Δ=2)
+
+- Trigger mid-quench when RT/area components decouple
+- `accepted=true`, Δpressure ≈ 0.05–0.15 (larger chain relieves stress)
+- See also [factorization.md](./factorization.md) for labeling drift under the same quench

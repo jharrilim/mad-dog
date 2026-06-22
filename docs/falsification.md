@@ -24,6 +24,10 @@ Run: `npm run check:falsification` or **Experiments → Falsification Tests**.
 | **D** | Modular clocks desync | In-cone modular sync R² < 0.95 |
 | **E** | Excitations propagate | Both worldlines move; min separation ≥ 1 during overlap |
 | **F** | Refinement decoupling | Slope vs area diagnostic peaks diverge under quench |
+| **G** | Multi-clock not globally consistent | defectUniformR² > 0.95 and minPairwiseR² < 0.95 |
+| **H** | Adaptive split relieves pressure | Split triggers and accepted on default quench |
+| **I** | Branch excitations code-like | Sharpness gain > 1.03, window rank drops, branch overlap < 0.95 |
+| **J** | Gauge-free MI geometry stable | Ordered phase mean Spearman ρ > 0.85 |
 
 ## Implementation
 

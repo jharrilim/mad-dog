@@ -1,7 +1,7 @@
 //! High-level drivers exposed to WASM.
 
 use crate::geometry::{analyze_emergent_geometry, EmergenceReport};
-use crate::models::{random_nonlocal, tfim_chain, tfim_grid, BuiltModel, TruePosition};
+use crate::models::{random_nonlocal, tfim_chain, tfim_cube, tfim_grid, BuiltModel, TruePosition};
 use crate::quantum::ground_state;
 use crate::rng::Rng;
 use serde::{Deserialize, Serialize};
@@ -10,9 +10,18 @@ use serde::{Deserialize, Serialize};
 #[serde(rename_all = "camelCase")]
 pub struct RunConfig {
     pub kind: String,
+    #[serde(default)]
     pub n: usize,
+    #[serde(default)]
     pub rows: usize,
+    #[serde(default)]
     pub cols: usize,
+    #[serde(default)]
+    pub lx: usize,
+    #[serde(default)]
+    pub ly: usize,
+    #[serde(default)]
+    pub lz: usize,
     pub field: f64,
     pub seed: u32,
 }
@@ -33,11 +42,18 @@ pub struct RunResult {
 
 fn build_model(config: &RunConfig) -> BuiltModel {
     match config.kind.as_str() {
-        "chain" => tfim_chain(config.n, 1.0, config.field),
-        "grid" => tfim_grid(config.rows, config.cols, 1.0, config.field),
+        "chain" => tfim_chain(config.n.max(2), 1.0, config.field),
+        "grid" => tfim_grid(config.rows.max(2), config.cols.max(2), 1.0, config.field),
+        "cube" => tfim_cube(
+            config.lx.max(2),
+            config.ly.max(2),
+            config.lz.max(2),
+            1.0,
+            config.field,
+        ),
         _ => {
             let mut rng = Rng::new(config.seed.wrapping_add(991));
-            random_nonlocal(config.n, &mut rng)
+            random_nonlocal(config.n.max(2), &mut rng)
         }
     }
 }

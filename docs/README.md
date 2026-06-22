@@ -15,8 +15,14 @@ These are **working learnings**, not claims of new physics. They record what the
 | [refinement.md](./refinement.md) | Adaptive factor-count diagnostics (prototype) |
 | [factorization.md](./factorization.md) | Spectrum-driven locality search (prototype) |
 | [parameters-and-phases.md](./parameters-and-phases.md) | What `h` and `J` mean; ordered vs paramagnetic |
-| [universe-lab.md](./universe-lab.md) | 3+1 lab: cube lattice, visualization, limits |
+| [universe-lab.md](./universe-lab.md) | 3+1 lab: cube lattice, dim=3 benchmarks |
 | [emergent-particles.md](./emergent-particles.md) | What particle-like structure would look like |
+| [scattering.md](./scattering.md) | Worldline tracking, two-defect scattering |
+| [decoherence.md](./decoherence.md) | Minimal env coupling, branch-resolved tracks |
+| [qecc-probe.md](./qecc-probe.md) | Branch-resolved excitation subspace (QECC / EFT proto) |
+| [geometry-stability.md](./geometry-stability.md) | Gauge-free MI distance stability across slices |
+| [multi-clock.md](./multi-clock.md) | N-clock consistency networks |
+| [roadmap.md](./roadmap.md) | Exploration backlog (dated) |
 | [open-questions.md](./open-questions.md) | Honest limits and next experiments |
 
 ## Code map

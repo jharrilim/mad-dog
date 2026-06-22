@@ -48,6 +48,22 @@ Slope **tilts upward**; linear fit degrades but does not collapse.
 
 **Honest interpretation:** the discrete RT identity \(S_A \approx \frac{1}{2}\sum I(a{:}b)\) holds for redundancy-constrained states, not arbitrary excitations. Slope \(\approx 1.4\) means the state left that class — the formula broke down — not that we measured emergent scalar curvature. See [falsification.md](./falsification.md).
 
+## 4. Multi-insertion / excitation density (2026-06)
+
+At fixed quench strength (`strength=1`), evenly spaced X-flips across the inner chain:
+
+| # excitations | ρ = count/n | RT slope | Δslope vs vacuum |
+|---------------|-------------|----------|------------------|
+| 1 | 0.10 | ~1.40 | ~+0.46 |
+| 2 | 0.20 | ~1.47 | ~+0.53 |
+| 3 | 0.30 | ~2.17 | ~+1.22 |
+| 4 | 0.40 | ~2.35 | ~+1.40 |
+| 5 | 0.50 | ~2.28 | ~+1.34 |
+
+Run `npm run sweep:mass` for live numbers. **Δslope grows with ρ** (roughly linear at low ρ; RT fit degrades at ρ≳0.4 as R² drops).
+
+WASM: `inject_mass_multi`, `densitySweep` on `run_rt_mass_json`. UI: third chart on *Mass Curves the RT Slope* (Experiments).
+
 ## Implementation notes
 
 - `entropyOfRegion` — partial trace on smaller side (S_A = S_Ā for pure states).

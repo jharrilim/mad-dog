@@ -7,18 +7,20 @@
 3. **Mutual information** `I(a:b) = S_a + S_b - S_{ab}` (clamped ≥ 0).
 4. **Distance** `d(a,b) = -ξ ln(I(a:b) / I_max)`; negligible MI → capped distance.
 5. **Classical MDS** on the distance matrix → embedding coords + Gram eigenvalues.
-6. **Emergent dimension** — largest relative gap in the positive eigenvalue spectrum (restricted to eigenvalues > 1% of max).
+6. **Emergent dimension** — largest relative gap in the positive eigenvalue spectrum, with **Kaiser fallback** (λ > mean) when the first scree gap is weak or degenerate (small cubes).
 
 ## What we expect (and verified)
 
-| Model | Expected dim | `sim-check` observation |
-|-------|--------------|-------------------------|
+| Model | Expected dim | `sim-check` / `bench:universe` |
+|-------|--------------|-------------------------------|
 | TFIM chain, h=1.5 | 1 | emergentDim = 1, NN MI > far MI |
 | TFIM grid 3×3, h=1.5 | 2 | emergentDim = 2 |
 | Random non-local | high | emergentDim ≈ 3+, messy spectrum |
-| TFIM cube 2×2×2, h=1.5 | 3 | emergentDim = 2 (noisy at n=8) |
+| TFIM cube 2×2×2 ground, h=1.5 | 3 | emergentDim = 1 (8 points — inconclusive) |
+| TFIM cube 2×2×3 ground, h=1.5 | 3 | emergentDim = 3 (12 points + improved estimator) |
+| Cube quench @ k≈3, h=1.5 | 3 | emergentDim = 3 on 2×2×2 and 2×2×3 |
 
-**Lesson:** With only 8 points, 3D dimension detection is unreliable. The MDS may carry three coordinates, but the gap heuristic often reports 2. This is an honest limitation of the minimal cube — not proof against 3D emergence at larger scale.
+**Lesson:** With only 8 points, 3D dimension detection is unreliable even with the improved estimator. **2×2×3 (12 qubits)** resolves **dim=3** on ground state and mid-quench slices at h=1.5. Run `npm run bench:universe` for the matrix.
 
 ## Gauge freedom
 

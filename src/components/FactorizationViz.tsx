@@ -141,6 +141,9 @@ export function FactorizationViz() {
               <Badge variant={result.recoveredIdentity ? 'secondary' : 'destructive'}>
                 {result.recoveredIdentity ? 'local factorization found' : 'weak recovery'}
               </Badge>
+              {result.permMatchDistance !== undefined && (
+                <Badge variant="outline">perm match {result.permMatchDistance}</Badge>
+              )}
             </div>
 
             <div className="grid sm:grid-cols-2 gap-3 text-sm">

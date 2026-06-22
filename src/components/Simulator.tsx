@@ -227,8 +227,11 @@ export function Simulator() {
   const [running, setRunning] = useState(false)
 
   const qubitCount = useMemo(() => {
-    if (config.kind === 'grid') return config.rows * config.cols
-    return config.n
+    if (config.kind === 'grid') return (config.rows ?? 3) * (config.cols ?? 3)
+    if (config.kind === 'cube') {
+      return (config.lx ?? 2) * (config.ly ?? 2) * (config.lz ?? 2)
+    }
+    return config.n ?? 8
   }, [config])
 
   const run = useCallback(() => {

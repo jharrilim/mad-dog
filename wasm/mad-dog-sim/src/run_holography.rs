@@ -34,6 +34,14 @@ pub struct RtMassRunConfig {
     pub seed: u32,
     pub mass_site: Option<usize>,
     pub strength: f64,
+    #[serde(default)]
+    pub density_sweep: bool,
+    #[serde(default = "default_max_mass_count")]
+    pub max_mass_count: usize,
+}
+
+fn default_max_mass_count() -> usize {
+    5
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -72,6 +80,8 @@ pub fn run_rt_mass(config: &RtMassRunConfig) -> RtMassRunResult {
         config.strength,
         9,
         2.0,
+        config.density_sweep,
+        config.max_mass_count,
     );
     RtMassRunResult {
         label: model.label,

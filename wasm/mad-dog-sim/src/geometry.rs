@@ -199,6 +199,60 @@ pub struct MdsResult {
     pub explained_variance: Vec<f64>,
 }
 
+/// Estimate intrinsic dimension from sorted Gram eigenvalues (descending).
+/// Combines scree-gap and Kaiser (λ > mean) with tie handling for small point clouds.
+pub fn estimate_emergent_dimension(eigenvalues: &[f64], max_dim: usize) -> usize {
+    let mut positive: Vec<f64> = eigenvalues
+        .iter()
+        .copied()
+        .filter(|v| *v > 1e-9)
+        .collect();
+    if positive.is_empty() {
+        return 0;
+    }
+    positive.sort_by(|a, b| b.partial_cmp(a).unwrap_or(std::cmp::Ordering::Equal));
+
+    let max_eig = positive[0].max(1e-12);
+    let significant: Vec<f64> = positive
+        .iter()
+        .copied()
+        .filter(|v| *v > 0.01 * max_eig)
+        .collect();
+    if significant.len() <= 1 {
+        return significant.len().max(1);
+    }
+
+    let cap = max_dim.min(significant.len()).max(1);
+
+    let mut gap_dim = cap;
+    let mut best_ratio = 1.0_f64;
+    for k in 1..cap {
+        let ratio = significant[k - 1] / significant[k].max(1e-12);
+        if ratio > best_ratio {
+            best_ratio = ratio;
+            gap_dim = k;
+        }
+    }
+
+    let mean = significant.iter().sum::<f64>() / significant.len() as f64;
+    let kaiser = significant
+        .iter()
+        .filter(|&&v| v > mean * 1.001)
+        .count()
+        .clamp(1, cap);
+
+    // A strong first gap can be spurious on small cubes; prefer Kaiser when it suggests higher D.
+    let dim = if gap_dim == 1 && kaiser > 1 && best_ratio < 3.0 {
+        kaiser
+    } else if kaiser > gap_dim && best_ratio < 2.0 {
+        kaiser
+    } else {
+        gap_dim
+    };
+
+    dim.clamp(1, cap)
+}
+
 pub fn classical_mds(distance: &[Vec<f64>], max_dim: usize) -> MdsResult {
     let n = distance.len();
     let d2: Vec<Vec<f64>> = distance
@@ -246,23 +300,8 @@ pub fn classical_mds(distance: &[Vec<f64>], max_dim: usize) -> MdsResult {
     } else {
         1.0
     };
-    let significant: Vec<f64> = eigenvalues
-        .iter()
-        .copied()
-        .filter(|v| *v > 0.01 * max_eig)
-        .collect();
-    let mut emergent_dim = significant.len();
-    let mut best_ratio = 1.0;
-    for k in 1..significant.len() {
-        let ratio = significant[k - 1] / significant[k];
-        if ratio > best_ratio {
-            best_ratio = ratio;
-            emergent_dim = k;
-        }
-    }
-    if significant.len() <= 1 {
-        emergent_dim = significant.len();
-    }
+    let _ = max_eig;
+    let emergent_dim = estimate_emergent_dimension(&eigenvalues, max_dim);
 
     let dims = max_dim.min(n);
     let mut coords = vec![vec![0.0; dims]; n];
@@ -306,5 +345,40 @@ pub fn analyze_emergent_geometry(state: &QuantumState, xi: f64, max_dim: usize) 
         mi,
         distance,
         mds,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::models::{tfim_chain, tfim_cube, tfim_grid};
+    use crate::quantum::ground_state;
+    use crate::rng::Rng;
+
+    fn ground_dim(model_fn: impl FnOnce() -> crate::models::BuiltModel) -> usize {
+        let model = model_fn();
+        let mut rng = Rng::new(42);
+        let (state, _, _) = ground_state(&model.hamiltonian, &mut rng, 4000, 1e-9);
+        analyze_emergent_geometry(&state, 1.0, 3).mds.emergent_dim
+    }
+
+    #[test]
+    fn chain_ground_dim_one() {
+        assert_eq!(ground_dim(|| tfim_chain(8, 1.0, 1.5)), 1);
+    }
+
+    #[test]
+    fn grid_ground_dim_two() {
+        assert_eq!(ground_dim(|| tfim_grid(3, 3, 1.0, 1.5)), 2);
+    }
+
+    #[test]
+    fn cube_223_ground_dim_three() {
+        let dim222 = ground_dim(|| tfim_cube(2, 2, 2, 1.0, 1.5));
+        let dim223 = ground_dim(|| tfim_cube(2, 2, 3, 1.0, 1.5));
+        assert!(
+            dim223 >= 3,
+            "2x2x3 ground should resolve dim=3 (got {dim223}); 222={dim222}"
+        );
     }
 }

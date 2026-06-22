@@ -48,9 +48,12 @@ function niceMax(v: number): number {
 export function DiagnosticTracesChart({
   slices,
   expectedDim = 1,
+  triggerStep,
 }: {
   slices: DiagnosticTracePoint[]
   expectedDim?: number
+  /** Vertical marker when adaptive split triggers */
+  triggerStep?: number
 }) {
   const [visible, setVisible] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(SERIES.map((s) => [s.key, true])),
@@ -147,6 +150,22 @@ export function DiagnosticTracesChart({
             />
           )
         })}
+        {triggerStep != null && (() => {
+          const slice = slices.find((s) => s.step === triggerStep)
+          const t = slice?.t ?? triggerStep * (maxT / Math.max(slices.length - 1, 1))
+          const xx = x(t)
+          return (
+            <line
+              x1={xx}
+              y1={pad.t}
+              x2={xx}
+              y2={pad.t + plotH}
+              stroke="oklch(0.78 0.13 60)"
+              strokeWidth={1.5}
+              strokeDasharray="4 3"
+            />
+          )
+        })()}
       </svg>
       <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs">
         {SERIES.map((s) => (

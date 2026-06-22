@@ -16,8 +16,8 @@ A separate page (`/lab`) showing **three emergent spatial dimensions + one emerg
 
 | Lattice | Qubits | Notes |
 |---------|--------|-------|
-| 2×2×2 (default) | 8 | Fast; minimum viable 3+1 |
-| 2×2×3 | 12 | Stretch; noticeably slower |
+| 2×2×2 (default) | 8 | Fast; ground-state dim inconclusive |
+| 2×2×3 | 12 | **dim=3 benchmark** (ground + quench); slower |
 
 3×3×3 (27 qubits) remains out of scope for the reference engine.
 
@@ -44,8 +44,15 @@ Time is **not** a fourth graphics axis — see [emergent-time.md](./emergent-tim
 
 **Ground state 2×2×2, h=1.5:**
 
-- emergentDim = 2 (not 3 — noisy at n=8)
-- Top three Gram eigenvalues nearly degenerate
+- emergentDim = 1 (inconclusive at n=8)
+
+**Ground state 2×2×3, h=1.5:**
+
+- emergentDim = 3 ✓
+
+**Quench mid-slice (k=3), h=1.5:**
+
+- 2×2×2 and 2×2×3: emergentDim = 3 ✓
 
 **Quench 3+1:**
 
@@ -62,4 +69,4 @@ Time is **not** a fourth graphics axis — see [emergent-time.md](./emergent-tim
 
 - 8-qubit toy universe.
 - Positions reconstructed from entanglement.
-- Emergent dim ≈ 3 is a **hypothesis to test**, not guaranteed at this size.
+- Emergent dim ≈ 3 is **testable at 2×2×3** with the improved estimator; 2×2×2 remains inconclusive on ground states.

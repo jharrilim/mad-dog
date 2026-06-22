@@ -56,6 +56,12 @@ pub fn run_light_cone_compare(config: &LightConeCompareConfig) -> LightConeCompa
         align_to: None,
         order: 6,
         include_geometry: true,
+        track_energy: true,
+        retain_slices: true,
+        worldline_defects: None,
+        track_worldline: false,
+        defect_site: None,
+        seed: config.seed,
     });
     let mi_dist = mi_distances_from_state(&initial, center, 1.0);
     let mi_time_avg = average_mi_distances_from_trajectory(

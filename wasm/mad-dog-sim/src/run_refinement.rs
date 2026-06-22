@@ -1,10 +1,11 @@
 //! Refinement runners for WASM.
 
 use crate::models::tfim_chain;
-use crate::quantum::evolve_interval;
+use crate::quantum::{evolve_interval, QuantumState};
 use crate::refinement::{
-    compute_refinement_baselines, defect_initial_state, measure_refinement_diagnostics,
-    refinement_decoupling_lag, RefinementBaselines, RefinementDiagnostics, RefinementThresholds,
+    compute_refinement_baselines, defect_initial_state, first_split_trigger_from_diag,
+    measure_refinement_diagnostics, refinement_decoupling_lag, suggest_split_site,
+    RefinementBaselines, RefinementDiagnostics, RefinementThresholds, SplitEvent,
 };
 use crate::rng::Rng;
 use serde::{Deserialize, Serialize};
@@ -67,13 +68,13 @@ pub struct RefinementNCompareResult {
     pub backend: &'static str,
 }
 
-fn state_after_quench(
+fn state_after_quench_with_site(
     chain_n: usize,
     field: f64,
     dt: f64,
     quench_step: usize,
     seed: u32,
-) -> RefinementDiagnostics {
+) -> (QuantumState, RefinementDiagnostics) {
     let model = tfim_chain(chain_n, 1.0, field);
     let mut rng = Rng::new(42);
     let radius = model
@@ -86,7 +87,18 @@ fn state_after_quench(
     for _ in 0..quench_step {
         state = evolve_interval(&model.hamiltonian, &state, dt, radius, 6);
     }
-    measure_refinement_diagnostics(&state, 1, &baselines, &thresholds)
+    let diag = measure_refinement_diagnostics(&state, 1, &baselines, &thresholds);
+    (state, diag)
+}
+
+fn state_after_quench(
+    chain_n: usize,
+    field: f64,
+    dt: f64,
+    quench_step: usize,
+    seed: u32,
+) -> RefinementDiagnostics {
+    state_after_quench_with_site(chain_n, field, dt, quench_step, seed).1
 }
 
 pub fn run_refinement_quench(config: &RefinementQuenchConfig) -> RefinementQuenchResult {
@@ -153,6 +165,111 @@ pub fn run_refinement_n_compare(config: &RefinementNCompareConfig) -> Refinement
         small,
         large,
         larger_relieves,
+        elapsed_ms: 0.0,
+        backend: "wasm",
+    }
+}
+
+#[derive(Clone, Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AdaptiveRefinementConfig {
+    pub n: usize,
+    pub field: f64,
+    pub dt: f64,
+    pub steps: usize,
+    pub seed: u32,
+    #[serde(default)]
+    pub delta_n: Option<usize>,
+}
+
+#[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AdaptiveRefinementResult {
+    pub n: usize,
+    pub delta_n: usize,
+    pub field: f64,
+    pub dt: f64,
+    pub steps: usize,
+    pub baselines: RefinementBaselines,
+    pub slices: Vec<RefinementQuenchSlice>,
+    pub decoupling_lag: usize,
+    pub peak_step: usize,
+    pub peak_pressure: f64,
+    pub split_event: Option<SplitEvent>,
+    pub elapsed_ms: f64,
+    pub backend: &'static str,
+}
+
+pub fn run_adaptive_refinement(config: &AdaptiveRefinementConfig) -> AdaptiveRefinementResult {
+    let quench = run_refinement_quench(&RefinementQuenchConfig {
+        n: config.n,
+        field: config.field,
+        dt: config.dt,
+        steps: config.steps,
+        seed: config.seed,
+    });
+    let delta_n = config.delta_n.unwrap_or(2);
+    let diag_steps: Vec<(usize, RefinementDiagnostics)> = quench
+        .slices
+        .iter()
+        .map(|s| (s.step, s.diagnostics.clone()))
+        .collect();
+
+    let (peak_step, peak_pressure) = diag_steps
+        .iter()
+        .fold((0usize, 0.0_f64), |acc, (step, d)| {
+            if d.pressure > acc.1 {
+                (*step, d.pressure)
+            } else {
+                acc
+            }
+        });
+
+    let thresholds = RefinementThresholds::default();
+    let split_event = first_split_trigger_from_diag(&diag_steps, &thresholds).map(|trigger_step| {
+        let trigger_t = trigger_step as f64 * config.dt;
+        let (state, pre) = state_after_quench_with_site(
+            config.n,
+            config.field,
+            config.dt,
+            trigger_step,
+            config.seed,
+        );
+        let split_site = suggest_split_site(&state);
+        let post = state_after_quench(
+            config.n + delta_n,
+            config.field,
+            config.dt,
+            trigger_step,
+            config.seed,
+        );
+        let pressure_delta = pre.pressure - post.pressure;
+        let accepted = post.pressure < pre.pressure - 1e-6;
+        SplitEvent {
+            trigger_step,
+            trigger_t,
+            pre_n: config.n,
+            post_n: config.n + delta_n,
+            suggested_split_site: split_site,
+            pre,
+            post,
+            accepted,
+            pressure_delta,
+        }
+    });
+
+    AdaptiveRefinementResult {
+        n: config.n,
+        delta_n,
+        field: config.field,
+        dt: config.dt,
+        steps: config.steps,
+        baselines: quench.baselines,
+        slices: quench.slices,
+        decoupling_lag: quench.decoupling_lag,
+        peak_step,
+        peak_pressure,
+        split_event,
         elapsed_ms: 0.0,
         backend: "wasm",
     }

@@ -15,12 +15,17 @@ import {
   run_rt_mass_json,
   run_refinement_quench_json,
   run_refinement_n_compare_json,
+  run_adaptive_refinement_json,
   run_relational_time_json,
   run_universe_3d_json,
   run_universe_slice_json,
   run_light_cone_compare_json,
   run_modular_dual_clock_json,
+  run_multi_clock_json,
   run_scattering_json,
+  run_decoherence_quench_json,
+  run_excitation_subspace_json,
+  run_geometry_stability_json,
   run_factorization_search_json,
 } from '../src/sim/wasm/pkg/mad_dog_sim.js'
 
@@ -55,13 +60,21 @@ for (const config of [
 // --- Spacetime ---
 {
   const r = JSON.parse(
-    run_spacetime_json(JSON.stringify({ n: 9, field: 1, dt: 0.2, steps: 12, seed: 7 })),
+    run_spacetime_json(JSON.stringify({ n: 9, field: 0.8, dt: 0.2, steps: 20, seed: 7 })),
   )
   console.log('\nspacetime:')
-  if (r.slices.length !== 12) fail(`expected 12 slices, got ${r.slices.length}`)
+  if (r.slices.length !== 20) fail(`expected 20 slices, got ${r.slices.length}`)
   else ok(`${r.slices.length} slices`)
   if (!r.lightCone?.velocity || r.lightCone.velocity <= 0) fail('lightCone velocity')
   else ok(`LR velocity=${r.lightCone.velocity.toFixed(3)}`)
+  if (!r.worldline || r.worldline.length !== 20) fail('worldline length')
+  else {
+    const moved = r.worldline.some(
+      (p: { site: number }, i: number) => i > 0 && p.site !== r.worldline[0].site,
+    )
+    if (!moved) fail('worldline should move in ordered phase')
+    else ok('worldline tracks propagating defect')
+  }
 }
 
 // --- Holography ---
@@ -82,6 +95,28 @@ for (const config of [
   console.log('\nRT mass:')
   if (r.report.mass.rtSlope <= r.report.vacuum.rtSlope) fail('mass slope not above vacuum')
   else ok(`Δslope=${(r.report.mass.rtSlope - r.report.vacuum.rtSlope).toFixed(3)}`)
+
+  const dense = JSON.parse(
+    run_rt_mass_json(
+      JSON.stringify({
+        n: 10,
+        field: 1.5,
+        seed: 7,
+        strength: 1.0,
+        densitySweep: true,
+        maxMassCount: 5,
+      }),
+    ),
+  )
+  const sweep = dense.report.densitySweep
+  console.log('\nRT mass density sweep:')
+  if (!sweep?.length) fail('densitySweep missing')
+  else {
+    const d0 = sweep[0].deltaSlope
+    const dLast = sweep[sweep.length - 1].deltaSlope
+    if (dLast <= d0 + 0.05) fail('Δslope did not grow with density')
+    else ok(`ρ=0.1→${sweep[sweep.length - 1].density.toFixed(1)} Δslope=${d0.toFixed(2)}→${dLast.toFixed(2)}`)
+  }
 }
 
 // --- Refinement ---
@@ -106,6 +141,21 @@ for (const config of [
   ok(`small=${r.small.pressure.toFixed(3)} large=${r.large.pressure.toFixed(3)}`)
 }
 
+{
+  const r = JSON.parse(
+    run_adaptive_refinement_json(
+      JSON.stringify({ n: 10, field: 1.5, dt: 0.2, steps: 18, seed: 7711, deltaN: 2 }),
+    ),
+  )
+  console.log('\nadaptive refinement:')
+  if (!r.splitEvent) fail('expected split trigger')
+  else {
+    ok(`trigger@${r.splitEvent.triggerStep} accepted=${r.splitEvent.accepted}`)
+    if (!r.splitEvent.accepted) fail('split should relieve pressure')
+    else ok(`Δpressure=${r.splitEvent.pressureDelta.toFixed(3)}`)
+  }
+}
+
 // --- Relational time ---
 {
   const r = JSON.parse(
@@ -115,6 +165,28 @@ for (const config of [
   )
   console.log('\nrelational time:')
   ok(`syncR²=${r.syncR2.toFixed(4)}`)
+}
+
+// --- Multi-clock network ---
+{
+  const n = 9
+  const r = JSON.parse(
+    run_multi_clock_json(
+      JSON.stringify({
+        n,
+        field: 1,
+        dt: 0.2,
+        steps: 40,
+        clockSites: [0, Math.floor(n / 2), n - 1],
+        physicalSlices: 15,
+      }),
+    ),
+  )
+  console.log('\nmultiClock:')
+  if (r.defectUniformR2 <= 0.95) fail(`defectUniformR2=${r.defectUniformR2}`)
+  else ok(`defectUniformR2=${r.defectUniformR2.toFixed(3)}`)
+  if (r.minPairwiseR2 >= 0.95) fail('network should not be globally consistent')
+  else ok(`minPairwiseR2=${r.minPairwiseR2.toFixed(3)}, inconsistentPairs=${r.inconsistentPairs}`)
 }
 
 // --- Universe ---
@@ -131,11 +203,34 @@ for (const config of [
 {
   const r = JSON.parse(
     run_universe_slice_json(
-      JSON.stringify({ lx: 2, ly: 2, lz: 2, field: 1, dt: 0.25, steps: 12, k: 3 }),
+      JSON.stringify({ lx: 2, ly: 2, lz: 2, field: 1.5, dt: 0.25, steps: 12, k: 3 }),
     ),
   )
-  console.log('\nuniverse slice:')
-  ok(`emergentDim=${r.report.mds.emergentDim}`)
+  console.log('\nuniverse slice (2x2x2 quench k=3):')
+  if (r.report.mds.emergentDim < 3) fail(`expected dim≥3, got ${r.report.mds.emergentDim}`)
+  else ok(`emergentDim=${r.report.mds.emergentDim}`)
+}
+
+{
+  const r = JSON.parse(
+    run_emergence_json(
+      JSON.stringify({ kind: 'cube', lx: 2, ly: 2, lz: 3, field: 1.5, seed: 42 }),
+    ),
+  )
+  console.log('\ncube ground (2x2x3):')
+  if (r.report.mds.emergentDim < 3) fail(`expected dim≥3, got ${r.report.mds.emergentDim}`)
+  else ok(`emergentDim=${r.report.mds.emergentDim}`)
+}
+
+{
+  const r = JSON.parse(
+    run_universe_slice_json(
+      JSON.stringify({ lx: 2, ly: 2, lz: 3, field: 1.5, dt: 0.25, steps: 12, k: 3 }),
+    ),
+  )
+  console.log('\nuniverse slice (2x2x3 quench k=3):')
+  if (r.report.mds.emergentDim < 3) fail(`expected dim≥3, got ${r.report.mds.emergentDim}`)
+  else ok(`emergentDim=${r.report.mds.emergentDim}`)
 }
 
 // --- Factorization ---
@@ -165,7 +260,8 @@ for (const config of [
     ),
   )
   console.log('\nfactorization spectrum:')
-  ok(`scorer=${r.scorerUsed} recovered=${r.recoveredIdentity}`)
+  if (!r.recoveredIdentity) fail('spectrum identity not recovered')
+  else ok(`scorer=${r.scorerUsed} permMatch=${r.permMatchDistance ?? '?'} score=${r.best.score.toFixed(3)}`)
 }
 
 // --- Light cone compare ---
@@ -206,7 +302,9 @@ for (const config of [
   )
   console.log('\nscattering (lite):')
   if (r.slices.length !== 0) fail('lite mode should omit slices')
-  else ok(`crossed=${r.crossed} minSep=${r.minSeparation.toFixed(3)}`)
+  else ok(`crossed=${r.crossed} minSep=${r.minSeparation.toFixed(3)} bothMoved=${r.bothMoved}`)
+  if (r.separationSeries?.length !== 40) fail('separation series length')
+  else ok(`separationSeries=${r.separationSeries.length}`)
 }
 
 // --- Scattering (full) ---
@@ -226,6 +324,68 @@ for (const config of [
   console.log('\nscattering (full):')
   if (r.slices.length !== 40) fail(`expected 40 slices, got ${r.slices.length}`)
   else ok(`${r.slices.length} slices, worldlines=${r.worldlines.length}`)
+}
+
+// --- Decoherence quench ---
+{
+  const r = JSON.parse(
+    run_decoherence_quench_json(
+      JSON.stringify({
+        n: 8,
+        field: 1.2,
+        dt: 0.2,
+        steps: 22,
+        coupleStep: 7,
+        coupling: 0.9,
+        seed: 4242,
+      }),
+    ),
+  )
+  console.log('\ndecoherence quench:')
+  if (!r.branchesDistinguishable) fail('branches not distinguishable')
+  else
+    ok(
+      `sharpen=${r.sharpenRatio.toFixed(2)} p0=${r.branches[0].weight.toFixed(2)} branches=${r.branches.length}`,
+    )
+}
+
+// --- Excitation subspace probe ---
+{
+  const r = JSON.parse(
+    run_excitation_subspace_json(
+      JSON.stringify({
+        n: 8,
+        field: 1.2,
+        dt: 0.2,
+        steps: 22,
+        coupleStep: 7,
+        coupling: 0.9,
+        seed: 4242,
+        windowRadius: 2,
+      }),
+    ),
+  )
+  console.log('\nexcitation subspace:')
+  if (!r.codeLike) fail('branch excitation not code-like')
+  else
+    ok(
+      `gain=${r.sharpnessGain.toFixed(2)} rankRed=${r.rankReduction.toFixed(2)} overlap=${r.branchOverlap.toFixed(3)}`,
+    )
+}
+
+// --- Gauge-free geometry stability ---
+{
+  const r = JSON.parse(
+    run_geometry_stability_json(
+      JSON.stringify({ n: 10, field: 1.2, dt: 0.2, steps: 20, xi: 1.0, seed: 42 }),
+    ),
+  )
+  console.log('\ngeometry stability:')
+  if (!r.geometryStable) fail('ordered-phase MI ranking unstable')
+  else
+    ok(
+      `rho=${r.meanRankCorrelation.toFixed(3)} drift=${r.meanDistanceDrift.toFixed(3)} dimStd=${r.dimStd.toFixed(2)}`,
+    )
 }
 
 console.log(failures === 0 ? '\nAll WASM checks passed.' : `\n${failures} check(s) failed.`)

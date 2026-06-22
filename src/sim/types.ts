@@ -2,13 +2,16 @@
 
 export type SimBackend = 'wasm'
 
-export type ModelKind = 'chain' | 'grid' | 'random'
+export type ModelKind = 'chain' | 'grid' | 'cube' | 'random'
 
 export interface RunConfig {
   kind: ModelKind
-  n: number
-  rows: number
-  cols: number
+  n?: number
+  rows?: number
+  cols?: number
+  lx?: number
+  ly?: number
+  lz?: number
   field: number
   seed: number
 }
@@ -59,6 +62,9 @@ export interface SpacetimeResult {
   slices: SpacetimeSlice[]
   energyDrift: number
   lightCone?: LightCone
+  /** Signal-weighted centroid track for single-defect quenches. */
+  worldline?: WorldlinePoint[]
+  worldlines?: [WorldlinePoint[], WorldlinePoint[]]
   elapsedMs: number
   backend?: SimBackend
 }
@@ -134,6 +140,14 @@ export interface RtFit {
   rtR2: number
 }
 
+export interface DensitySweepPoint {
+  count: number
+  density: number
+  slope: number
+  r2: number
+  deltaSlope: number
+}
+
 export interface RtMassReport {
   n: number
   massSite: number
@@ -141,6 +155,7 @@ export interface RtMassReport {
   vacuum: RtFit
   mass: RtFit
   sweep: { strength: number; slope: number; r2: number }[]
+  densitySweep?: DensitySweepPoint[]
 }
 
 export interface RtMassRunConfig {
@@ -148,6 +163,8 @@ export interface RtMassRunConfig {
   field: number
   strength: number
   seed?: number
+  densitySweep?: boolean
+  maxMassCount?: number
 }
 
 export interface RtMassRunResult {
@@ -228,6 +245,43 @@ export interface RefinementNCompareResult {
   backend?: SimBackend
 }
 
+export interface SplitEvent {
+  triggerStep: number
+  triggerT: number
+  preN: number
+  postN: number
+  suggestedSplitSite: number
+  pre: RefinementDiagnostics
+  post: RefinementDiagnostics
+  accepted: boolean
+  pressureDelta: number
+}
+
+export interface AdaptiveRefinementConfig {
+  n: number
+  field: number
+  dt: number
+  steps: number
+  seed: number
+  deltaN?: number
+}
+
+export interface AdaptiveRefinementResult {
+  n: number
+  deltaN: number
+  field: number
+  dt: number
+  steps: number
+  baselines: RefinementBaselines
+  slices: RefinementQuenchSlice[]
+  decouplingLag: number
+  peakStep: number
+  peakPressure: number
+  splitEvent: SplitEvent | null
+  elapsedMs: number
+  backend?: SimBackend
+}
+
 export interface RelationalTimeConfig {
   n: number
   field: number
@@ -256,6 +310,37 @@ export interface DualClockResult {
   syncR2: number
   syncSlope: number
   syncIntercept: number
+  elapsedMs: number
+  backend?: SimBackend
+}
+
+export interface MultiClockConfig {
+  n: number
+  field: number
+  dt: number
+  steps: number
+  clockSites?: number[]
+  physicalSlices?: number
+}
+
+export interface PhysicalClockReading {
+  site: number
+  label: string
+  timeMap: TimeMapPoint[]
+  syncR2VsUniform: number
+  syncSlopeVsUniform: number
+}
+
+export interface MultiClockResult {
+  sites: number
+  defectSite: number
+  labels: string[]
+  clocks: PhysicalClockReading[]
+  pairwiseR2: number[][]
+  minPairwiseR2: number
+  defectUniformR2: number
+  edgeEdgeR2: number
+  inconsistentPairs: number
   elapsedMs: number
   backend?: SimBackend
 }
@@ -305,8 +390,56 @@ export interface ScatteringResult {
   defectSites: [number, number]
   slices: SpacetimeSlice[]
   worldlines: [WorldlinePoint[], WorldlinePoint[]]
+  separationSeries: number[]
+  velocities: [number, number]
+  bothMoved: boolean
   crossed: boolean
   minSeparation: number
+  elapsedMs: number
+  backend?: SimBackend
+}
+
+export interface DecoherenceQuenchConfig {
+  n: number
+  field: number
+  dt: number
+  steps: number
+  coupleStep?: number
+  coupling?: number
+  seed?: number
+}
+
+export interface DecoherenceSlice {
+  k: number
+  t: number
+  signal: number[]
+  envP0: number
+  envP1: number
+  envEntropy: number
+  envCoherence: number
+  mixedPeakWidth: number
+  branchPeakWidth: number
+  mixedEntropy: number
+  branchEntropy: number
+}
+
+export interface BranchTrack {
+  label: string
+  envBit: number
+  weight: number
+  worldline: WorldlinePoint[]
+}
+
+export interface DecoherenceQuenchResult {
+  chainSites: number
+  envQubit: number
+  coupleStep: number
+  coupling: number
+  slices: DecoherenceSlice[]
+  mixedWorldline: WorldlinePoint[]
+  branches: BranchTrack[]
+  sharpenRatio: number
+  branchesDistinguishable: boolean
   elapsedMs: number
   backend?: SimBackend
 }
@@ -394,6 +527,7 @@ export interface FactorizationSearchResult {
   best: FactorizationCandidate
   topCandidates: FactorizationCandidate[]
   recoveredIdentity: boolean
+  permMatchDistance?: number
   trueShuffle?: number[]
   baselineMi: number[][]
   bestMi: number[][]
@@ -447,6 +581,78 @@ export interface FalsificationBatteryResult {
   tests: FalsificationTest[]
   passed: number
   total: number
+  elapsedMs: number
+  backend?: SimBackend
+}
+
+export interface ExcitationSubspaceConfig {
+  n: number
+  field: number
+  dt: number
+  steps: number
+  coupleStep?: number
+  coupling?: number
+  seed?: number
+  windowRadius?: number
+}
+
+export interface PauliSiteDiagnostic {
+  site: number
+  mixedZ: number
+  branch0Z: number
+  branch1Z: number
+  mixedX: number
+  branch0X: number
+  branch1X: number
+}
+
+export interface ExcitationSubspaceResult {
+  chainSites: number
+  excitationPeak: number
+  windowSites: number[]
+  envP0: number
+  envP1: number
+  mixedSharpness: number
+  branch0Sharpness: number
+  branch1Sharpness: number
+  sharpnessGain: number
+  mixedEffectiveRank: number
+  branch0EffectiveRank: number
+  branch1EffectiveRank: number
+  rankReduction: number
+  branchOverlap: number
+  siteDiagnostics: PauliSiteDiagnostic[]
+  codeLike: boolean
+  elapsedMs: number
+  backend?: SimBackend
+}
+
+export interface GeometryStabilityConfig {
+  n: number
+  field: number
+  dt: number
+  steps: number
+  xi?: number
+  seed?: number
+}
+
+export interface GeometryStabilitySlice {
+  k: number
+  t: number
+  emergentDim: number
+  topEigenvalues: number[]
+  distanceDrift: number
+  rankCorrelation: number
+}
+
+export interface GeometryStabilityResult {
+  sites: number
+  field: number
+  slices: GeometryStabilitySlice[]
+  meanDistanceDrift: number
+  meanRankCorrelation: number
+  dimStd: number
+  geometryStable: boolean
   elapsedMs: number
   backend?: SimBackend
 }

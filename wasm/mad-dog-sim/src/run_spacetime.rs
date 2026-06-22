@@ -53,6 +53,12 @@ pub fn run_spacetime(config: &SpacetimeRunConfig) -> SpacetimeResult {
         align_to: None,
         order: 6,
         include_geometry: true,
+        track_energy: true,
+        retain_slices: true,
+        worldline_defects: None,
+        track_worldline: true,
+        defect_site: Some(center),
+        seed: config.seed,
     });
     result.light_cone = Some(measure_light_cone(&result, 0.12, Some(center), None));
     result
@@ -74,6 +80,12 @@ pub fn run_spacetime_2d(config: &Spacetime2DConfig) -> SpacetimeResult {
         align_to: Some(&model.layout.true_positions),
         order: 6,
         include_geometry: true,
+        track_energy: true,
+        retain_slices: true,
+        worldline_defects: None,
+        track_worldline: true,
+        defect_site: Some(center),
+        seed: 42,
     });
     result.light_cone = Some(measure_light_cone(&result, 0.12, Some(center), None));
     result

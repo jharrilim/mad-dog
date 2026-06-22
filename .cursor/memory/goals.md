@@ -9,5 +9,10 @@
 
 ## Near-term directions
 
-- Extend WASM backend to spacetime / holography / Universe Lab (emergence done).
-- Worldline tracking, two-particle quenches, minimal decoherence branch.
+- ~~Spectrum-only factorization blind tests (see [roadmap.md](../docs/roadmap.md)).~~
+- ~~Minimal decoherence branch for branch-resolved worldlines.~~ — shipped 2026-06.
+- ~~Larger 3D lattices + dim=3 resolution.~~ — shipped 2026-06 (`bench:universe`).
+- ~~Curved space / mass concentration sweeps.~~ — shipped 2026-06 (`sweep:mass`).
+- ~~Adaptive holographic refinement~~ — shipped 2026-06.
+- ~~Three-or-more-clock consistency networks~~ — shipped 2026-06.
+- ~~Worldline tracking, two-particle scattering~~ — shipped 2026-06.

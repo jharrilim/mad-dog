@@ -193,7 +193,7 @@ fn slices_from_indices(
         .collect()
 }
 
-fn physical_clock_indices(
+pub fn physical_clock_indices(
     trajectory: &[TrajectoryPoint],
     clock_site: usize,
     base_z: &[f64],
@@ -340,6 +340,8 @@ pub fn build_dual_clock(config: DualClockConfig<'_>) -> DualClockResult {
                 slices: uniform_slice_list,
                 energy_drift,
                 light_cone: None,
+                worldline: None,
+                worldlines: None,
                 elapsed_ms: 0.0,
             },
         },
@@ -351,6 +353,8 @@ pub fn build_dual_clock(config: DualClockConfig<'_>) -> DualClockResult {
                 slices: physical_slice_list,
                 energy_drift,
                 light_cone: None,
+                worldline: None,
+                worldlines: None,
                 elapsed_ms: 0.0,
             },
         },

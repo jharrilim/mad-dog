@@ -5,8 +5,6 @@ use crate::quantum::{expectation_z, QuantumState};
 use crate::relational_time::{evolve_trajectory, fit_affine, TrajectoryPoint};
 use serde::{Deserialize, Serialize};
 
-const EPS: f64 = 1e-12;
-
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ModularDualClockConfig {
@@ -37,17 +35,6 @@ pub struct ModularDualClockResult {
     pub sync_r2_z: f64,
     pub elapsed_ms: f64,
     pub backend: &'static str,
-}
-
-pub fn modular_spectral_drift(prev: &[f64], next: &[f64]) -> f64 {
-    let len = prev.len().max(next.len());
-    let mut sum = 0.0;
-    for i in 0..len {
-        let lp = prev.get(i).copied().unwrap_or(EPS).max(EPS).ln();
-        let ln = next.get(i).copied().unwrap_or(EPS).max(EPS).ln();
-        sum += (ln - lp).abs();
-    }
-    sum
 }
 
 fn cumulative_modular_time(trajectory: &[TrajectoryPoint], region: &[usize]) -> Vec<f64> {

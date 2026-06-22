@@ -11,8 +11,11 @@
     "build:pages": "GITHUB_PAGES=true npm run build",
     "check:wasm": "npm run build:wasm && node scripts/wasm-check.ts",
     "bench:factorization": "npm run build:wasm && node scripts/factorization-bench.ts",
+    "bench:universe": "npm run build:wasm && node scripts/universe-bench.ts",
+    "sweep:mass": "npm run build:wasm && node scripts/mass-sweep.ts",
     "check:falsification": "npm run ensure:wasm && node scripts/falsification-check.ts",
     "sweep:scattering": "npm run build:wasm && node scripts/scattering-sweep.ts",
+    "sweep:refinement": "npm run build:wasm && node scripts/refinement-adaptive.ts",
     "lint": "eslint .",
     "preview": "vite preview"
   },

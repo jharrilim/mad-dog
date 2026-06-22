@@ -3,14 +3,19 @@ import { Simulator } from '@/components/Simulator'
 import { SpacetimeViz } from '@/components/SpacetimeViz'
 import { Spacetime2DViz } from '@/components/Spacetime2DViz'
 import { RelationalTimeViz } from '@/components/RelationalTimeViz'
+import { MultiClockViz } from '@/components/MultiClockViz'
 import { HolographyViz } from '@/components/HolographyViz'
 import { RtMassViz } from '@/components/RtMassViz'
 import { RefinementViz } from '@/components/RefinementViz'
+import { AdaptiveRefinementViz } from '@/components/AdaptiveRefinementViz'
 import { FactorizationViz } from '@/components/FactorizationViz'
 import { FactorizationRefinementViz } from '@/components/FactorizationRefinementViz'
 import { LightConeCompareViz } from '@/components/LightConeCompareViz'
 import { ModularClockViz } from '@/components/ModularClockViz'
 import { ScatteringViz } from '@/components/ScatteringViz'
+import { DecoherenceQuenchViz } from '@/components/DecoherenceQuenchViz'
+import { ExcitationSubspaceViz } from '@/components/ExcitationSubspaceViz'
+import { GeometryStabilityViz } from '@/components/GeometryStabilityViz'
 import { FalsificationViz } from '@/components/FalsificationViz'
 
 function Experiments() {
@@ -61,7 +66,11 @@ function Experiments() {
           <LightConeCompareViz />
           <ModularClockViz />
           <ScatteringViz />
+          <DecoherenceQuenchViz />
+          <ExcitationSubspaceViz />
+          <GeometryStabilityViz />
           <RelationalTimeViz />
+          <MultiClockViz />
         </section>
 
         <Separator />
@@ -80,6 +89,7 @@ function Experiments() {
           <HolographyViz />
           <RtMassViz />
           <RefinementViz />
+          <AdaptiveRefinementViz />
           <FactorizationViz />
           <FactorizationRefinementViz />
         </section>

@@ -1,9 +1,9 @@
 //! Factorization search runner for WASM.
 
 use crate::factorization::{
-    score_permutation, search_factorization, shuffle_hamiltonian,
-    spectrum_from_hamiltonian, FactorizationCandidate, GraphKind, InputMode, SearchMethod,
-    SearchParams,
+    line_equiv_distance, line_equiv_match, perm_distance, score_permutation, search_factorization,
+    shuffle_hamiltonian, spectrum_from_hamiltonian, FactorizationCandidate, GraphKind,
+    InputMode, SearchMethod, SearchParams,
 };
 use crate::geometry::mutual_information_matrix;
 use crate::models::{random_nonlocal, tfim_chain, tfim_grid};
@@ -52,6 +52,8 @@ pub struct FactorizationSearchResult {
     pub best: FactorizationCandidate,
     pub top_candidates: Vec<FactorizationCandidate>,
     pub recovered_identity: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub perm_match_distance: Option<usize>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub true_shuffle: Option<Vec<usize>>,
     pub baseline_mi: Vec<Vec<f64>>,
@@ -103,15 +105,23 @@ fn build_params(config: &FactorizationSearchConfig) -> SearchParams {
         cols,
         input_mode: parse_input_mode(config.input_mode.as_ref()),
         search_method: parse_search_method(config.search_method.as_ref(), config.n),
-        eigenstate_count: config.eigenstate_count.unwrap_or(1).max(1).min(4),
+        eigenstate_count: config.eigenstate_count.unwrap_or(1).clamp(1, 4),
         distance_decay: config.distance_decay.unwrap_or(0.0),
         annealing_steps: config.annealing_steps.unwrap_or(3000),
         emergent_dim_weight: 0.1,
     }
 }
 
+fn inverse_shuffle(shuffle: &[usize]) -> Vec<usize> {
+    let mut inv = vec![0usize; shuffle.len()];
+    for (q, &p) in shuffle.iter().enumerate() {
+        inv[p] = q;
+    }
+    inv
+}
+
 pub fn run_factorization_search(config: &FactorizationSearchConfig) -> FactorizationSearchResult {
-    let top_k = config.top_k.max(1).min(20);
+    let top_k = config.top_k.clamp(1, 20);
     let mut params = build_params(config);
 
     let (label, hamiltonian, true_shuffle) = match config.kind.as_str() {
@@ -166,21 +176,32 @@ pub fn run_factorization_search(config: &FactorizationSearchConfig) -> Factoriza
         spectrum.as_ref(),
     );
 
+    let perm_match_distance = true_shuffle.as_ref().map(|shuffle| {
+        line_equiv_distance(&outcome.best.permutation, &inverse_shuffle(shuffle))
+    });
+
     let recovered_identity = if let Some(ref shuffle) = true_shuffle {
-        let n = config.n;
-        let mut inv_shuffle = vec![0usize; n];
-        for (q, &p) in shuffle.iter().enumerate() {
-            inv_shuffle[p] = q;
+        let inv = inverse_shuffle(shuffle);
+        let perm_ok = if params.input_mode == InputMode::Spectrum {
+            line_equiv_match(&outcome.best.permutation, &inv)
+        } else {
+            perm_distance(&outcome.best.permutation, &inv) == 0
+        };
+        if params.input_mode == InputMode::Spectrum {
+            perm_ok
+        } else {
+            let mi = mutual_information_matrix(&states[0]);
+            let recovery = score_permutation(
+                Some(&hamiltonian),
+                &[mi],
+                &inv,
+                &params,
+                None,
+                false,
+            );
+            perm_ok
+                || (recovery.locality_fraction > 0.99 && recovery.nonlocal_terms == 0)
         }
-        let mi = mutual_information_matrix(&states[0]);
-        let recovery = score_permutation(
-            Some(&hamiltonian),
-            &[mi],
-            &inv_shuffle,
-            &params,
-            None,
-        );
-        recovery.locality_fraction > 0.99 && recovery.nonlocal_terms == 0
     } else {
         outcome.best.score > outcome.baseline.score + 0.05
     };
@@ -199,6 +220,7 @@ pub fn run_factorization_search(config: &FactorizationSearchConfig) -> Factoriza
         best: outcome.best,
         top_candidates: outcome.top_candidates,
         recovered_identity,
+        perm_match_distance,
         true_shuffle,
         baseline_mi: outcome.baseline_mi,
         best_mi: outcome.best_mi,
@@ -208,5 +230,46 @@ pub fn run_factorization_search(config: &FactorizationSearchConfig) -> Factoriza
         search_method: outcome.search_method,
         search_iters: outcome.search_iters,
         elapsed_ms: 0.0,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::factorization::line_equiv_distance;
+
+    #[test]
+    fn spectrum_recovers_shuffled_chain_n6() {
+        let config = FactorizationSearchConfig {
+            kind: "shuffled_chain".to_string(),
+            n: 6,
+            field: 1.5,
+            seed: 4242,
+            top_k: 3,
+            input_mode: Some("spectrum".to_string()),
+            search_method: Some("exact".to_string()),
+            eigenstate_count: Some(3),
+            graph_kind: None,
+            rows: None,
+            cols: None,
+            distance_decay: None,
+            annealing_steps: None,
+        };
+        let result = run_factorization_search(&config);
+        assert!(
+            result.recovered_identity,
+            "score={} perm={:?} dist={:?}",
+            result.best.score,
+            result.best.permutation,
+            result.perm_match_distance
+        );
+        assert_eq!(result.perm_match_distance, Some(0));
+    }
+
+    #[test]
+    fn line_equiv_distance_accepts_reflection() {
+        let a = vec![0, 3, 4, 1, 2, 5];
+        let b = vec![5, 2, 1, 4, 3, 0];
+        assert_eq!(line_equiv_distance(&a, &b), 0);
     }
 }

@@ -7,7 +7,7 @@ pub struct EigenResult {
 
 pub fn jacobi_eigen_symmetric(input: &[Vec<f64>]) -> EigenResult {
     let n = input.len();
-    let mut a: Vec<Vec<f64>> = input.iter().map(|row| row.clone()).collect();
+    let mut a: Vec<Vec<f64>> = input.to_vec();
     let mut v: Vec<Vec<f64>> = (0..n)
         .map(|i| (0..n).map(|j| if i == j { 1.0 } else { 0.0 }).collect())
         .collect();

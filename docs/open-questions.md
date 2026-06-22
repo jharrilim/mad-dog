@@ -3,7 +3,7 @@
 ## From the paper (not yet simulated)
 
 - **Lorentz invariance** — no finite-dimensional unitary Lorentz reps on factors; how approximate is emergent Lorentz symmetry?
-- **Effective field theory / QECC** — are IR matter degrees of freedom a code subspace?
+- **Effective field theory / QECC** — are IR matter degrees of freedom a code subspace? **Proto-probe:** [qecc-probe.md](./qecc-probe.md) (branch Pauli sharpness + window rank after decoherence).
 - **Problem of time** — what picks the clock subsystem? (We use explicit Δt ticks or site-based physical clocks — not derived from Wheeler–DeWitt constraint.)
 - **Locality from spectrum** — search for factorizations that make a given Ĥ look local.
 - **Factor count and Hilbert-space growth** — Mad-Dog takes ℋ = ⊗ₐ ℋₐ and the number of micro-factors as primitive. It does not explain why *this* factorization, *this* dimension, or whether new fundamental degrees of freedom can appear over time (cosmological “creation” of qubits, growing Hilbert space in quantum gravity, etc.). Our simulator fixes `n` at model-build time; it never adds a tensor factor.
@@ -41,8 +41,8 @@ In simulator terms: instead of hand-picking `tfimChain(n+1)`, detect failure of 
 
 **What we could test (not built):**
 
-- Monitor RT slope and area-law saturation as entanglement grows under a quench; ask at what effective complexity a larger `n` would be *required* to restore area-law scaling in the MDS embedding.
-- Compare factorizations of the same |ψ⟩ with different `n` (tensor network truncation) and measure when holography breaks.
+- In-place tensor factor split of the same |ψ⟩ (vs today's n vs n+Δ quench comparison).
+- Compare factorizations of the same |ψ⟩ with different `n` via explicit embedding / truncation.
 
 **Prototype:** see [factorization.md](./factorization.md) — permutation search (line/grid), multi-eigenstate + spectrum modes, annealing for n>8, joint quench study with [refinement.md](./refinement.md).
 
@@ -53,33 +53,39 @@ In simulator terms: instead of hand-picking `tfimChain(n+1)`, detect failure of 
 | Fixed ℋ, fixed `n` | Yes | Yes (by design) |
 | Factorization from spectrum | Open | **Search prototype** (Pauli/spectrum, line/grid, annealing) |
 | Holographic bound on factor count | Thematic only | Baby RT / area law only |
-| Adaptive refinement | Extension | **Diagnostics** + quench/factorization joint study |
+| Adaptive refinement | Extension | **Split heuristic** + n vs n+Δ accept rule |
 
 ## From our experiments
 
 | Question | Status |
 |----------|--------|
-| Does 3D space emerge on a 3D lattice? | MDS gives 3 coords; dim detector says 2 at n=8. Inconclusive. |
+| Does 3D space emerge on a 3D lattice? | **Partially** — dim=3 on 2×2×3 ground + quench (h=1.5); 2×2×2 ground still inconclusive. See [universe-lab.md](./universe-lab.md). |
 | Does holographic area law hold? | Yes for ground state vs random. |
 | Does discrete RT hold? | Yes, slope ≈ 1, R² ≈ 0.99. |
-| Does mass deform RT slope? | Yes, slope rises to ~1.4. |
+| Does mass deform RT slope? | Yes; Δslope grows with excitation density ρ (RT fit degrades at high ρ). See [holography.md](./holography.md), `sweep:mass`. |
 | Is time absolute? | No — two clocks desynchronize (edge vs uniform). |
-| What does an emergent particle look like? | Domain-wall worldline; see [emergent-particles.md](./emergent-particles.md). |
+| What does an emergent particle look like? | Domain-wall worldline with centroid overlay; two-defect scattering on Experiments page. See [emergent-particles.md](./emergent-particles.md), [scattering.md](./scattering.md). |
 
 ## Engineering limits
 
 - **Hilbert space size** — exponential in qubits; 3×3×3 cube impractical in browser TS.
 - **MDS gauge freedom** — Procrustes needs `truePositions`; without them, embeddings spin between frames.
 - **Ground vs quench** — one initial condition cannot optimize all tests (holography wants ground state; spacetime wants quench).
-- **Decoherence** — branching/classicality not in live engine.
+- **Decoherence** — minimal env-coupling quench with branch-resolved worldlines ([decoherence.md](./decoherence.md)); QECC subspace ID still open.
 - **Bundle size** — Three.js adds ~1.3MB; lab route could be code-split.
 
 ## Roadmap ideas (from project)
 
-- WebGPU backend validated against TS reference.
+Full dated backlog: [roadmap.md](./roadmap.md).
+
+- ~~Worldline tracking and two-particle scattering.~~ **Done (2026-06)** — see [scattering.md](./scattering.md).
 - Three-or-more-clock consistency networks.
-- Worldline tracking and two-particle scattering.
-- Curved space via stronger controlled mass concentrations.
+- Adaptive holographic refinement (dynamical splitting).
+- Spectrum-only factorization blind tests.
+- ~~Minimal decoherence / branch-resolved tracks.~~ **Done (2026-06)** — [decoherence.md](./decoherence.md).
+- ~~Curved space via stronger controlled mass concentrations.~~ **Done (2026-06)** — multi-insertion `sweep:mass`.
+- ~~Larger 3D lattices (2×2×3) for dim=3 question.~~ **Done (2026-06)** — [universe-lab.md](./universe-lab.md), `bench:universe`.
+- WebGPU backend validated against WASM reference.
 - Code-split `/lab` for faster essay page load.
 
 ## How to extend notes

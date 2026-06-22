@@ -14,6 +14,10 @@ import {
 } from '@/sim/runner'
 import { runSpacetimeAsync, type SpacetimeResultWithBackend } from '@/sim/runner-async'
 import type { LightCone, SpacetimeResult } from '@/sim/types'
+import {
+  worldlinePolylinePoints,
+  WORLDLINE_COLORS,
+} from '@/components/worldline-viz'
 
 function signalColor(v: number) {
   // v in [0,1] -> from transparent to bright primary.
@@ -96,6 +100,18 @@ function SpacetimeDiagram({
           <line x1={cx} y1={yTop} x2={xRight} y2={yBot} />
           <line x1={cx} y1={yTop} x2={xLeft} y2={yBot} />
         </g>
+      )}
+      {result.worldline && result.worldline.length > 1 && (
+        <polyline
+          fill="none"
+          stroke={WORLDLINE_COLORS[0]}
+          strokeWidth={2.5}
+          points={worldlinePolylinePoints(result.worldline, {
+            cell,
+            padL,
+            padT,
+          })}
+        />
       )}
     </svg>
   )
@@ -287,6 +303,8 @@ export function SpacetimeViz() {
                   Brightness = |⟨Z&#7522;⟩ − reference|, the information spreading
                   from a central defect. The dashed lines are the fitted light
                   cone; its slope is the emergent Lieb&ndash;Robinson velocity.
+                  The solid curve tracks the peak-signal worldline (one
+                  outbound front for a central defect).
                 </p>
               </div>
               <div className="space-y-3">

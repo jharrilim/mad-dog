@@ -44,6 +44,16 @@ pub struct HolographyReport {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct DensitySweepPoint {
+    pub count: usize,
+    pub density: f64,
+    pub slope: f64,
+    pub r2: f64,
+    pub delta_slope: f64,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct RtMassReport {
     pub n: usize,
     pub mass_site: usize,
@@ -51,6 +61,8 @@ pub struct RtMassReport {
     pub vacuum: RtFit,
     pub mass: RtFit,
     pub sweep: Vec<SweepPoint>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub density_sweep: Option<Vec<DensitySweepPoint>>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -166,16 +178,71 @@ pub fn inject_mass(
     mass_site: usize,
     strength: f64,
 ) -> QuantumState {
-    if strength <= 0.0 {
+    inject_mass_multi(h, ground, &[mass_site], strength)
+}
+
+/// Evenly spaced excitation sites in the inner half of the chain.
+pub fn mass_sites_evenly(n: usize, count: usize) -> Vec<usize> {
+    let count = count.clamp(1, n);
+    if count == 1 {
+        return vec![n / 2];
+    }
+    let lo = n / 4;
+    let hi = n.saturating_sub(1).saturating_sub(n / 4);
+    if hi <= lo {
+        return (0..count).map(|i| (i * n / count).min(n - 1)).collect();
+    }
+    (0..count)
+        .map(|i| {
+            lo + ((hi - lo) as f64 * i as f64 / (count - 1) as f64).round() as usize
+        })
+        .collect()
+}
+
+pub fn inject_mass_multi(
+    h: &Hamiltonian,
+    ground: &QuantumState,
+    sites: &[usize],
+    strength: f64,
+) -> QuantumState {
+    if strength <= 0.0 || sites.is_empty() {
         return ground.clone_state();
     }
     let mut rng = Rng::new(42);
     let radius = h.estimate_spectral_radius(&mut rng, 30).max(1e-6);
-    let mut psi = kick_x(ground, mass_site);
+    let mut psi = ground.clone_state();
+    for &site in sites {
+        psi = kick_x(&psi, site.min(ground.n.saturating_sub(1)));
+    }
     psi.normalize();
     psi = evolve_interval(h, &psi, strength, radius, 6);
     psi.normalize();
     psi
+}
+
+pub fn analyze_rt_mass_density_sweep(
+    h: &Hamiltonian,
+    ground: &QuantumState,
+    strength: f64,
+    max_count: usize,
+) -> Vec<DensitySweepPoint> {
+    let n = ground.n;
+    let vacuum_slope = analyze_rt_relation(ground, Some(n / 2)).rt_slope;
+    let max_count = max_count.clamp(1, n.min(8));
+    let mut points = Vec::new();
+    for count in 1..=max_count {
+        let sites = mass_sites_evenly(n, count);
+        let state = inject_mass_multi(h, ground, &sites, strength);
+        let fit = analyze_rt_relation(&state, Some(n / 2));
+        points.push(DensitySweepPoint {
+            count,
+            density: count as f64 / n as f64,
+            slope: fit.rt_slope,
+            r2: fit.rt_r2,
+            delta_slope: fit.rt_slope - vacuum_slope,
+        });
+    }
+    points
 }
 
 pub fn analyze_rt_mass_deformation(
@@ -185,6 +252,8 @@ pub fn analyze_rt_mass_deformation(
     strength: f64,
     sweep_steps: usize,
     max_strength: f64,
+    density_sweep: bool,
+    max_mass_count: usize,
 ) -> RtMassReport {
     let n = ground.n;
     let vacuum = analyze_rt_relation(ground, Some(mass_site));
@@ -214,5 +283,38 @@ pub fn analyze_rt_mass_deformation(
         vacuum,
         mass,
         sweep,
+        density_sweep: if density_sweep {
+            Some(analyze_rt_mass_density_sweep(
+                h,
+                ground,
+                strength,
+                max_mass_count,
+            ))
+        } else {
+            None
+        },
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::models::tfim_chain;
+    use crate::quantum::ground_state;
+    use crate::rng::Rng;
+
+    #[test]
+    fn rt_slope_rises_with_excitation_density() {
+        let model = tfim_chain(10, 1.0, 1.5);
+        let mut rng = Rng::new(7);
+        let (ground, _, _) = ground_state(&model.hamiltonian, &mut rng, 4000, 1e-9);
+        let sweep = analyze_rt_mass_density_sweep(&model.hamiltonian, &ground, 1.0, 5);
+        assert!(sweep.len() >= 3);
+        let last = sweep.last().unwrap().delta_slope;
+        let first = sweep.first().unwrap().delta_slope;
+        assert!(
+            last > first + 0.05,
+            "Δslope should grow with density: first={first} last={last}"
+        );
     }
 }

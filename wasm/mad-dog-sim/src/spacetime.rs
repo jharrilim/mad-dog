@@ -3,7 +3,10 @@
 use crate::geometry::analyze_emergent_geometry;
 use crate::linalg::{procrustes_2d, procrustes_3d};
 use crate::models::TruePosition;
-use crate::quantum::{evolve_interval, expectation_z, Hamiltonian, QuantumState};
+use crate::quantum::{
+    evolve_interval_inplace, expectation_z_all, signal_from_z, EvolveScratch, Hamiltonian,
+    QuantumState,
+};
 use crate::rng::Rng;
 use serde::{Deserialize, Serialize};
 
@@ -26,6 +29,11 @@ pub struct SpacetimeResult {
     pub energy_drift: f64,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub light_cone: Option<LightCone>,
+    /// Signal-weighted centroid track for a single defect quench.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub worldline: Option<Vec<WorldlinePoint>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub worldlines: Option<[Vec<WorldlinePoint>; 2]>,
     pub elapsed_ms: f64,
 }
 
@@ -41,6 +49,92 @@ pub struct SpacetimeConfig<'a> {
     pub order: usize,
     /// When false, skip MI/MDS per slice (light-cone signal only).
     pub include_geometry: bool,
+    /// When false, skip ⟨H⟩ each slice (scattering sweeps).
+    pub track_energy: bool,
+    /// When false, omit slice history (lite scattering).
+    pub retain_slices: bool,
+    /// Inline worldline tracking for lite scattering (defect sites on left/right).
+    pub worldline_defects: Option<[usize; 2]>,
+    /// Track a single excitation (centroid/peak); requires defect site for half-chain split at center.
+    pub track_worldline: bool,
+    pub defect_site: Option<usize>,
+    /// RNG seed for spectral-radius estimate.
+    pub seed: u32,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WorldlinePoint {
+    pub t: f64,
+    pub site: usize,
+    pub amplitude: f64,
+}
+
+/// Peak-signal track for a single defect. On 1D chains uses a half-window so
+/// symmetric center quenches follow one wavefront; on higher-D embeddings uses
+/// global peak (site index is not a spatial axis).
+pub fn track_single_worldline(
+    signal: &[f64],
+    defect_site: usize,
+    n: usize,
+    embed_dim: usize,
+    t: f64,
+) -> WorldlinePoint {
+    let (lo, hi) = if embed_dim >= 2 {
+        (0usize, n - 1)
+    } else {
+        let mid = n / 2;
+        if defect_site < mid {
+            (0, mid)
+        } else if defect_site > mid {
+            (mid, n - 1)
+        } else {
+            ((mid + 1).min(n - 1), n - 1)
+        }
+    };
+    let mut best_site = defect_site.min(n - 1);
+    let mut best_amp = -1.0_f64;
+    for i in lo..=hi {
+        let amp = signal[i];
+        if amp > best_amp {
+            best_amp = amp;
+            best_site = i;
+        }
+    }
+    WorldlinePoint {
+        t,
+        site: best_site,
+        amplitude: best_amp.max(0.0),
+    }
+}
+
+fn track_worldline_point(
+    signal: &[f64],
+    defect_site: usize,
+    n: usize,
+    side: &str,
+    t: f64,
+) -> WorldlinePoint {
+    let mid = n / 2;
+    let (lo, hi) = if side == "left" {
+        (0usize, mid.saturating_sub(1))
+    } else {
+        (mid, n - 1)
+    };
+    let mut best_site = defect_site;
+    let mut best_amp = -1.0;
+    for i in lo..=hi {
+        let amp = signal[i];
+        if amp > best_amp {
+            best_amp = amp;
+            best_site = i;
+        }
+    }
+    WorldlinePoint {
+        t,
+        site: best_site,
+        amplitude: best_amp,
+    }
 }
 
 fn orient_coords(coords: &[f64]) -> Vec<f64> {
@@ -77,22 +171,75 @@ pub fn build_spacetime(config: SpacetimeConfig<'_>) -> SpacetimeResult {
         pts.iter().map(|p| vec![p.x, p.y]).collect()
     });
 
-    let energy0 = hamiltonian.expectation(&config.initial);
+    let energy0 = if config.track_energy {
+        hamiltonian.expectation(&config.initial)
+    } else {
+        0.0
+    };
     let mut energy_drift = 0.0_f64;
-    let mut rng = Rng::new(42);
-    let radius = hamiltonian.estimate_spectral_radius(&mut rng, 30).max(1e-6);
+    let mut rng = Rng::new(config.seed);
+    let radius = hamiltonian.spectral_radius(&mut rng);
 
     let mut slices = Vec::new();
     let mut psi = config.initial.clone_state();
     let mut ref_state = config.reference.clone();
-    let base_z: Vec<f64> = (0..sites).map(|q| expectation_z(&config.initial, q)).collect();
+    let base_z = expectation_z_all(&config.initial);
+    let mut scratch = EvolveScratch::new(psi.dim);
+    let mut ref_scratch = if ref_state.is_some() {
+        Some(EvolveScratch::new(psi.dim))
+    } else {
+        None
+    };
+    let mut worldlines = config.worldline_defects.map(|d| {
+        (
+            Vec::with_capacity(config.steps),
+            Vec::with_capacity(config.steps),
+            d,
+        )
+    });
+    let mut worldline = if config.track_worldline {
+        Some(Vec::with_capacity(config.steps))
+    } else {
+        None
+    };
 
     for k in 0..config.steps {
         let t = k as f64 * config.dt;
-        let energy = hamiltonian.expectation(&psi);
-        energy_drift = energy_drift.max((energy - energy0).abs());
+        let energy = if config.track_energy {
+            hamiltonian.expectation_with_scratch(&psi, &mut scratch.h_psi)
+        } else {
+            0.0
+        };
+        if config.track_energy {
+            energy_drift = energy_drift.max((energy - energy0).abs());
+        }
 
-        let coords = if config.include_geometry {
+        let z_expectation = expectation_z_all(&psi);
+        let ref_z: Vec<f64> = if let Some(ref r) = ref_state {
+            expectation_z_all(r)
+        } else {
+            base_z.clone()
+        };
+        let signal = signal_from_z(&z_expectation, &ref_z);
+
+        if let Some((ref mut wl1, ref mut wl2, defects)) = worldlines.as_mut() {
+            wl1.push(track_worldline_point(&signal, defects[0], sites, "left", t));
+            wl2.push(track_worldline_point(&signal, defects[1], sites, "right", t));
+        }
+        if let Some(ref mut wl) = worldline {
+            if let Some(defect) = config.defect_site {
+                wl.push(track_single_worldline(
+                    &signal,
+                    defect,
+                    sites,
+                    config.embed_dim,
+                    t,
+                ));
+            }
+        }
+
+        if config.retain_slices {
+            let coords = if config.include_geometry {
             let report = analyze_emergent_geometry(&psi, 1.0, embed_dim.max(1));
             if use_3d {
                 let raw: Vec<Vec<f64>> = report
@@ -135,35 +282,31 @@ pub fn build_spacetime(config: SpacetimeConfig<'_>) -> SpacetimeResult {
                 );
                 oriented.into_iter().map(|x| vec![x]).collect()
             }
-        } else {
-            vec![Vec::new(); sites]
-        };
+            } else {
+                vec![Vec::new(); sites]
+            };
 
-        let z_expectation: Vec<f64> = (0..sites).map(|q| expectation_z(&psi, q)).collect();
-        let ref_z: Vec<f64> = if let Some(ref r) = ref_state {
-            (0..sites).map(|q| expectation_z(r, q)).collect()
-        } else {
-            base_z.clone()
-        };
-        let signal: Vec<f64> = z_expectation
-            .iter()
-            .zip(ref_z.iter())
-            .map(|(z, rz)| (z - rz).abs())
-            .collect();
+            slices.push(SpacetimeSlice {
+                k,
+                t,
+                coords,
+                z_expectation,
+                signal,
+                energy,
+            });
+        }
 
-        slices.push(SpacetimeSlice {
-            k,
-            t,
-            coords,
-            z_expectation,
-            signal,
-            energy,
-        });
-
-        psi = evolve_interval(hamiltonian, &psi, config.dt, radius, config.order);
+        evolve_interval_inplace(hamiltonian, &mut psi, config.dt, radius, config.order, &mut scratch);
         psi.normalize();
         if let Some(ref mut r) = ref_state {
-            *r = evolve_interval(hamiltonian, r, config.dt, radius, config.order);
+            evolve_interval_inplace(
+                hamiltonian,
+                r,
+                config.dt,
+                radius,
+                config.order,
+                ref_scratch.as_mut().unwrap(),
+            );
             r.normalize();
         }
     }
@@ -173,6 +316,8 @@ pub fn build_spacetime(config: SpacetimeConfig<'_>) -> SpacetimeResult {
         slices,
         energy_drift,
         light_cone: None,
+        worldline,
+        worldlines: worldlines.map(|(a, b, _)| [a, b]),
         elapsed_ms: 0.0,
     }
 }
@@ -269,16 +414,15 @@ pub fn average_mi_distances_from_trajectory(
     order: usize,
 ) -> Vec<f64> {
     use crate::geometry::mi_distances_from_state;
-    use crate::quantum::evolve_interval;
+    use crate::quantum::evolve_interval_inplace;
     use crate::rng::Rng;
 
     let n = hamiltonian.n;
     let mut sums = vec![0.0; n];
     let mut psi = initial.clone();
     let mut rng = Rng::new(42);
-    let radius = hamiltonian
-        .estimate_spectral_radius(&mut rng, 30)
-        .max(1e-6);
+    let radius = hamiltonian.spectral_radius(&mut rng);
+    let mut scratch = crate::quantum::EvolveScratch::new(psi.dim);
     let count = steps.max(1) as f64;
     for k in 0..steps {
         let d = mi_distances_from_state(&psi, center, 1.0);
@@ -286,7 +430,7 @@ pub fn average_mi_distances_from_trajectory(
             sums[i] += d[i];
         }
         if k + 1 < steps {
-            psi = evolve_interval(hamiltonian, &psi, dt, radius, order);
+            evolve_interval_inplace(hamiltonian, &mut psi, dt, radius, order, &mut scratch);
             psi.normalize();
         }
     }

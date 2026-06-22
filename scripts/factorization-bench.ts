@@ -25,8 +25,28 @@ const cases: { label: string; config: FactorizationSearchConfig; expectRecover?:
   },
   { label: 'random n=6', config: { kind: 'random', n: 6, field: 1.5, seed: 7, topK: 3 } },
   {
+    label: 'spectrum n=4',
+    config: { kind: 'shuffled_chain', n: 4, field: 1.5, seed: 4242, topK: 3, inputMode: 'spectrum', eigenstateCount: 2 },
+    expectRecover: true,
+  },
+  {
     label: 'spectrum n=6',
     config: { kind: 'shuffled_chain', n: 6, field: 1.5, seed: 4242, topK: 3, inputMode: 'spectrum', eigenstateCount: 3 },
+    expectRecover: true,
+  },
+  {
+    label: 'spectrum n=8',
+    config: {
+      kind: 'shuffled_chain',
+      n: 8,
+      field: 1.5,
+      seed: 100,
+      topK: 3,
+      inputMode: 'spectrum',
+      eigenstateCount: 3,
+      searchMethod: 'exact',
+    },
+    expectRecover: true,
   },
   {
     label: 'grid vs line n=9',
@@ -63,6 +83,9 @@ for (const { label, config, expectRecover } of cases) {
 
   console.log(`\n${label} (${elapsedMs.toFixed(0)} ms):`)
   console.log(`  recovered=${wasm.recoveredIdentity}${expectRecover !== undefined ? (recoverOk ? ' OK' : ' FAIL') : ''}`)
+  if (wasm.permMatchDistance !== undefined) {
+    console.log(`  permMatchDistance=${wasm.permMatchDistance}`)
+  }
   console.log(`  best score=${wasm.best.score.toFixed(3)}  locality=${(wasm.best.localityFraction * 100).toFixed(0)}%  method=${wasm.searchMethod}`)
 }
 

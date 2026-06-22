@@ -196,3 +196,54 @@ pub fn refinement_decoupling_lag(steps_and_diag: &[(usize, RefinementDiagnostics
     }
     slope_peak.abs_diff(area_peak)
 }
+
+/// Site index where edge-anchored entropy grows fastest — toy split hint.
+pub fn suggest_split_site(state: &QuantumState) -> usize {
+    let ent = edge_anchored_entropies(state);
+    if ent.len() < 2 {
+        return state.n / 2;
+    }
+    let mut max_jump = 0.0_f64;
+    let mut site = state.n / 2;
+    for i in 1..ent.len() {
+        let jump = (ent[i] - ent[i - 1]).abs();
+        if jump > max_jump {
+            max_jump = jump;
+            site = i;
+        }
+    }
+    site
+}
+
+/// Split trigger at peak-pressure step when the quench ends in refinement failure.
+pub fn first_split_trigger_from_diag(
+    steps: &[(usize, RefinementDiagnostics)],
+    _thresholds: &RefinementThresholds,
+) -> Option<usize> {
+    let last = &steps.last()?.1;
+    if !last.needs_refinement {
+        return None;
+    }
+    steps
+        .iter()
+        .max_by(|a, b| {
+            a.1.pressure
+                .partial_cmp(&b.1.pressure)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        })
+        .map(|(step, _)| *step)
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SplitEvent {
+    pub trigger_step: usize,
+    pub trigger_t: f64,
+    pub pre_n: usize,
+    pub post_n: usize,
+    pub suggested_split_site: usize,
+    pub pre: RefinementDiagnostics,
+    pub post: RefinementDiagnostics,
+    pub accepted: bool,
+    pub pressure_delta: f64,
+}

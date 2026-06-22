@@ -4,6 +4,7 @@ import { OrbitControls, Line } from '@react-three/drei'
 import * as THREE from 'three'
 import type { Universe3DResult } from '@/sim/runner'
 import type { SpacetimeSlice } from '@/sim/types'
+import { worldlineEmergentPath } from '@/components/worldline-viz'
 
 interface Bounds {
   cx: number
@@ -85,6 +86,13 @@ function UniverseScene({
 
   const coneThr = maxSig * 0.15
 
+  const worldlinePath = useMemo(() => {
+    const wl = result.spacetime.worldline
+    if (!wl || wl.length < 2) return null
+    const raw = worldlineEmergentPath(wl, result.spacetime.slices)
+    return raw.map(([x, y, z]) => toScene(x, y, z, bounds))
+  }, [result.spacetime.worldline, result.spacetime.slices, bounds])
+
   return (
     <>
       <ambientLight intensity={0.45} />
@@ -108,6 +116,16 @@ function UniverseScene({
           />
         )
       })}
+
+      {worldlinePath && (
+        <Line
+          points={worldlinePath}
+          color="#c4a8ff"
+          lineWidth={2}
+          transparent
+          opacity={0.85}
+        />
+      )}
 
       {slice.coords.map((c, i) => {
         const intensity = slice.signal[i] / maxSig

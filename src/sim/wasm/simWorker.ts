@@ -11,9 +11,14 @@ import init, {
   run_rt_mass_json,
   run_refinement_quench_json,
   run_refinement_n_compare_json,
+  run_adaptive_refinement_json,
   run_relational_time_json,
+  run_multi_clock_json,
   run_modular_dual_clock_json,
   run_scattering_json,
+  run_decoherence_quench_json,
+  run_excitation_subspace_json,
+  run_geometry_stability_json,
   run_universe_3d_json,
   run_universe_slice_json,
   run_factorization_search_json,
@@ -31,9 +36,14 @@ export type WasmMethod =
   | 'rtMass'
   | 'refinementQuench'
   | 'refinementNCompare'
+  | 'adaptiveRefinement'
   | 'relationalTime'
+  | 'multiClock'
   | 'modularDualClock'
   | 'scattering'
+  | 'decoherenceQuench'
+  | 'excitationSubspace'
+  | 'geometryStability'
   | 'universe3d'
   | 'universeSlice'
   | 'factorizationSearch'
@@ -59,9 +69,14 @@ const runners: Record<WasmMethod, (json: string) => string> = {
   rtMass: run_rt_mass_json,
   refinementQuench: run_refinement_quench_json,
   refinementNCompare: run_refinement_n_compare_json,
+  adaptiveRefinement: run_adaptive_refinement_json,
   relationalTime: run_relational_time_json,
+  multiClock: run_multi_clock_json,
   modularDualClock: run_modular_dual_clock_json,
   scattering: run_scattering_json,
+  decoherenceQuench: run_decoherence_quench_json,
+  excitationSubspace: run_excitation_subspace_json,
+  geometryStability: run_geometry_stability_json,
   universe3d: run_universe_3d_json,
   universeSlice: run_universe_slice_json,
   factorizationSearch: run_factorization_search_json,

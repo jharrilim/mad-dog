@@ -8,7 +8,13 @@ use crate::run_factorization::{run_factorization_search, FactorizationSearchConf
 use crate::run_light_cone_compare::{run_light_cone_compare, LightConeCompareConfig};
 use crate::modular_time::ModularDualClockConfig;
 use crate::run_modular_dual_clock::run_modular_dual_clock;
-use crate::run_refinement::{run_refinement_quench, RefinementQuenchConfig};
+use crate::run_refinement::{
+    run_adaptive_refinement, run_refinement_quench, AdaptiveRefinementConfig,
+    RefinementQuenchConfig,
+};
+use crate::run_excitation_subspace::{run_excitation_subspace_probe, ExcitationSubspaceConfig};
+use crate::run_geometry_stability::{run_geometry_stability, GeometryStabilityConfig};
+use crate::run_multi_clock::{run_multi_clock, MultiClockRunConfig};
 use crate::scattering::{run_two_defect_scattering, ScatteringConfig};
 use serde::Serialize;
 
@@ -236,6 +242,102 @@ pub fn run_falsification_battery() -> FalsificationBatteryResult {
             passed: lag > 0 || slope_deficit > 0.1,
             detail: format!(
                 "peak lag={lag} steps, late slopeDeficit={slope_deficit:.3}"
+            ),
+        });
+    }
+
+    // G — multi-clock network: defect syncs with uniform, network not globally consistent
+    {
+        let n = 9;
+        let m = run_multi_clock(&MultiClockRunConfig {
+            n,
+            field: 1.0,
+            dt: 0.2,
+            steps: 40,
+            clock_sites: Some(vec![0, n / 2, n - 1]),
+            physical_slices: Some(15),
+        });
+        tests.push(FalsificationTest {
+            id: "G".to_string(),
+            name: "Multi-clock network lacks global consistency".to_string(),
+            passed: m.defect_uniform_r2 > 0.95 && m.min_pairwise_r2 < 0.95,
+            detail: format!(
+                "defectUniformR2={:.3}, minPairwiseR2={:.3}, edgeEdgeR2={:.3}, inconsistentPairs={}",
+                m.defect_uniform_r2, m.min_pairwise_r2, m.edge_edge_r2, m.inconsistent_pairs
+            ),
+        });
+    }
+
+    // H — adaptive split accepted when triggered
+    {
+        let a = run_adaptive_refinement(&AdaptiveRefinementConfig {
+            n: 10,
+            field: 1.5,
+            dt: 0.2,
+            steps: 18,
+            seed: 7711,
+            delta_n: Some(2),
+        });
+        let (passed, detail) = match &a.split_event {
+            Some(ev) => (
+                ev.accepted,
+                format!(
+                    "triggerStep={}, accepted={}, deltaP={:.3}",
+                    ev.trigger_step, ev.accepted, ev.pressure_delta
+                ),
+            ),
+            None => (false, "no split trigger".to_string()),
+        };
+        tests.push(FalsificationTest {
+            id: "H".to_string(),
+            name: "Adaptive split relieves pressure when triggered".to_string(),
+            passed,
+            detail,
+        });
+    }
+
+    // I — branch-resolved excitations look code-like after decoherence
+    {
+        let q = run_excitation_subspace_probe(&ExcitationSubspaceConfig {
+            n: 8,
+            field: 1.2,
+            dt: 0.2,
+            steps: 22,
+            couple_step: 7,
+            coupling: 0.9,
+            seed: 4242,
+            window_radius: 2,
+        });
+        tests.push(FalsificationTest {
+            id: "I".to_string(),
+            name: "Branch excitations sharpen into low-rank Pauli-biased subspace".to_string(),
+            passed: q.code_like,
+            detail: format!(
+                "gain={:.3}, rankRed={:.3}, overlap={:.3}, mixedSharp={:.3}",
+                q.sharpness_gain, q.rank_reduction, q.branch_overlap, q.mixed_sharpness
+            ),
+        });
+    }
+
+    // J — MI distance ranking stable without Procrustes (ordered phase)
+    {
+        let ordered = run_geometry_stability(&GeometryStabilityConfig {
+            n: 10,
+            field: 1.2,
+            dt: 0.2,
+            steps: 20,
+            xi: 1.0,
+            seed: 42,
+        });
+        tests.push(FalsificationTest {
+            id: "J".to_string(),
+            name: "Gauge-free MI geometry stable in ordered phase".to_string(),
+            passed: ordered.geometry_stable,
+            detail: format!(
+                "drift={:.3} corr={:.3} dimStd={:.3}",
+                ordered.mean_distance_drift,
+                ordered.mean_rank_correlation,
+                ordered.dim_std
             ),
         });
     }

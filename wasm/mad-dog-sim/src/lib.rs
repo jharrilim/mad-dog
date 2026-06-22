@@ -1,6 +1,13 @@
+//! Mad-Dog quantum simulator — WASM calculation engine.
+
+#![allow(clippy::needless_range_loop)] // index loops are intentional in numerical kernels
+
+mod decoherence;
 mod emergence;
+mod excitation_subspace;
 mod factorization;
 mod geometry;
+mod geometry_stability;
 mod holography;
 mod linalg;
 mod models;
@@ -8,12 +15,17 @@ mod quantum;
 mod relational_time;
 mod rng;
 mod refinement;
+mod run_decoherence;
+mod run_excitation_subspace;
+mod run_geometry_stability;
 mod run_factorization;
 mod run_factorization_refinement;
 mod run_falsification;
 mod run_holography;
+mod multi_clock;
 mod modular_time;
 mod run_light_cone_compare;
+mod run_multi_clock;
 mod run_modular_dual_clock;
 mod run_refinement;
 mod scattering;
@@ -23,6 +35,9 @@ mod run_universe;
 mod spacetime;
 
 use emergence::{run_emergence, RunConfig as EmergenceConfig};
+use run_decoherence::{run_decoherence_quench, DecoherenceQuenchConfig};
+use run_excitation_subspace::{run_excitation_subspace_probe, ExcitationSubspaceConfig};
+use run_geometry_stability::{run_geometry_stability, GeometryStabilityConfig};
 use run_factorization::{run_factorization_search, FactorizationSearchConfig};
 use run_factorization_refinement::{
     run_factorization_refinement_study, FactorizationRefinementConfig,
@@ -32,12 +47,13 @@ use run_holography::{
     run_holography, run_rt_mass, HolographyRunConfig, RtMassRunConfig,
 };
 use run_light_cone_compare::{run_light_cone_compare, LightConeCompareConfig};
+use run_multi_clock::{run_multi_clock, MultiClockRunConfig};
 use run_modular_dual_clock::run_modular_dual_clock;
 use modular_time::ModularDualClockConfig;
 use scattering::{run_two_defect_scattering, ScatteringConfig};
 use run_refinement::{
-    run_refinement_n_compare, run_refinement_quench, RefinementNCompareConfig,
-    RefinementQuenchConfig,
+    run_adaptive_refinement, run_refinement_n_compare, run_refinement_quench,
+    AdaptiveRefinementConfig, RefinementNCompareConfig, RefinementQuenchConfig,
 };
 use run_relational_time::{run_relational_time, RelationalTimeConfig};
 use run_spacetime::{run_spacetime, run_spacetime_2d, Spacetime2DConfig, SpacetimeRunConfig};
@@ -107,6 +123,16 @@ pub fn run_light_cone_compare_json(config_json: &str) -> Result<String, JsValue>
 }
 
 #[wasm_bindgen]
+pub fn run_multi_clock_json(config_json: &str) -> Result<String, JsValue> {
+    let start = js_sys::Date::now();
+    let config: MultiClockRunConfig =
+        serde_json::from_str(config_json).map_err(|e| JsValue::from_str(&e.to_string()))?;
+    let mut result = run_multi_clock(&config);
+    result.elapsed_ms = js_sys::Date::now() - start;
+    serde_json::to_string(&result).map_err(|e| JsValue::from_str(&e.to_string()))
+}
+
+#[wasm_bindgen]
 pub fn run_modular_dual_clock_json(config_json: &str) -> Result<String, JsValue> {
     let start = js_sys::Date::now();
     let config: ModularDualClockConfig =
@@ -122,6 +148,16 @@ pub fn run_scattering_json(config_json: &str) -> Result<String, JsValue> {
     let config: ScatteringConfig =
         serde_json::from_str(config_json).map_err(|e| JsValue::from_str(&e.to_string()))?;
     let mut result = run_two_defect_scattering(&config);
+    result.elapsed_ms = js_sys::Date::now() - start;
+    serde_json::to_string(&result).map_err(|e| JsValue::from_str(&e.to_string()))
+}
+
+#[wasm_bindgen]
+pub fn run_adaptive_refinement_json(config_json: &str) -> Result<String, JsValue> {
+    let start = js_sys::Date::now();
+    let config: AdaptiveRefinementConfig =
+        serde_json::from_str(config_json).map_err(|e| JsValue::from_str(&e.to_string()))?;
+    let mut result = run_adaptive_refinement(&config);
     result.elapsed_ms = js_sys::Date::now() - start;
     serde_json::to_string(&result).map_err(|e| JsValue::from_str(&e.to_string()))
 }
@@ -197,6 +233,36 @@ pub fn run_factorization_refinement_json(config_json: &str) -> Result<String, Js
 }
 
 #[wasm_bindgen]
+pub fn run_decoherence_quench_json(config_json: &str) -> Result<String, JsValue> {
+    let start = js_sys::Date::now();
+    let config: DecoherenceQuenchConfig =
+        serde_json::from_str(config_json).map_err(|e| JsValue::from_str(&e.to_string()))?;
+    let mut result = run_decoherence_quench(&config);
+    result.elapsed_ms = js_sys::Date::now() - start;
+    serde_json::to_string(&result).map_err(|e| JsValue::from_str(&e.to_string()))
+}
+
+#[wasm_bindgen]
+pub fn run_excitation_subspace_json(config_json: &str) -> Result<String, JsValue> {
+    let start = js_sys::Date::now();
+    let config: ExcitationSubspaceConfig =
+        serde_json::from_str(config_json).map_err(|e| JsValue::from_str(&e.to_string()))?;
+    let mut result = run_excitation_subspace_probe(&config);
+    result.elapsed_ms = js_sys::Date::now() - start;
+    serde_json::to_string(&result).map_err(|e| JsValue::from_str(&e.to_string()))
+}
+
+#[wasm_bindgen]
+pub fn run_geometry_stability_json(config_json: &str) -> Result<String, JsValue> {
+    let start = js_sys::Date::now();
+    let config: GeometryStabilityConfig =
+        serde_json::from_str(config_json).map_err(|e| JsValue::from_str(&e.to_string()))?;
+    let mut result = run_geometry_stability(&config);
+    result.elapsed_ms = js_sys::Date::now() - start;
+    serde_json::to_string(&result).map_err(|e| JsValue::from_str(&e.to_string()))
+}
+
+#[wasm_bindgen]
 pub fn run_falsification_battery_json(_config_json: &str) -> Result<String, JsValue> {
     let start = js_sys::Date::now();
     let mut result = run_falsification_battery();
@@ -206,7 +272,7 @@ pub fn run_falsification_battery_json(_config_json: &str) -> Result<String, JsVa
 
 #[wasm_bindgen]
 pub fn wasm_sim_version() -> String {
-    "0.7.0".to_string()
+    "0.7.7".to_string()
 }
 
 #[cfg(test)]

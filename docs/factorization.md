@@ -7,7 +7,20 @@ Open hypothesis from [open-questions.md](./open-questions.md): given spectral da
 | Mode | What the search sees | Scorer |
 |------|----------------------|--------|
 | **Pauli + MI** (`inputMode: 'pauli'`) | Pauli expansion of Ĥ + low-energy states | H locality + multi-state MI + emergent dim |
-| **Spectrum only** (`inputMode: 'spectrum'`) | Eigenvalues + eigenvector amplitudes only | MI locality + bandwidth proxy (no Pauli terms) |
+| **Spectrum only** (`inputMode: 'spectrum'`) | Eigenvalues + eigenvector amplitudes only | Weighted MI + **line-support bandwidth** (permutation-aware span of active sites) + emergent dim |
+
+Spectrum scoring uses low-lying eigenstate weights (heavier weight on ground state) and measures how compact each eigenvector’s support is along the **candidate line** after permuting qubit indices — not raw Hamming weight, which ignores the permutation. On an open chain, the reflected labeling (k ↦ n−1−k) is equivalent; recovery uses `line_equiv_distance`.
+
+## Recovery benchmarks (2026-06)
+
+| Case | Pauli+MI | Spectrum |
+|------|----------|----------|
+| shuffled chain n=4 | ✓ | ✓ |
+| shuffled chain n=6 | ✓ | ✓ |
+| shuffled chain n=8 (exact) | ✓ | ✓ |
+| random n=6 | no ground truth | — |
+
+Run `npm run bench:factorization` for the full matrix. Spectrum mode still sees eigenvectors in the **hidden computational basis** — a toy stand-in for true blind inference from {Eₙ} alone.
 
 ## What the code does
 
@@ -54,7 +67,7 @@ WASM: `factorizationSearch`, `factorizationRefinement`.
 ## Limits
 
 - Line/grid permutations only — no dynamic factor splitting.
-- Spectrum mode is a **toy**: eigenvectors in the hidden computational basis, not true “only {Eₙ}” inference.
+- Spectrum mode is a **toy**: eigenvectors in the hidden computational basis, not true “only {Eₙ}” inference; recovery works on small shuffled chains with the improved scorer but may fail on random Hamiltonians or larger n with annealing.
 - `n > 8` uses simulated annealing (tune via `annealingSteps`).
 
 ## Checks

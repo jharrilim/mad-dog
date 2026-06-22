@@ -17,6 +17,10 @@ import {
   type Universe3DResultWithBackend,
 } from '@/sim/runner-async'
 import type { Universe3DConfig } from '@/sim/runner'
+import {
+  worldlinePolylinePoints,
+  WORLDLINE_COLORS,
+} from '@/components/worldline-viz'
 
 type LatticePreset = '2x2x2' | '2x2x3'
 
@@ -24,8 +28,8 @@ const PRESETS: Record<
   LatticePreset,
   { lx: number; ly: number; lz: number; label: string }
 > = {
-  '2x2x2': { lx: 2, ly: 2, lz: 2, label: '2×2×2 (8 qubits)' },
-  '2x2x3': { lx: 2, ly: 2, lz: 3, label: '2×2×3 (12 qubits, slower)' },
+  '2x2x2': { lx: 2, ly: 2, lz: 2, label: '2×2×2 (8 qubits, fast)' },
+  '2x2x3': { lx: 2, ly: 2, lz: 3, label: '2×2×3 (12 qubits, dim=3 benchmark)' },
 }
 
 const DEFAULT: Universe3DConfig & { preset: LatticePreset } = {
@@ -54,8 +58,11 @@ function SpacetimeStrip({
     for (const v of s.signal) max = Math.max(max, v)
   }
   const cell = 10
-  const W = cols * cell + 8
-  const H = rows * cell + 8
+  const padL = 4
+  const padT = 4
+  const W = padL + cols * cell + 4
+  const H = padT + rows * cell + 4
+  const worldline = result.spacetime.worldline
 
   return (
     <svg
@@ -69,8 +76,8 @@ function SpacetimeStrip({
         slice.signal.map((v, i) => (
           <rect
             key={`${k}-${i}`}
-            x={4 + i * cell}
-            y={4 + k * cell}
+            x={padL + i * cell}
+            y={padT + k * cell}
             width={cell - 1}
             height={cell - 1}
             rx={1}
@@ -82,7 +89,38 @@ function SpacetimeStrip({
           />
         )),
       )}
+      {worldline && worldline.length > 1 && (
+        <polyline
+          fill="none"
+          stroke={WORLDLINE_COLORS[0]}
+          strokeWidth={1.8}
+          points={worldlinePolylinePoints(worldline, { cell, padL, padT })}
+        />
+      )}
     </svg>
+  )
+}
+
+function EigenScree({ eigenvalues }: { eigenvalues: number[] }) {
+  const positive = eigenvalues.filter((v) => v > 1e-6).slice(0, 6)
+  const max = Math.max(...positive, 1e-9)
+  return (
+    <div className="space-y-1">
+      <h4 className="text-xs font-medium text-foreground">MDS eigenvalue scree</h4>
+      <div className="flex items-end gap-1 h-12">
+        {positive.map((v, i) => (
+          <div
+            key={i}
+            className="flex-1 bg-primary/70 rounded-sm min-w-[6px]"
+            style={{ height: `${Math.max(8, (v / max) * 100)}%` }}
+            title={`λ${i + 1}=${v.toFixed(4)}`}
+          />
+        ))}
+      </div>
+      <p className="text-[10px] text-muted-foreground font-mono truncate">
+        {positive.map((v) => v.toFixed(3)).join(', ')}
+      </p>
+    </div>
   )
 }
 
@@ -320,8 +358,14 @@ export function UniverseLab() {
                   <Badge variant="outline">{result.backend}</Badge>
                   <Badge>
                     dim≈{sliceAnalysis?.mds.emergentDim ?? '?'}
+                    {result.model.layout.expectedDim != null &&
+                      sliceAnalysis &&
+                      ` / ${result.model.layout.expectedDim}`}
                   </Badge>
                 </div>
+                {sliceAnalysis && (
+                  <EigenScree eigenvalues={sliceAnalysis.mds.eigenvalues} />
+                )}
                 <dl className="space-y-2 text-muted-foreground">
                   <div className="flex justify-between gap-2">
                     <dt>Energy</dt>

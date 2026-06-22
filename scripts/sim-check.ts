@@ -14,6 +14,7 @@ import {
   run_rt_mass_json,
   run_relational_time_json,
   run_universe_3d_json,
+  run_universe_slice_json,
   run_refinement_quench_json,
   run_refinement_n_compare_json,
 } from '../src/sim/wasm/pkg/mad_dog_sim.js'
@@ -185,6 +186,14 @@ function fail(cond: boolean) {
   console.log('  3D coords:', dim3 ? 'OK' : 'NO')
   console.log('  LR velocity:', uni.lightCone.velocity.toFixed(3))
   fail(!dim3 || uni.lightCone.velocity <= 0)
+
+  const mid = JSON.parse(
+    run_universe_slice_json(
+      JSON.stringify({ lx: 2, ly: 2, lz: 3, field: 1.5, dt: 0.25, steps: 12, k: 3 }),
+    ),
+  )
+  console.log('  2x2x3 quench k=3 emergentDim:', mid.report.mds.emergentDim)
+  fail(mid.report.mds.emergentDim < 3)
 }
 
 // --- Refinement ---

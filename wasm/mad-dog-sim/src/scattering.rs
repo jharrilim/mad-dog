@@ -2,7 +2,7 @@
 
 use crate::models::tfim_chain;
 use crate::quantum::QuantumState;
-use crate::spacetime::{build_light_cone_trajectory, SpacetimeConfig, SpacetimeSlice};
+use crate::spacetime::{build_light_cone_trajectory, SpacetimeConfig, SpacetimeSlice, WorldlinePoint};
 use serde::{Deserialize, Serialize};
 
 fn default_scatter_order() -> usize {
@@ -27,10 +27,20 @@ pub struct ScatteringConfig {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct WorldlinePoint {
+pub struct ScatteringWorldlinePoint {
     pub t: f64,
     pub site: usize,
     pub amplitude: f64,
+}
+
+impl From<WorldlinePoint> for ScatteringWorldlinePoint {
+    fn from(p: WorldlinePoint) -> Self {
+        Self {
+            t: p.t,
+            site: p.site,
+            amplitude: p.amplitude,
+        }
+    }
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -40,67 +50,75 @@ pub struct ScatteringResult {
     pub field: f64,
     pub defect_sites: [usize; 2],
     pub slices: Vec<SpacetimeSlice>,
-    pub worldlines: [Vec<WorldlinePoint>; 2],
+    pub worldlines: [Vec<ScatteringWorldlinePoint>; 2],
+    pub separation_series: Vec<f64>,
+    pub velocities: [f64; 2],
+    pub both_moved: bool,
     pub crossed: bool,
     pub min_separation: f64,
     pub elapsed_ms: f64,
     pub backend: &'static str,
 }
 
-fn track_worldline(
-    slices: &[SpacetimeSlice],
-    defect_site: usize,
-    n: usize,
-    side: &str,
-) -> Vec<WorldlinePoint> {
-    let mid = n / 2;
-    slices
+fn fit_site_velocity(worldline: &[ScatteringWorldlinePoint], burn_in_frac: f64) -> f64 {
+    let start = ((worldline.len() as f64) * burn_in_frac).floor() as usize;
+    if worldline.len().saturating_sub(start) < 2 {
+        return 0.0;
+    }
+    let mut sum_t = 0.0;
+    let mut sum_s = 0.0;
+    let mut sum_tt = 0.0;
+    let mut sum_ts = 0.0;
+    let mut count = 0.0;
+    for p in worldline.iter().skip(start) {
+        let t = p.t;
+        let s = p.site as f64;
+        sum_t += t;
+        sum_s += s;
+        sum_tt += t * t;
+        sum_ts += t * s;
+        count += 1.0;
+    }
+    let denom = count * sum_tt - sum_t * sum_t;
+    if denom.abs() < 1e-12 {
+        return 0.0;
+    }
+    (count * sum_ts - sum_t * sum_s) / denom
+}
+
+fn worldline_moved(worldline: &[ScatteringWorldlinePoint], initial: usize) -> bool {
+    worldline
         .iter()
-        .map(|slice| {
-            let (lo, hi) = if side == "left" {
-                (0usize, mid.saturating_sub(1))
-            } else {
-                (mid, n - 1)
-            };
-            let mut best_site = defect_site;
-            let mut best_amp = -1.0;
-            for i in lo..=hi {
-                if slice.signal[i] > best_amp {
-                    best_amp = slice.signal[i];
-                    best_site = i;
-                }
-            }
-            WorldlinePoint {
-                t: slice.t,
-                site: best_site,
-                amplitude: best_amp,
-            }
-        })
-        .collect()
+        .any(|p| (p.site as i32 - initial as i32).abs() >= 1)
 }
 
 fn analyze_crossing(
-    left: &[WorldlinePoint],
-    right: &[WorldlinePoint],
+    left: &[ScatteringWorldlinePoint],
+    right: &[ScatteringWorldlinePoint],
     d1: usize,
     d2: usize,
-) -> (bool, f64) {
+) -> (bool, f64, Vec<f64>) {
     let mut min_sep = f64::INFINITY;
     let mut crossed = false;
+    let mut separation_series = Vec::with_capacity(left.len());
     let overlap_start = left.len() * 15 / 100;
-    for k in overlap_start..left.len() {
-        let sep = (left[k].site as i32 - right[k].site as i32).unsigned_abs() as f64;
-        min_sep = min_sep.min(sep);
-        if d1 < d2 && left[k].site >= right[k].site {
-            crossed = true;
-        }
-        if d1 > d2 && left[k].site <= right[k].site {
-            crossed = true;
+    for (k, (l, r)) in left.iter().zip(right.iter()).enumerate() {
+        let sep = (l.site as i32 - r.site as i32).unsigned_abs() as f64;
+        separation_series.push(sep);
+        if k >= overlap_start {
+            min_sep = min_sep.min(sep);
+            if d1 < d2 && l.site >= r.site {
+                crossed = true;
+            }
+            if d1 > d2 && l.site <= r.site {
+                crossed = true;
+            }
         }
     }
     (
         crossed,
         if min_sep.is_finite() { min_sep } else { 0.0 },
+        separation_series,
     )
 }
 
@@ -118,6 +136,7 @@ pub fn run_two_defect_scattering(config: &ScatteringConfig) -> ScatteringResult 
         r
     };
 
+    let lite = config.lite;
     let spacetime = build_light_cone_trajectory(SpacetimeConfig {
         hamiltonian: &model.hamiltonian,
         initial,
@@ -128,22 +147,45 @@ pub fn run_two_defect_scattering(config: &ScatteringConfig) -> ScatteringResult 
         align_to: None,
         order: config.taylor_order,
         include_geometry: false,
+        track_energy: !lite,
+        retain_slices: !lite,
+        worldline_defects: Some([d1, d2]),
+        track_worldline: false,
+        defect_site: None,
+        seed: 42,
     });
 
-    let wl1 = track_worldline(&spacetime.slices, d1, config.n, "left");
-    let wl2 = track_worldline(&spacetime.slices, d2, config.n, "right");
-    let (crossed, min_separation) = analyze_crossing(&wl1, &wl2, d1, d2);
+    let [raw1, raw2] = spacetime
+        .worldlines
+        .expect("worldlines tracked during scattering");
+    let wl1: Vec<ScatteringWorldlinePoint> = raw1
+        .into_iter()
+        .map(ScatteringWorldlinePoint::from)
+        .collect();
+    let wl2: Vec<ScatteringWorldlinePoint> = raw2
+        .into_iter()
+        .map(ScatteringWorldlinePoint::from)
+        .collect();
+    let (crossed, min_separation, separation_series) = analyze_crossing(&wl1, &wl2, d1, d2);
+    let velocities = [
+        fit_site_velocity(&wl1, 0.15),
+        fit_site_velocity(&wl2, 0.15),
+    ];
+    let both_moved = worldline_moved(&wl1, d1) && worldline_moved(&wl2, d2);
 
     ScatteringResult {
         n: config.n,
         field: config.field,
         defect_sites: [d1, d2],
-        slices: if config.lite {
+        slices: if lite {
             Vec::new()
         } else {
             spacetime.slices
         },
         worldlines: [wl1, wl2],
+        separation_series,
+        velocities,
+        both_moved,
         crossed,
         min_separation,
         elapsed_ms: 0.0,
