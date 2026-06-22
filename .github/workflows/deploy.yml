@@ -34,8 +34,7 @@ jobs:
 
       - run: npm ci
 
-      - run: npm run check:wasm
-
+      # Compile only — no wasm-check / sim runs (those are local regression scripts).
       - run: npm run build:pages
 
       - uses: actions/upload-pages-artifact@v3
