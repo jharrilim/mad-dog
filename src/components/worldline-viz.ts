@@ -47,11 +47,15 @@ export function worldlineEmergentPathTweened(
   slices: { coords: number[][] }[],
   k: number,
 ): [number, number, number][] {
-  const k0 = Math.min(Math.floor(k), worldline.length - 1)
-  const path = worldlineEmergentPath(worldline, slices, k0)
-  if (k0 >= worldline.length - 1 || k <= k0) return path
+  if (worldline.length === 0 || slices.length === 0) return []
 
-  const alpha = k - k0
+  const maxK = Math.min(worldline.length - 1, slices.length - 1)
+  const clamped = Math.max(0, Math.min(k, maxK))
+  const k0 = Math.floor(clamped)
+  const path = worldlineEmergentPath(worldline, slices, k0)
+  if (k0 >= maxK || clamped <= k0) return path
+
+  const alpha = clamped - k0
   const next = worldline[k0 + 1]
   const c = slices[k0 + 1]?.coords[next.site] ?? [0, 0, 0]
   const tip: [number, number, number] = [c[0], c[1] ?? 0, c[2] ?? 0]

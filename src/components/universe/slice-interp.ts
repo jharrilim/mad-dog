@@ -16,11 +16,28 @@ export function interpolateSlice(
   k1: number
   alpha: number
 } {
-  const k0 = Math.min(Math.floor(k), slices.length - 1)
-  const k1 = Math.min(k0 + 1, slices.length - 1)
-  const alpha = k0 === k1 ? 0 : k - k0
+  if (slices.length === 0) {
+    return { coords: [], signal: [], energy: 0, k0: 0, k1: 0, alpha: 0 }
+  }
+
+  const maxK = slices.length - 1
+  const clamped = Math.max(0, Math.min(k, maxK))
+  const k0 = Math.floor(clamped)
+  const k1 = Math.min(k0 + 1, maxK)
+  const alpha = k0 === k1 ? 0 : clamped - k0
   const s0 = slices[k0]
   const s1 = slices[k1]
+  if (!s0?.coords || !s1?.coords) {
+    const fallback = slices[0]
+    return {
+      coords: fallback?.coords ?? [],
+      signal: fallback?.signal ?? [],
+      energy: fallback?.energy ?? 0,
+      k0: 0,
+      k1: 0,
+      alpha: 0,
+    }
+  }
   const n = s0.coords.length
 
   const coords = Array.from({ length: n }, (_, i) => {

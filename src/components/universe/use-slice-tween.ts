@@ -18,6 +18,10 @@ export function useSliceTween(
   const rafRef = useRef<number | null>(null)
 
   useEffect(() => {
+    if (rafRef.current !== null) {
+      cancelAnimationFrame(rafRef.current)
+      rafRef.current = null
+    }
     displayRef.current = target
     setDisplay(target)
     // Snap to target when simulation resets; target is from the same render as resetKey.

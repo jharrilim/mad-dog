@@ -182,23 +182,31 @@ export function UniverseLab() {
 
   const displayK = useSliceTween(selected, playing ? 360 : 280, result)
 
+  const sliceCount = result?.spacetime.slices.length ?? 0
+  const safeDisplayK =
+    sliceCount > 0
+      ? Math.max(0, Math.min(displayK, sliceCount - 1))
+      : 0
+
   const displayMi = useMemo(() => {
     void miEpoch
-    if (!result) return null
-    const k0 = Math.floor(displayK)
-    const k1 = Math.min(k0 + 1, result.spacetime.slices.length - 1)
-    const alpha = displayK - k0
+    if (!result || sliceCount === 0) return null
+    const k0 = Math.floor(safeDisplayK)
+    const k1 = Math.min(k0 + 1, sliceCount - 1)
+    const alpha = safeDisplayK - k0
     return lerpMiMatrix(
       miCache.current.get(k0) ?? null,
       miCache.current.get(k1) ?? null,
       alpha,
     )
-  }, [displayK, miEpoch, result])
+  }, [safeDisplayK, miEpoch, result, sliceCount])
 
   const displayFrame = useMemo(
     () =>
-      result ? interpolateSlice(result.spacetime.slices, displayK) : null,
-    [result, displayK],
+      result && sliceCount > 0
+        ? interpolateSlice(result.spacetime.slices, safeDisplayK)
+        : null,
+    [result, safeDisplayK, sliceCount],
   )
 
   const sliceMi = displayMi
@@ -355,7 +363,7 @@ export function UniverseLab() {
               <div className="space-y-4 min-w-0">
                 <UniverseCanvas
                   result={result}
-                  displayK={displayK}
+                  displayK={safeDisplayK}
                   mi={sliceMi}
                 />
                 <div className="flex items-center gap-3">
@@ -394,7 +402,7 @@ export function UniverseLab() {
                     className="flex-1 accent-primary"
                   />
                   <span className="text-xs text-muted-foreground whitespace-nowrap font-mono">
-                    k={displayK.toFixed(2)} t={(displayK * config.dt).toFixed(2)}
+                    k={safeDisplayK.toFixed(2)} t={(safeDisplayK * config.dt).toFixed(2)}
                   </span>
                 </div>
               </div>
