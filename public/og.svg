@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-label="Mad-Dog Everettianism">
   <defs>
     <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -17,13 +18,13 @@
     <circle cx="780" cy="320" r="60"/>
     <path d="M760 250 L980 250 M820 190 L820 380 M900 190 L900 380"/>
   </g>
-  <text x="96" y="250" fill="#f4f0ff" font-family="ui-sans-serif, system-ui, sans-serif" font-size="64" font-weight="600" letter-spacing="-0.02em">
+  <text x="96" y="250" fill="#f4f0ff" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="64" font-weight="600">
     Mad-Dog Everettianism
   </text>
-  <text x="96" y="320" fill="#c4b8e8" font-family="ui-sans-serif, system-ui, sans-serif" font-size="30" font-weight="400">
+  <text x="96" y="320" fill="#c4b8e8" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="30">
     Quantum mechanics at its most minimal
   </text>
-  <text x="96" y="380" fill="#9588b8" font-family="ui-sans-serif, system-ui, sans-serif" font-size="22">
-    Interactive essay &amp; simulations  Carroll &amp; Singh (2018)
+  <text x="96" y="380" fill="#9588b8" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="22">
+    Interactive essay and simulations — Carroll and Singh (2018)
   </text>
 </svg>
