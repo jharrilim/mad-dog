@@ -34,6 +34,11 @@ const PRESETS: Record<
   '2x2x3': { lx: 2, ly: 2, lz: 3, label: '2×2×3 (12 qubits, dim=3 benchmark)' },
 }
 
+const STEP_BOUNDS: Record<LatticePreset, { min: number; max: number }> = {
+  '2x2x2': { min: 12, max: 80 },
+  '2x2x3': { min: 12, max: 56 },
+}
+
 const DEFAULT: Universe3DConfig & { preset: LatticePreset } = {
   preset: '2x2x2',
   lx: 2,
@@ -41,7 +46,7 @@ const DEFAULT: Universe3DConfig & { preset: LatticePreset } = {
   lz: 2,
   field: 1,
   dt: 0.25,
-  steps: 18,
+  steps: 36,
 }
 
 function SpacetimeStrip({
@@ -59,7 +64,7 @@ function SpacetimeStrip({
   for (const s of result.spacetime.slices) {
     for (const v of s.signal) max = Math.max(max, v)
   }
-  const cell = 10
+  const cell = Math.max(4, Math.min(10, Math.floor(200 / Math.max(rows, 1))))
   const padL = 4
   const padT = 4
   const W = padL + cols * cell + 4
@@ -230,8 +235,19 @@ export function UniverseLab() {
 
   const setPreset = (preset: LatticePreset) => {
     const p = PRESETS[preset]
-    setConfig((c) => ({ ...c, preset, lx: p.lx, ly: p.ly, lz: p.lz }))
+    const { min, max } = STEP_BOUNDS[preset]
+    setConfig((c) => ({
+      ...c,
+      preset,
+      lx: p.lx,
+      ly: p.ly,
+      lz: p.lz,
+      steps: Math.min(Math.max(c.steps, min), max),
+    }))
   }
+
+  const stepBounds = STEP_BOUNDS[config.preset]
+  const totalTime = config.steps * config.dt
 
   const slice = result?.spacetime.slices[selected]
 
@@ -348,6 +364,44 @@ export function UniverseLab() {
                 className="w-24 accent-primary"
               />
             </label>
+            <label className="text-sm flex flex-col gap-1 min-w-[140px]">
+              <span className="text-muted-foreground whitespace-nowrap">
+                slices = {config.steps}{' '}
+                <span className="text-[10px]">
+                  (T ≈ {totalTime.toFixed(1)})
+                </span>
+              </span>
+              <input
+                type="range"
+                min={stepBounds.min}
+                max={stepBounds.max}
+                step={1}
+                value={config.steps}
+                onChange={(e) =>
+                  setConfig((c) => ({
+                    ...c,
+                    steps: Number(e.target.value),
+                  }))
+                }
+                className="w-full accent-primary"
+              />
+            </label>
+            <label className="text-sm flex flex-col gap-1 min-w-[120px]">
+              <span className="text-muted-foreground whitespace-nowrap">
+                Δt = {config.dt.toFixed(2)}
+              </span>
+              <input
+                type="range"
+                min={0.15}
+                max={0.35}
+                step={0.05}
+                value={config.dt}
+                onChange={(e) =>
+                  setConfig((c) => ({ ...c, dt: Number(e.target.value) }))
+                }
+                className="w-full accent-primary"
+              />
+            </label>
             <Button onClick={run} disabled={running}>
               {running ? (
                 <Loader2 className="size-4 animate-spin" />
@@ -357,6 +411,12 @@ export function UniverseLab() {
               {running ? 'Evolving…' : 'Create universe'}
             </Button>
           </div>
+          <p className="text-xs text-muted-foreground -mt-2">
+            More clock slices extend emergent time{' '}
+            <code className="font-mono text-[10px]">T = k · Δt</code> — scrub
+            or play to late slices to see whether MI geometry and the defect
+            signal settle. 2×2×3 runs are slower above ~40 slices.
+          </p>
 
           {result && slice && (
             <div className="grid lg:grid-cols-[1fr_240px] gap-6 items-start">
