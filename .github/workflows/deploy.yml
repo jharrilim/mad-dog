@@ -29,8 +29,13 @@ jobs:
         with:
           targets: wasm32-unknown-unknown
 
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: wasm/mad-dog-sim -> target
+          cache-on-failure: true
+
       - name: Install wasm-pack
-        run: cargo install wasm-pack --locked
+        uses: taiki-e/install-action@wasm-pack
 
       - run: npm ci
 
