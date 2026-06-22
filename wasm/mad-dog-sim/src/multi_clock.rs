@@ -2,7 +2,8 @@
 
 use crate::quantum::{expectation_z, QuantumState};
 use crate::relational_time::{
-    evolve_trajectory, fit_affine, physical_clock_indices, TimeMapPoint,
+    evolve_trajectory, fit_affine, physical_clock_indices, physical_clock_uniform_r2,
+    physical_time_at_uniform, TimeMapPoint,
 };
 use serde::{Deserialize, Serialize};
 
@@ -20,6 +21,10 @@ pub struct MultiClockConfig {
     pub clock_sites: Option<Vec<usize>>,
     #[serde(default = "default_physical_slices")]
     pub physical_slices: usize,
+    #[serde(default)]
+    pub defect_site: Option<usize>,
+    #[serde(default)]
+    pub edge_sites: Option<[usize; 2]>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -35,6 +40,8 @@ pub struct PhysicalClockReading {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MultiClockResult {
+    pub kind: String,
+    pub label: String,
     pub sites: usize,
     pub defect_site: usize,
     pub labels: Vec<String>,
@@ -48,33 +55,27 @@ pub struct MultiClockResult {
     pub backend: &'static str,
 }
 
-fn default_clock_sites(n: usize) -> Vec<usize> {
+fn default_clock_sites_chain(n: usize) -> Vec<usize> {
     let center = n / 2;
     vec![0, center, n.saturating_sub(1)]
 }
 
+fn default_clock_sites_grid(rows: usize, cols: usize, defect_site: usize) -> Vec<usize> {
+    let corners = [0, cols - 1, (rows - 1) * cols, rows * cols - 1];
+    if corners.contains(&defect_site) {
+        vec![corners[0], corners[2], corners[3]]
+    } else {
+        vec![corners[0], defect_site, corners[3]]
+    }
+}
+
+fn default_clock_sites_cube(sites: usize, defect_site: usize) -> Vec<usize> {
+    vec![0, defect_site, sites - 1]
+}
+
 /// Interpolated physical tick reading at uniform slice `k`.
-fn physical_time_at_uniform(phys_indices: &[usize], k: usize) -> f64 {
-    if phys_indices.is_empty() {
-        return 0.0;
-    }
-    let mut seg = 0usize;
-    for (i, &idx) in phys_indices.iter().enumerate() {
-        if idx <= k {
-            seg = i;
-        } else {
-            break;
-        }
-    }
-    if seg + 1 < phys_indices.len() {
-        let u0 = phys_indices[seg] as f64;
-        let u1 = phys_indices[seg + 1] as f64;
-        if u1 > u0 {
-            let frac = ((k as f64 - u0) / (u1 - u0)).clamp(0.0, 1.0);
-            return seg as f64 + frac;
-        }
-    }
-    seg as f64
+fn physical_time_at_uniform_local(phys_indices: &[usize], k: usize) -> f64 {
+    physical_time_at_uniform(phys_indices, k)
 }
 
 fn uniform_times(steps: usize) -> Vec<f64> {
@@ -114,13 +115,20 @@ pub fn build_multi_clock(
     initial: QuantumState,
     reference: QuantumState,
     config: &MultiClockConfig,
+    kind: &str,
+    label: &str,
 ) -> MultiClockResult {
     let sites = config.n;
-    let defect_site = sites / 2;
-    let clock_sites = config
-        .clock_sites
-        .clone()
-        .unwrap_or_else(|| default_clock_sites(sites));
+    let defect_site = config.defect_site.unwrap_or(sites / 2);
+    let clock_sites = config.clock_sites.clone().unwrap_or_else(|| match kind {
+        "grid" => {
+            let cols = (sites as f64).sqrt().round() as usize;
+            let rows = sites / cols.max(1);
+            default_clock_sites_grid(rows, cols, defect_site)
+        }
+        "cube" => default_clock_sites_cube(sites, defect_site),
+        _ => default_clock_sites_chain(sites),
+    });
 
     let trajectory = evolve_trajectory(
         hamiltonian,
@@ -144,7 +152,7 @@ pub fn build_multi_clock(
             physical_clock_indices(&trajectory, site, &base_z, config.physical_slices);
         let time_map = build_time_map(&indices);
         let track: Vec<f64> = (0..trajectory.len())
-            .map(|k| physical_time_at_uniform(&indices, k))
+            .map(|k| physical_time_at_uniform_local(&indices, k))
             .collect();
         let sync = sync_r2_time_map(&time_map);
         let (slope, _, _) = fit_affine(
@@ -212,17 +220,24 @@ pub fn build_multi_clock(
         .unwrap_or(1);
     let defect_uniform_r2 = pairwise_r2[0][defect_idx];
 
-    let edge_a = clock_sites.iter().position(|&s| s == 0).map(|i| i + 1);
-    let edge_b = clock_sites
-        .iter()
-        .position(|&s| s == sites.saturating_sub(1))
-        .map(|i| i + 1);
+    let edge_a = config
+        .edge_sites
+        .map(|e| e[0])
+        .or_else(|| clock_sites.first().copied())
+        .and_then(|s| clock_sites.iter().position(|&c| c == s).map(|i| i + 1));
+    let edge_b = config
+        .edge_sites
+        .map(|e| e[1])
+        .or_else(|| clock_sites.last().copied())
+        .and_then(|s| clock_sites.iter().position(|&c| c == s).map(|i| i + 1));
     let edge_edge_r2 = match (edge_a, edge_b) {
         (Some(a), Some(b)) if a != b => pairwise_r2[a][b],
         _ => 1.0,
     };
 
     MultiClockResult {
+        kind: kind.to_string(),
+        label: label.to_string(),
         sites,
         defect_site,
         labels,
@@ -266,7 +281,11 @@ mod tests {
                 steps: 40,
                 clock_sites: Some(vec![0, n / 2, n - 1]),
                 physical_slices: 15,
+                defect_site: Some(n / 2),
+                edge_sites: Some([0, n - 1]),
             },
+            "chain",
+            "TFIM chain",
         );
         assert!(result.defect_uniform_r2 > 0.9);
         assert!(result.min_pairwise_r2 < 0.95);

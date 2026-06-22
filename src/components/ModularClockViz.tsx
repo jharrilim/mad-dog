@@ -105,6 +105,12 @@ export function ModularClockViz() {
                 sync R² Z-threshold = {result.syncR2Z.toFixed(3)}
               </Badge>
               <Badge variant="outline">
+                min mod ↔ uniform = {result.minModularUniformR2.toFixed(3)}
+              </Badge>
+              <Badge variant="outline">
+                min Z edge ↔ uniform = {result.minZEdgeUniformR2.toFixed(3)}
+              </Badge>
+              <Badge variant="outline">
                 {result.elapsedMs.toFixed(0)} ms · {result.backend}
               </Badge>
             </div>

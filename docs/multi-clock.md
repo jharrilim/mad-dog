@@ -34,14 +34,17 @@ WASM: `run_multi_clock_json` → `MultiClockResult`
 import { runMultiClockAsync } from '@/sim/runner-async'
 
 const result = await runMultiClockAsync({
-  n: 9,
+  kind: 'grid',
+  rows: 3,
+  cols: 3,
   field: 1,
   dt: 0.2,
   steps: 40,
-  clockSites: [0, 4, 8],
   physicalSlices: 15,
 })
 ```
+
+**G′** (grid) uses the same pass criterion as **G**. Cube 2×2×3 covered in `npm run bench:time`.
 
 UI: **Experiments** → *Multi-clock consistency network*
 
@@ -49,6 +52,6 @@ Falsification test **G**: defectUniformR² > 0.95 **and** minPairwiseR² < 0.95.
 
 ## Limits
 
-- Z-signal threshold clocks only (no modular-flow network yet).
-- 1D chain; cube multi-clock not wired.
+- Z-signal threshold clocks only (modular-flow network on lattices not yet wired).
+- ~~1D chain; cube multi-clock not wired.~~ **2026-06 Phase 3:** grid 3×3 and cube 2×2×3 multi-clock; simultaneity bend metric **N**.
 - R² threshold 0.95 is hand-tuned on TFIM demos.

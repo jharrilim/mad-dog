@@ -315,7 +315,11 @@ export interface DualClockResult {
 }
 
 export interface MultiClockConfig {
-  n: number
+  kind?: 'chain' | 'grid' | 'cube'
+  n?: number
+  rows?: number
+  cols?: number
+  lz?: number
   field: number
   dt: number
   steps: number
@@ -332,6 +336,8 @@ export interface PhysicalClockReading {
 }
 
 export interface MultiClockResult {
+  kind: string
+  label: string
   sites: number
   defectSite: number
   labels: string[]
@@ -364,6 +370,50 @@ export interface ModularDualClockResult {
   tickB: number[]
   syncR2Modular: number
   syncR2Z: number
+  syncR2ModularAUniform: number
+  syncR2ModularBUniform: number
+  syncR2ZAUniform: number
+  syncR2ZBUniform: number
+  minModularUniformR2: number
+  minZUniformR2: number
+  minZEdgeUniformR2: number
+  elapsedMs: number
+  backend?: SimBackend
+}
+
+export interface SimultaneityConfig {
+  n: number
+  field: number
+  dt: number
+  steps: number
+  clockA?: number
+  clockB?: number
+  physicalSlices?: number
+  embedDim?: number
+  referenceSite?: number
+}
+
+export interface SimultaneitySlice {
+  k: number
+  tauA: number
+  tauB: number
+  tauSkew: number
+  emergentX: number
+  emergentY: number
+}
+
+export interface SimultaneityResult {
+  sites: number
+  clockA: number
+  clockB: number
+  referenceSite: number
+  meanTauSkew: number
+  maxTauSkew: number
+  slopeA: number
+  slopeB: number
+  slopeDelta: number
+  bendDetected: boolean
+  slices: SimultaneitySlice[]
   elapsedMs: number
   backend?: SimBackend
 }

@@ -13,7 +13,7 @@ We are **not** trying to prove Mad-Dog from axioms or solve the measurement prob
 
 Automated today: **K** (multi-model ensemble), **M** (negative controls), **L** (directional isotropy v0). Next ranked: **J′**, stabilizer **I′**, **L** scaling.
 
-**Phase 2 shipped (2026-06):** 3D gauge-free geometry (J′), dim sweep bench, cross-embedding ρ, quench dim stability. Next: **Phase 3** relational time.
+**Phase 2 shipped (2026-06):** 3D gauge-free geometry (J′), dim sweep bench, cross-embedding ρ, quench dim stability. **Phase 3 shipped:** grid/cube multi-clock (G′), modular vs uniform (D′), simultaneity bend (N). Next: **Phase 4** Lorentz scaling.
 
 ## From the paper (not yet simulated)
 

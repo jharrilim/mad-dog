@@ -53,6 +53,7 @@ export type WasmMethod =
   | 'relationalTime'
   | 'multiClock'
   | 'modularDualClock'
+  | 'simultaneity'
   | 'scattering'
   | 'decoherenceQuench'
   | 'excitationSubspace'

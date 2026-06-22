@@ -267,6 +267,46 @@ pub fn fit_affine(xs: &[f64], ys: &[f64]) -> (f64, f64, f64) {
     (slope, intercept, r2)
 }
 
+pub fn physical_time_at_uniform(phys_indices: &[usize], k: usize) -> f64 {
+    if phys_indices.is_empty() {
+        return 0.0;
+    }
+    let mut seg = 0usize;
+    for (i, &idx) in phys_indices.iter().enumerate() {
+        if idx <= k {
+            seg = i;
+        } else {
+            break;
+        }
+    }
+    if seg + 1 < phys_indices.len() {
+        let u0 = phys_indices[seg] as f64;
+        let u1 = phys_indices[seg + 1] as f64;
+        if u1 > u0 {
+            let frac = ((k as f64 - u0) / (u1 - u0)).clamp(0.0, 1.0);
+            return seg as f64 + frac;
+        }
+    }
+    seg as f64
+}
+
+pub fn physical_clock_uniform_r2(
+    trajectory: &[TrajectoryPoint],
+    site: usize,
+    base_z: &[f64],
+    num_slices: usize,
+) -> f64 {
+    let (indices, _) = physical_clock_indices(trajectory, site, base_z, num_slices);
+    if trajectory.len() < 2 {
+        return 1.0;
+    }
+    let uniform: Vec<f64> = (0..trajectory.len()).map(|k| k as f64).collect();
+    let phys: Vec<f64> = (0..trajectory.len())
+        .map(|k| physical_time_at_uniform(&indices, k))
+        .collect();
+    fit_affine(&phys, &uniform).2
+}
+
 pub fn build_dual_clock(config: DualClockConfig<'_>) -> DualClockResult {
     let hamiltonian = config.hamiltonian;
     let sites = hamiltonian.n;

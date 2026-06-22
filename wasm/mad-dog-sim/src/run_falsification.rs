@@ -242,6 +242,26 @@ pub fn run_falsification_battery() -> FalsificationBatteryResult {
         });
     }
 
+    // D′ — modular and Z clocks both desync from uniform Δt
+    {
+        let m = run_modular_dual_clock(&ModularDualClockConfig {
+            n: 12,
+            field: 1.2,
+            dt: 0.15,
+            steps: 48,
+            modular_slices: 12,
+        });
+        tests.push(FalsificationTest {
+            id: "D′".to_string(),
+            name: "Modular and Z clocks desync from uniform Δt".to_string(),
+            passed: m.min_modular_uniform_r2 < 0.95 && m.min_z_edge_uniform_r2 < 0.95,
+            detail: format!(
+                "minModUniformR2={:.3}, minZEdgeUniformR2={:.3}",
+                m.min_modular_uniform_r2, m.min_z_edge_uniform_r2
+            ),
+        });
+    }
+
     // E — two excitations propagate without binding
     {
         let s = run_two_defect_scattering(&ScatteringConfig {
@@ -298,7 +318,11 @@ pub fn run_falsification_battery() -> FalsificationBatteryResult {
     {
         let n = 9;
         let m = run_multi_clock(&MultiClockRunConfig {
-            n,
+            kind: "chain".to_string(),
+            n: Some(n),
+            rows: None,
+            cols: None,
+            lz: None,
             field: 1.0,
             dt: 0.2,
             steps: 40,
@@ -312,6 +336,57 @@ pub fn run_falsification_battery() -> FalsificationBatteryResult {
             detail: format!(
                 "defectUniformR2={:.3}, minPairwiseR2={:.3}, edgeEdgeR2={:.3}, inconsistentPairs={}",
                 m.defect_uniform_r2, m.min_pairwise_r2, m.edge_edge_r2, m.inconsistent_pairs
+            ),
+        });
+    }
+
+    // G′ — multi-clock on 3×3 grid: defect local, network not globally consistent
+    {
+        let m = run_multi_clock(&MultiClockRunConfig {
+            kind: "grid".to_string(),
+            n: None,
+            rows: Some(3),
+            cols: Some(3),
+            lz: None,
+            field: 1.0,
+            dt: 0.2,
+            steps: 40,
+            clock_sites: None,
+            physical_slices: Some(15),
+        });
+        tests.push(FalsificationTest {
+            id: "G′".to_string(),
+            name: "Grid multi-clock network lacks global consistency".to_string(),
+            passed: m.defect_uniform_r2 > 0.95 && m.min_pairwise_r2 < 0.95,
+            detail: format!(
+                "{} defectUniformR2={:.3}, minPairwiseR2={:.3}, edgeEdgeR2={:.3}",
+                m.label, m.defect_uniform_r2, m.min_pairwise_r2, m.edge_edge_r2
+            ),
+        });
+    }
+
+    // N — emergent simultaneity surfaces bend between observers
+    {
+        use crate::run_simultaneity::{run_simultaneity, SimultaneityRunConfig};
+        let n = 9;
+        let s = run_simultaneity(&SimultaneityRunConfig {
+            n,
+            field: 1.0,
+            dt: 0.2,
+            steps: 40,
+            clock_a: Some(n / 2),
+            clock_b: Some(0),
+            physical_slices: Some(15),
+            embed_dim: Some(2),
+            reference_site: Some(0),
+        });
+        tests.push(FalsificationTest {
+            id: "N".to_string(),
+            name: "Emergent simultaneity surfaces bend between observers".to_string(),
+            passed: s.bend_detected,
+            detail: format!(
+                "meanTauSkew={:.3}, slopeDelta={:.3}, maxSkew={:.1}",
+                s.mean_tau_skew, s.slope_delta, s.max_tau_skew
             ),
         });
     }

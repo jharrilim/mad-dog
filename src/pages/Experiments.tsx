@@ -4,6 +4,7 @@ import { SpacetimeViz } from '@/components/SpacetimeViz'
 import { Spacetime2DViz } from '@/components/Spacetime2DViz'
 import { RelationalTimeViz } from '@/components/RelationalTimeViz'
 import { MultiClockViz } from '@/components/MultiClockViz'
+import { SimultaneityViz } from '@/components/SimultaneityViz'
 import { HolographyViz } from '@/components/HolographyViz'
 import { RtMassViz } from '@/components/RtMassViz'
 import { RefinementViz } from '@/components/RefinementViz'
@@ -71,6 +72,7 @@ function Experiments() {
           <GeometryStabilityViz />
           <RelationalTimeViz />
           <MultiClockViz />
+          <SimultaneityViz />
         </section>
 
         <Separator />

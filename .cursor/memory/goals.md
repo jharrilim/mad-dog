@@ -9,6 +9,6 @@
 
 ## Near-term directions
 
-See phased signature program in [roadmap.md](../docs/roadmap.md) (S1–S10). **Phase 2 shipped.**
+See phased signature program in [roadmap.md](../docs/roadmap.md) (S1–S10). **Phase 3 shipped.**
 
-- **Phase 3:** clock networks on 2D/3D; modular vs physical clocks.
+- **Phase 4:** Lorentz proxy scaling (L → n), dispersion relation.

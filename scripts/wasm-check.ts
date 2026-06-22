@@ -22,6 +22,7 @@ import {
   run_light_cone_compare_json,
   run_modular_dual_clock_json,
   run_multi_clock_json,
+  run_simultaneity_json,
   run_scattering_json,
   run_decoherence_quench_json,
   run_excitation_subspace_json,
@@ -174,6 +175,7 @@ for (const config of [
   const r = JSON.parse(
     run_multi_clock_json(
       JSON.stringify({
+        kind: 'chain',
         n,
         field: 1,
         dt: 0.2,
@@ -183,11 +185,51 @@ for (const config of [
       }),
     ),
   )
-  console.log('\nmultiClock:')
+  console.log('\nmultiClock (chain):')
   if (r.defectUniformR2 <= 0.95) fail(`defectUniformR2=${r.defectUniformR2}`)
   else ok(`defectUniformR2=${r.defectUniformR2.toFixed(3)}`)
   if (r.minPairwiseR2 >= 0.95) fail('network should not be globally consistent')
   else ok(`minPairwiseR2=${r.minPairwiseR2.toFixed(3)}, inconsistentPairs=${r.inconsistentPairs}`)
+}
+
+{
+  const r = JSON.parse(
+    run_multi_clock_json(
+      JSON.stringify({
+        kind: 'grid',
+        rows: 3,
+        cols: 3,
+        field: 1,
+        dt: 0.2,
+        steps: 40,
+        physicalSlices: 15,
+      }),
+    ),
+  )
+  console.log('\nmultiClock (grid 3x3):')
+  if (r.defectUniformR2 <= 0.95) fail(`defectUniformR2=${r.defectUniformR2}`)
+  else ok(`defectUniformR2=${r.defectUniformR2.toFixed(3)} minPair=${r.minPairwiseR2.toFixed(3)}`)
+}
+
+{
+  const r = JSON.parse(
+    run_simultaneity_json(
+      JSON.stringify({
+        n: 9,
+        field: 1,
+        dt: 0.2,
+        steps: 40,
+        clockA: 4,
+        clockB: 0,
+        physicalSlices: 15,
+        embedDim: 2,
+        referenceSite: 0,
+      }),
+    ),
+  )
+  console.log('\nsimultaneity surfaces:')
+  if (!r.bendDetected) fail('foliation should bend between defect and edge clocks')
+  else ok(`meanSkew=${r.meanTauSkew.toFixed(3)} slopeDelta=${r.slopeDelta.toFixed(3)}`)
 }
 
 // --- Universe ---

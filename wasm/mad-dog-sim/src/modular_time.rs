@@ -2,7 +2,7 @@
 
 use crate::geometry::entropy_of_region;
 use crate::quantum::{expectation_z, QuantumState};
-use crate::relational_time::{evolve_trajectory, fit_affine, TrajectoryPoint};
+use crate::relational_time::{evolve_trajectory, fit_affine, physical_clock_uniform_r2, TrajectoryPoint};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Deserialize)]
@@ -33,6 +33,13 @@ pub struct ModularDualClockResult {
     pub tick_b: Vec<usize>,
     pub sync_r2_modular: f64,
     pub sync_r2_z: f64,
+    pub sync_r2_modular_a_uniform: f64,
+    pub sync_r2_modular_b_uniform: f64,
+    pub sync_r2_z_a_uniform: f64,
+    pub sync_r2_z_b_uniform: f64,
+    pub min_modular_uniform_r2: f64,
+    pub min_z_uniform_r2: f64,
+    pub min_z_edge_uniform_r2: f64,
     pub elapsed_ms: f64,
     pub backend: &'static str,
 }
@@ -128,6 +135,15 @@ fn sync_r2_from_ticks(a: &[usize], b: &[usize]) -> f64 {
     fit_affine(&xs, &ys).2
 }
 
+fn sync_r2_ticks_vs_uniform(ticks: &[usize]) -> f64 {
+    if ticks.len() < 2 {
+        return 1.0;
+    }
+    let xs: Vec<f64> = (0..ticks.len()).map(|i| i as f64).collect();
+    let ys: Vec<f64> = ticks.iter().map(|&k| k as f64).collect();
+    fit_affine(&xs, &ys).2
+}
+
 pub fn build_modular_dual_clock(
     hamiltonian: &crate::quantum::Hamiltonian,
     config: &ModularDualClockConfig,
@@ -161,6 +177,20 @@ pub fn build_modular_dual_clock(
     let z_b = z_threshold_ticks(&trajectory, region_b[0], &base_z, config.modular_slices);
     let sync_r2_z = sync_r2_from_ticks(&z_a, &z_b);
 
+    let sync_r2_modular_a_uniform = sync_r2_ticks_vs_uniform(&tick_a);
+    let sync_r2_modular_b_uniform = sync_r2_ticks_vs_uniform(&tick_b);
+    let sync_r2_z_a_uniform = sync_r2_ticks_vs_uniform(&z_a);
+    let sync_r2_z_b_uniform = sync_r2_ticks_vs_uniform(&z_b);
+    let min_modular_uniform_r2 = sync_r2_modular_a_uniform.min(sync_r2_modular_b_uniform);
+    let min_z_uniform_r2 = sync_r2_z_a_uniform.min(sync_r2_z_b_uniform);
+    let min_z_edge_uniform_r2 = physical_clock_uniform_r2(&trajectory, 0, &base_z, config.modular_slices)
+        .min(physical_clock_uniform_r2(
+            &trajectory,
+            config.n - 1,
+            &base_z,
+            config.modular_slices,
+        ));
+
     ModularDualClockResult {
         n: config.n,
         center,
@@ -172,6 +202,13 @@ pub fn build_modular_dual_clock(
         tick_b,
         sync_r2_modular,
         sync_r2_z,
+        sync_r2_modular_a_uniform,
+        sync_r2_modular_b_uniform,
+        sync_r2_z_a_uniform,
+        sync_r2_z_b_uniform,
+        min_modular_uniform_r2,
+        min_z_uniform_r2,
+        min_z_edge_uniform_r2,
         elapsed_ms: 0.0,
         backend: "wasm",
     }

@@ -22,9 +22,12 @@ Run: `npm run check:falsification` or **Experiments → Falsification Tests**.
 | **B** | MI geometry faithful | \|v_MI / v_lattice − 1\| < 0.25 |
 | **C** | RT ratio on ground | std(S_A / ½ boundary MI) < 0.15 across intervals |
 | **D** | Modular clocks desync | In-cone modular sync R² < 0.95 |
+| **D′** | Modular and Z edge clocks desync from uniform Δt | minModUniformR² < 0.95 and minZEdgeUniformR² < 0.95 |
 | **E** | Excitations propagate | Both worldlines move; min separation ≥ 1 during overlap |
 | **F** | Refinement decoupling | Slope vs area diagnostic peaks diverge under quench |
 | **G** | Multi-clock not globally consistent | defectUniformR² > 0.95 and minPairwiseR² < 0.95 |
+| **G′** | Grid multi-clock not globally consistent | Same on 3×3 TFIM grid quench |
+| **N** | Simultaneity surfaces bend | Defect vs edge clock: `bendDetected` on emergent foliation |
 | **H** | Adaptive split relieves pressure | Split triggers and accepted on default quench |
 | **I** | Branch excitations code-like | Sharpness gain > 1.03, window rank drops, branch overlap < 0.95 |
 | **J** | Gauge-free MI geometry stable (chain) | Ordered phase mean Spearman ρ > 0.85 |

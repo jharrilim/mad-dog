@@ -32,7 +32,9 @@ mod run_modular_dual_clock;
 mod run_refinement;
 mod scattering;
 mod run_relational_time;
+mod run_simultaneity;
 mod run_spacetime;
+mod simultaneity;
 mod run_universe;
 mod spacetime;
 
@@ -60,6 +62,7 @@ use run_refinement::{
     AdaptiveRefinementConfig, RefinementNCompareConfig, RefinementQuenchConfig,
 };
 use run_relational_time::{run_relational_time, RelationalTimeConfig};
+use run_simultaneity::{run_simultaneity, SimultaneityRunConfig};
 use run_spacetime::{run_spacetime, run_spacetime_2d, Spacetime2DConfig, SpacetimeRunConfig};
 use run_universe::{
     run_universe_3d, run_universe_slice, Universe3DConfig, UniverseSliceConfig,
@@ -142,6 +145,16 @@ pub fn run_modular_dual_clock_json(config_json: &str) -> Result<String, JsValue>
     let config: ModularDualClockConfig =
         serde_json::from_str(config_json).map_err(|e| JsValue::from_str(&e.to_string()))?;
     let mut result = run_modular_dual_clock(&config);
+    result.elapsed_ms = js_sys::Date::now() - start;
+    serde_json::to_string(&result).map_err(|e| JsValue::from_str(&e.to_string()))
+}
+
+#[wasm_bindgen]
+pub fn run_simultaneity_json(config_json: &str) -> Result<String, JsValue> {
+    let start = js_sys::Date::now();
+    let config: SimultaneityRunConfig =
+        serde_json::from_str(config_json).map_err(|e| JsValue::from_str(&e.to_string()))?;
+    let mut result = run_simultaneity(&config);
     result.elapsed_ms = js_sys::Date::now() - start;
     serde_json::to_string(&result).map_err(|e| JsValue::from_str(&e.to_string()))
 }

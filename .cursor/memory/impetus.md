@@ -88,6 +88,13 @@ Dated bullets for decisions future agents should not relitigate without cause.
 - **Negative control M:** random nonlocal + `spectrumScramble` must not recover.
 - **Deferred:** true eigenvalue-only blind inference; 3D/torus graph factorization.
 
+## 2026-06-21 — Phase 3 S3 (relational time)
+
+- **Multi-clock on grid/cube** — `kind` in `run_multi_clock`; falsification **G′**.
+- **Modular vs uniform Δt** — edge Z + in-cone modular desync; **D′**.
+- **Simultaneity surfaces** — `run_simultaneity_json`; foliation bend **N**.
+- **`bench:time`** — grid/cube clocks + modular + simultaneity smoke.
+
 ## 2026-06-21 — Phase 2 S2 (space isn’t an artifact)
 
 - **Lattice kinds** in `geometry_stability.rs`: chain, grid, cube quenches.

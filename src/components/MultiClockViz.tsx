@@ -13,9 +13,54 @@ import {
   runMultiClockAsync,
   type MultiClockResultWithBackend,
 } from '@/sim/runner-async'
+import type { MultiClockConfig } from '@/sim/types'
+
+const LATTICE_PRESETS = {
+  chain: {
+    label: 'Chain n=9',
+    config: {
+      kind: 'chain' as const,
+      n: 9,
+      field: 1,
+      dt: 0.2,
+      steps: 40,
+      physicalSlices: 15,
+    },
+    preset: 3 as PresetKey,
+  },
+  grid: {
+    label: 'Grid 3×3',
+    config: {
+      kind: 'grid' as const,
+      rows: 3,
+      cols: 3,
+      field: 1,
+      dt: 0.2,
+      steps: 40,
+      physicalSlices: 15,
+    },
+    preset: 3 as PresetKey,
+  },
+  cube: {
+    label: 'Cube 2×2×3',
+    config: {
+      kind: 'cube' as const,
+      rows: 2,
+      cols: 2,
+      lz: 3,
+      field: 1,
+      dt: 0.2,
+      steps: 40,
+      physicalSlices: 15,
+    },
+    preset: 3 as PresetKey,
+  },
+} as const
+
+type LatticeKey = keyof typeof LATTICE_PRESETS
 
 const PRESETS = {
-  3: { label: '3 clocks (edges + defect)', sites: (n: number) => [0, Math.floor(n / 2), n - 1] },
+  3: { label: '3 clocks (corners + defect)', sites: (n: number) => [0, Math.floor(n / 2), n - 1] },
   5: {
     label: '5 clocks (spread)',
     sites: (n: number) => [0, Math.floor(n / 4), Math.floor(n / 2), Math.floor((3 * n) / 4), n - 1],
@@ -87,38 +132,46 @@ function PairwiseMatrix({ result }: { result: MultiClockResultWithBackend }) {
   )
 }
 
-const DEFAULT = {
-  n: 9,
-  field: 1,
-  dt: 0.2,
-  steps: 40,
-  physicalSlices: 15,
-  preset: 3 as PresetKey,
+type RunConfig = MultiClockConfig & { preset: PresetKey; lattice: LatticeKey }
+
+const DEFAULT: RunConfig = {
+  ...LATTICE_PRESETS.chain.config,
+  preset: 3,
+  lattice: 'chain',
 }
 
 export function MultiClockViz() {
-  const [config, setConfig] = useState(DEFAULT)
+  const [config, setConfig] = useState<RunConfig>(DEFAULT)
   const [result, setResult] = useState<MultiClockResultWithBackend | null>(null)
   const [running, setRunning] = useState(false)
 
+  const sites = result?.sites ?? config.n ?? (config.rows ?? 3) * (config.cols ?? 3)
+
   const clockSites = useMemo(
-    () => PRESETS[config.preset].sites(config.n),
-    [config.preset, config.n],
+    () => PRESETS[config.preset].sites(sites),
+    [config.preset, sites],
   )
 
   const run = useCallback(() => {
     setRunning(true)
+    const { preset: _p, lattice: _l, ...runConfig } = config
     void runMultiClockAsync({
-      n: config.n,
-      field: config.field,
-      dt: config.dt,
-      steps: config.steps,
-      clockSites,
-      physicalSlices: config.physicalSlices,
+      ...runConfig,
+      clockSites: config.kind === 'chain' ? clockSites : undefined,
     })
       .then(setResult)
       .finally(() => setRunning(false))
   }, [config, clockSites])
+
+  const applyLattice = (key: LatticeKey) => {
+    const preset = LATTICE_PRESETS[key]
+    setConfig((c) => ({
+      ...c,
+      ...preset.config,
+      lattice: key,
+      preset: preset.preset,
+    }))
+  }
 
   return (
     <Card>
@@ -135,28 +188,46 @@ export function MultiClockViz() {
       <CardContent className="space-y-6">
         <div className="flex flex-wrap items-center gap-4">
           <div className="flex gap-2">
-            {(Object.keys(PRESETS) as unknown as PresetKey[]).map((key) => (
+            {(Object.keys(LATTICE_PRESETS) as LatticeKey[]).map((key) => (
               <Button
                 key={key}
                 size="sm"
-                variant={config.preset === key ? 'default' : 'outline'}
-                onClick={() => setConfig((c) => ({ ...c, preset: key }))}
+                variant={config.lattice === key ? 'default' : 'outline'}
+                onClick={() => applyLattice(key)}
               >
-                {PRESETS[key].label}
+                {LATTICE_PRESETS[key].label}
               </Button>
             ))}
           </div>
-          <label className="text-sm flex items-center gap-2">
-            <span className="text-muted-foreground">n = {config.n}</span>
-            <input
-              type="range"
-              min={7}
-              max={13}
-              value={config.n}
-              onChange={(e) => setConfig((c) => ({ ...c, n: Number(e.target.value) }))}
-              className="w-24 accent-primary"
-            />
-          </label>
+          {config.kind === 'chain' && (
+            <>
+              <div className="flex gap-2">
+                {(Object.keys(PRESETS) as unknown as PresetKey[]).map((key) => (
+                  <Button
+                    key={key}
+                    size="sm"
+                    variant={config.preset === key ? 'default' : 'outline'}
+                    onClick={() => setConfig((c) => ({ ...c, preset: key }))}
+                  >
+                    {PRESETS[key].label}
+                  </Button>
+                ))}
+              </div>
+              <label className="text-sm flex items-center gap-2">
+                <span className="text-muted-foreground">n = {config.n ?? 9}</span>
+                <input
+                  type="range"
+                  min={7}
+                  max={13}
+                  value={config.n ?? 9}
+                  onChange={(e) =>
+                    setConfig((c) => ({ ...c, n: Number(e.target.value) }))
+                  }
+                  className="w-24 accent-primary"
+                />
+              </label>
+            </>
+          )}
           <Button onClick={run} disabled={running} size="sm">
             {running ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -170,6 +241,7 @@ export function MultiClockViz() {
         {result && (
           <>
             <div className="flex flex-wrap gap-2 text-xs">
+              <Badge variant="outline">{result.label}</Badge>
               <Badge variant={result.minPairwiseR2 >= 0.95 ? 'outline' : 'default'}>
                 min pairwise R² = {result.minPairwiseR2.toFixed(3)}
               </Badge>

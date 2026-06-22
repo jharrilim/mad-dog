@@ -59,4 +59,8 @@ Neither clock is "the" time; they disagree when the local physics differs.
 
 ## Open issue
 
-~~Three-or-more-clock networks and consistency conditions not yet explored.~~ Addressed for Z-threshold clocks on chains; modular/QFT-style clock graphs remain open.
+~~Three-or-more-clock networks and consistency conditions not yet explored.~~ Addressed for Z-threshold clocks on chains, grids, and cubes; modular/QFT-style clock graphs remain open.
+
+## Emergent simultaneity surfaces (Phase 3)
+
+**2026-06:** Compare physical-clock foliations at defect vs edge site. Same underlying states get different time labels; emergent MDS coords of a reference site vs each clock's τ have different slopes (`run_simultaneity_json`). Falsification **N**.

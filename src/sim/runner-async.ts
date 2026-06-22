@@ -31,7 +31,8 @@ import type {
   RtMassRunResult,
   RunConfig,
   RunResult,
-  ScatteringConfig,
+  SimultaneityConfig,
+  SimultaneityResult,
   ScatteringResult,
   DecoherenceQuenchConfig,
   DecoherenceQuenchResult,
@@ -171,10 +172,18 @@ export async function runMultiClockAsync(
   return runWasm('multiClock', config)
 }
 
+export type SimultaneityResultWithBackend = SimultaneityResult & { backend: SimBackend }
+
 export async function runModularDualClockAsync(
   config: ModularDualClockConfig,
 ): Promise<ModularDualClockResultWithBackend> {
   return runWasm('modularDualClock', config)
+}
+
+export async function runSimultaneityAsync(
+  config: SimultaneityConfig,
+): Promise<SimultaneityResultWithBackend> {
+  return runWasm('simultaneity', config)
 }
 
 export async function runScatteringAsync(
