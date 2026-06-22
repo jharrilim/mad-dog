@@ -85,18 +85,22 @@ Operational checklist — each maps to falsification tests and roadmap phases.
 | Holographic bound on n | `run_holographic_bound_json`; falsification **W′** |
 | Factor dynamics bench | `npm run bench:factor` |
 
+### Phase 8 — Observational bridge — shipped 2026-06-21
+
+| Item | Notes |
+|------|-------|
+| Lorentz ε(n) vs GRB/synchrotron caps | `scripts/observational-lorentz.ts`; `exports/observational/lorentz.json` |
+| RT calibration vs AdS/CFT anchor | `scripts/observational-holography.ts` |
+| Multi-clock desync export | `scripts/observational-time.ts` |
+| Stabilizer code rate vs noise floors | `scripts/observational-ir.ts` |
+| Orchestrator | `npm run bench:observational` |
+| Doc | [observational-bridge.md](./observational-bridge.md) |
+
 ---
 
 ## Next up (ranked execution order)
 
-### Phase 8 — Observational bridge (export, not WASM)
-
-| Priority | Item | Role |
-|----------|------|------|
-| 1 | Lorentz violation bounds | Map Phase 4 ε(n) to GRB / synchrotron caps |
-| 2 | Holographic entropy | Calibrate RT failures vs AdS/CFT analogues |
-| 3 | Problem of time | Export multi-clock desync as frozen-formalism metaphor |
-| 4 | IR subspace | Connect stabilizer rates to lab noise thresholds |
+_(Phase 8 complete — see deferred engineering items below.)_
 
 ---
 

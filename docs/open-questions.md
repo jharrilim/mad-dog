@@ -9,11 +9,11 @@ We are **not** trying to prove Mad-Dog from axioms or solve the measurement prob
 | **Necessary conditions** | Falsification battery A–L; extend as claims sharpen |
 | **Toy demonstrations** | Universe Lab, scattering, decoherence, factorization search |
 | **Scaling / uniqueness** | Open — biggest gap between “mechanism” and “our-universe-likeness” |
-| **Observational export** | Map sim thresholds to Lorentz / entropy bounds (Phase 8) |
+| **Observational export** | Map sim thresholds to Lorentz / entropy bounds | **Shipped** — [observational-bridge.md](./observational-bridge.md), `npm run bench:observational` |
 
-Automated today: **K** (multi-model ensemble), **M** (negative controls), **L** (directional isotropy v0). Next ranked: **J′**, stabilizer **I′**, **L** scaling.
+Automated today: full falsification battery **A–W′** (31 tests). Signature program **S1–S10** complete through Phase 8.
 
-**Phase 3 shipped (2026-06):** grid/cube multi-clock (G′), modular vs uniform (D′), simultaneity bend (N). **Phase 4 shipped:** Lorentz scaling (L′), dispersion (O), boost (P), scattering phase (Q). Next: **Phase 5** holography dynamics.
+**Phases 1–8 shipped (2026-06).** Next ranked: deferred engineering (WebGPU, full Poincaré), extend observational caps as refs sharpen.
 
 ## From the paper (not yet simulated)
 

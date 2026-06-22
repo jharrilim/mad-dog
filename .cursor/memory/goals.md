@@ -9,6 +9,6 @@
 
 ## Near-term directions
 
-See phased signature program in [roadmap.md](../docs/roadmap.md) (S1–S10). **Phase 7 shipped.**
+See phased signature program in [roadmap.md](../docs/roadmap.md) (S1–S10). **Phase 8 shipped.**
 
-- **Phase 8:** observational bridge (Lorentz bounds, holographic calibration, export metaphors).
+- **Next:** deferred engineering (WebGPU, `/lab` bundle); extend observational exports as literature refs sharpen.

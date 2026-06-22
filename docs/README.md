@@ -25,6 +25,7 @@ These are **working learnings**, not claims of new physics. They record what the
 | [roadmap.md](./roadmap.md) | Signature program S1–S10 + phased backlog |
 | [falsification.md](./falsification.md) | Automated Mad-Dog claim tests (A–L) |
 | [open-questions.md](./open-questions.md) | Honest limits and next experiments |
+| [observational-bridge.md](./observational-bridge.md) | Phase 8: sim metrics vs literature caps (export) |
 
 ## Code map
 

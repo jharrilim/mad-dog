@@ -131,3 +131,11 @@ Dated bullets for decisions future agents should not relitigate without cause.
 - **In-place tensor split** — `embed_state_at_split` + evolve remainder; pressure relief vs pre-split (**V′**).
 - **Holographic bound** — sweep n for area law + dim + Hamiltonian locality; `n_min` + saturation (**W′**).
 - **`bench:factor`** — in-place split + bound smoke.
+
+## 2026-06-21 — Phase 8 observational bridge
+
+- **Lorentz headroom** — ε := speedCv vs GRB/synchrotron caps (`observational-lorentz.ts`).
+- **RT calibration** — slope vs AdS/CFT anchor + quench breakdown export.
+- **Time export** — multi-clock desync JSON for frozen-formalism metaphor.
+- **IR noise floors** — code rate vs surface-code / gate fidelity order-of-magnitude.
+- **`bench:observational`** — orchestrator → `exports/observational/*.json`.
