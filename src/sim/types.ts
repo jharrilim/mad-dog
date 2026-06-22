@@ -949,6 +949,67 @@ export interface EftDimensionResult {
   backend?: SimBackend
 }
 
+export interface InplaceSplitConfig {
+  n: number
+  field: number
+  dt: number
+  steps: number
+  seed: number
+  deltaN?: number
+}
+
+export interface InplaceSplitEvent {
+  triggerStep: number
+  splitSite: number
+  preN: number
+  postN: number
+  pre: RefinementDiagnostics
+  inPlace: RefinementDiagnostics
+  rerun: RefinementDiagnostics
+  inPlaceImproves: boolean
+  matchesRerun: boolean
+  pressureDelta: number
+}
+
+export interface InplaceSplitResult {
+  n: number
+  deltaN: number
+  field: number
+  dt: number
+  steps: number
+  splitEvent: InplaceSplitEvent | null
+  elapsedMs: number
+  backend?: SimBackend
+}
+
+export interface HolographicBoundConfig {
+  field: number
+  nMin?: number
+  nMax?: number
+}
+
+export interface HolographicBoundPoint {
+  n: number
+  rtR2: number
+  rtSlope: number
+  emergentDim: number
+  localityFraction: number
+  areaLawOk: boolean
+  dimOk: boolean
+  localityOk: boolean
+  allOk: boolean
+}
+
+export interface HolographicBoundResult {
+  field: number
+  points: HolographicBoundPoint[]
+  nMin: number | null
+  nSaturation: number
+  boundScales: boolean
+  elapsedMs: number
+  backend?: SimBackend
+}
+
 export type GeometryStabilityKind = 'chain' | 'grid' | 'cube'
 
 export interface GeometryStabilityConfig {

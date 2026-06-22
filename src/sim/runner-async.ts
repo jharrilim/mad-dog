@@ -57,6 +57,10 @@ import type {
   BranchBornResult,
   EftDimensionConfig,
   EftDimensionResult,
+  InplaceSplitConfig,
+  InplaceSplitResult,
+  HolographicBoundConfig,
+  HolographicBoundResult,
   GeometryStabilityConfig,
   GeometryStabilityResult,
   SimBackend,
@@ -293,6 +297,18 @@ export async function runEftDimensionAsync(
   config: EftDimensionConfig,
 ): Promise<EftDimensionResult & { backend: SimBackend }> {
   return runWasm('eftDimension', config)
+}
+
+export async function runInplaceSplitAsync(
+  config: InplaceSplitConfig,
+): Promise<InplaceSplitResult & { backend: SimBackend }> {
+  return runWasm('inplaceSplit', config)
+}
+
+export async function runHolographicBoundAsync(
+  config: HolographicBoundConfig,
+): Promise<HolographicBoundResult & { backend: SimBackend }> {
+  return runWasm('holographicBound', config)
 }
 
 export async function runGeometryStabilityAsync(

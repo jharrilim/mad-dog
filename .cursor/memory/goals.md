@@ -9,6 +9,6 @@
 
 ## Near-term directions
 
-See phased signature program in [roadmap.md](../docs/roadmap.md) (S1–S10). **Phase 6 shipped.**
+See phased signature program in [roadmap.md](../docs/roadmap.md) (S1–S10). **Phase 7 shipped.**
 
-- **Phase 7:** factor count dynamics (in-place tensor split, holographic bound on n).
+- **Phase 8:** observational bridge (Lorentz bounds, holographic calibration, export metaphors).

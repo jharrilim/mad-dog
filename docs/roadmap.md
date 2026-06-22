@@ -23,7 +23,7 @@ Operational checklist — each maps to falsification tests and roadmap phases.
 | **S7** | Classical branches | I, **T′** | **Shipped** — Born-weight / distinguishability correlation |
 | **S8** | IR subspace / code-like | I, **I′**, **U′** | **Shipped** — stabilizer search + EFT DOF counting |
 | **S9** | Lorentz-ish IR causality | **L**, **L′**, **O**, **P** | **Shipped** — scaling, dispersion, boost invariance |
-| **S10** | Factor count not arbitrary | F, H | 7 | Split heuristic; in-place split deferred |
+| **S10** | Factor count not arbitrary | F, H, **V′**, **W′** | **Shipped** — in-place split + holographic n_min |
 
 **Progress metric:** signatures pass on **models we didn’t hand-tune**, at **growing n**, with **negative controls** failing loudly.
 
@@ -77,16 +77,17 @@ Operational checklist — each maps to falsification tests and roadmap phases.
 | EFT DOF vs stabilizer code rate | `run_eft_dimension_json`; falsification **U′** |
 | Matter bench | `npm run bench:matter` |
 
+### Phase 7 — Factor count dynamics (S10) — shipped 2026-06-21
+
+| Item | Notes |
+|------|-------|
+| In-place tensor split | `run_inplace_split_json`; falsification **V′** |
+| Holographic bound on n | `run_holographic_bound_json`; falsification **W′** |
+| Factor dynamics bench | `npm run bench:factor` |
+
 ---
 
 ## Next up (ranked execution order)
-
-### Phase 7 — Factor count dynamics (S10)
-
-| Priority | Item | Deliverable | Pass criterion |
-|----------|------|-------------|----------------|
-| 1 | In-place tensor split | Same \|ψ⟩, split one factor without n+Δ re-run | Diagnostics improve at same bond budget |
-| 2 | Holographic bound on n | Min n s.t. area law + dim + locality hold | Scaling law n_min vs system size |
 
 ### Phase 8 — Observational bridge (export, not WASM)
 
@@ -105,7 +106,7 @@ Operational checklist — each maps to falsification tests and roadmap phases.
 |------|--------------|
 | WebGPU backend | WASM sufficient for current lattice sizes |
 | Full Lorentz / Poincaré test | Beyond **L** v0; needs dispersion + scaling |
-| In-place tensor factor split | Honest n+Δ comparison only for now |
+| In-place tensor factor split | Shipped Phase 7 — `embed_state_at_split` + evolve remainder |
 | Code-split `/lab` bundle | Engineering; not physics-blocking |
 
 ---

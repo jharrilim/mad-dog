@@ -19,6 +19,7 @@ import { ScatteringViz } from '@/components/ScatteringViz'
 import { DecoherenceQuenchViz } from '@/components/DecoherenceQuenchViz'
 import { ExcitationSubspaceViz } from '@/components/ExcitationSubspaceViz'
 import { MatterClassicalityViz } from '@/components/MatterClassicalityViz'
+import { FactorDynamicsViz } from '@/components/FactorDynamicsViz'
 import { GeometryStabilityViz } from '@/components/GeometryStabilityViz'
 import { FalsificationViz } from '@/components/FalsificationViz'
 
@@ -97,6 +98,7 @@ function Experiments() {
           <RtMassViz />
           <RefinementViz />
           <AdaptiveRefinementViz />
+          <FactorDynamicsViz />
           <HolographyDynamicsViz />
           <FactorizationViz />
           <FactorizationRefinementViz />

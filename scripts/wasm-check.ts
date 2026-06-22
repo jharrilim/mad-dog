@@ -36,6 +36,8 @@ import {
   run_particle_stability_json,
   run_branch_born_json,
   run_eft_dimension_json,
+  run_inplace_split_json,
+  run_holographic_bound_json,
   run_geometry_stability_json,
   run_geometry_dim_sweep_json,
   run_factorization_search_json,
@@ -526,6 +528,24 @@ const excitationCfg = {
   console.log('\nEFT dimension:')
   if (!r.dofAgreement) fail('EFT DOF mismatch')
   else ok(`measured=${r.measuredDofPerSite.toFixed(2)} predicted=${r.predictedDofPerSite.toFixed(2)}`)
+}
+
+{
+  const r = JSON.parse(
+    run_inplace_split_json(
+      JSON.stringify({ n: 10, field: 1.5, dt: 0.2, steps: 18, seed: 7711, deltaN: 2 }),
+    ),
+  )
+  console.log('\nin-place split:')
+  if (!r.splitEvent?.inPlaceImproves) fail('in-place split did not relieve pressure')
+  else ok(`step=${r.splitEvent.triggerStep} deltaP=${r.splitEvent.pressureDelta.toFixed(3)}`)
+}
+
+{
+  const r = JSON.parse(run_holographic_bound_json(JSON.stringify({ field: 1.5, nMin: 6, nMax: 12 })))
+  console.log('\nholographic bound:')
+  if (r.nMin == null || !r.boundScales) fail('no finite holographic n_min')
+  else ok(`nMin=${r.nMin} saturation=${r.nSaturation}`)
 }
 
 // --- Gauge-free geometry stability ---

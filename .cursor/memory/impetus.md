@@ -125,3 +125,9 @@ Dated bullets for decisions future agents should not relitigate without cause.
 - **Branch Born** — env entropy vs overlap correlation; **T′**.
 - **EFT DOF** — measured rank/site vs stabilizer code rate; **U′**.
 - **`bench:matter`** — all four probes smoke-tested.
+
+## 2026-06-21 — Phase 7 S10 (factor count dynamics)
+
+- **In-place tensor split** — `embed_state_at_split` + evolve remainder; pressure relief vs pre-split (**V′**).
+- **Holographic bound** — sweep n for area law + dim + Hamiltonian locality; `n_min` + saturation (**W′**).
+- **`bench:factor`** — in-place split + bound smoke.

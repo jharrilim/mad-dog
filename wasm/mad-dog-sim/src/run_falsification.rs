@@ -18,6 +18,11 @@ use crate::run_matter::{
     run_stabilizer_search, BranchBornConfig, EftDimensionConfig, ParticleStabilityConfig,
     StabilizerSearchConfig,
 };
+use crate::run_factor_dynamics::{
+    run_holographic_bound_probe, run_inplace_split_probe,
+};
+use crate::holographic_bound::HolographicBoundConfig;
+use crate::tensor_split::InplaceSplitConfig;
 use crate::run_rt_quench::{run_curvature_proxy_quench, run_rt_quench, CurvatureProxyQuenchConfig, RtQuenchConfig};
 use crate::excitation_subspace::ExcitationSubspaceConfig;
 use crate::run_excitation_subspace::run_excitation_subspace_probe;
@@ -779,6 +784,60 @@ pub fn run_falsification_battery() -> FalsificationBatteryResult {
             detail: format!(
                 "measured={:.3} predicted={:.3} relErr={:.3}",
                 e.measured_dof_per_site, e.predicted_dof_per_site, e.relative_error
+            ),
+        });
+    }
+
+    // V′ — in-place tensor split relieves pressure without full re-quench
+    {
+        let v = run_inplace_split_probe(&InplaceSplitConfig {
+            n: 10,
+            field: 1.5,
+            dt: 0.2,
+            steps: 18,
+            seed: 7711,
+            delta_n: Some(2),
+        });
+        let passed = v
+            .inner
+            .split_event
+            .as_ref()
+            .map(|e| e.in_place_improves)
+            .unwrap_or(false);
+        let detail = v
+            .inner
+            .split_event
+            .as_ref()
+            .map(|e| {
+                format!(
+                    "step={}, preP={:.3}, inPlaceP={:.3}, delta={:.3}",
+                    e.trigger_step, e.pre.pressure, e.in_place.pressure, e.pressure_delta
+                )
+            })
+            .unwrap_or_else(|| "no split trigger".to_string());
+        tests.push(FalsificationTest {
+            id: "V′".to_string(),
+            name: "In-place tensor split relieves refinement pressure".to_string(),
+            passed,
+            detail,
+        });
+    }
+
+    // W′ — holographic signatures saturate at finite n on TFIM chain
+    {
+        let w = run_holographic_bound_probe(&HolographicBoundConfig {
+            field: 1.5,
+            n_min: 6,
+            n_max: 12,
+        });
+        let passed = w.inner.n_min.is_some() && w.inner.bound_scales;
+        tests.push(FalsificationTest {
+            id: "W′".to_string(),
+            name: "Holographic bound n_min finite with scaling plateau".to_string(),
+            passed,
+            detail: format!(
+                "nMin={:?}, saturation={}, scales={}",
+                w.inner.n_min, w.inner.n_saturation, w.inner.bound_scales
             ),
         });
     }

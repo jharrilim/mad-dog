@@ -37,6 +37,8 @@ import init, {
   run_particle_stability_json,
   run_branch_born_json,
   run_eft_dimension_json,
+  run_inplace_split_json,
+  run_holographic_bound_json,
 } from './pkg/mad_dog_sim.js'
 import wasmUrl from './pkg/mad_dog_sim_bg.wasm?url'
 
@@ -75,6 +77,8 @@ export type WasmMethod =
   | 'particleStability'
   | 'branchBorn'
   | 'eftDimension'
+  | 'inplaceSplit'
+  | 'holographicBound'
 
 export type WorkerRequest = {
   id: number
@@ -121,6 +125,8 @@ const runners: Record<WasmMethod, (json: string) => string> = {
   particleStability: run_particle_stability_json,
   branchBorn: run_branch_born_json,
   eftDimension: run_eft_dimension_json,
+  inplaceSplit: run_inplace_split_json,
+  holographicBound: run_holographic_bound_json,
 }
 
 let initPromise: Promise<void> | null = null

@@ -41,6 +41,9 @@ mod run_refinement;
 mod run_rt_quench;
 mod rt_quench;
 mod stabilizer_search;
+mod holographic_bound;
+mod tensor_split;
+mod run_factor_dynamics;
 mod scattering;
 mod run_relational_time;
 mod run_simultaneity;
@@ -76,6 +79,9 @@ use run_refinement::{
     run_refinement_quench, AdaptiveRefinementConfig, RefinementNCompareConfig,
     RefinementQuenchConfig,
 };
+use run_factor_dynamics::{run_holographic_bound_probe, run_inplace_split_probe};
+use crate::holographic_bound::HolographicBoundConfig;
+use crate::tensor_split::InplaceSplitConfig;
 use run_matter::{
     run_branch_born_probe, run_eft_dimension_probe, run_particle_stability_probe,
     run_stabilizer_search, BranchBornConfig, EftDimensionConfig, ParticleStabilityConfig,
@@ -377,6 +383,26 @@ pub fn run_boost_invariance_json(config_json: &str) -> Result<String, JsValue> {
 }
 
 #[wasm_bindgen]
+pub fn run_inplace_split_json(config_json: &str) -> Result<String, JsValue> {
+    let start = js_sys::Date::now();
+    let config: InplaceSplitConfig =
+        serde_json::from_str(config_json).map_err(|e| JsValue::from_str(&e.to_string()))?;
+    let mut result = run_inplace_split_probe(&config);
+    result.elapsed_ms = js_sys::Date::now() - start;
+    serde_json::to_string(&result).map_err(|e| JsValue::from_str(&e.to_string()))
+}
+
+#[wasm_bindgen]
+pub fn run_holographic_bound_json(config_json: &str) -> Result<String, JsValue> {
+    let start = js_sys::Date::now();
+    let config: HolographicBoundConfig =
+        serde_json::from_str(config_json).map_err(|e| JsValue::from_str(&e.to_string()))?;
+    let mut result = run_holographic_bound_probe(&config);
+    result.elapsed_ms = js_sys::Date::now() - start;
+    serde_json::to_string(&result).map_err(|e| JsValue::from_str(&e.to_string()))
+}
+
+#[wasm_bindgen]
 pub fn run_stabilizer_search_json(config_json: &str) -> Result<String, JsValue> {
     let start = js_sys::Date::now();
     let config: StabilizerSearchConfig =
@@ -426,7 +452,7 @@ pub fn run_falsification_battery_json(_config_json: &str) -> Result<String, JsVa
 
 #[wasm_bindgen]
 pub fn wasm_sim_version() -> String {
-    "0.7.9".to_string()
+    "0.8.0".to_string()
 }
 
 #[cfg(test)]

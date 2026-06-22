@@ -50,7 +50,7 @@ Falsification test **H**: split triggers and is accepted on default TFIM demo.
 
 ## Honest limits
 
-- **No in-place split** — we compare independent quenches on different chain lengths, not embedding |ψ⟩ into a larger Hilbert space.
+- **In-place split** — embed |ψ⟩ at `split_site`, insert Δ |0⟩ qubits, evolve remainder on n+Δ Hamiltonian; compare to independent re-quench (**V′**).
 - **No tensor-network bond truncation** — adding factors means `tfimChain(n+Δ)`, not splitting a qubit.
 - Thresholds tuned on 10-site gapped chains. Accept/reject is a diagnostic hook, not a theorem.
 

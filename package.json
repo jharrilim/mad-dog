@@ -17,6 +17,7 @@
     "bench:causality": "npm run build:wasm && node scripts/causality-bench.ts",
     "bench:holography": "npm run build:wasm && node scripts/holography-bench.ts",
     "bench:matter": "npm run build:wasm && node scripts/matter-bench.ts",
+    "bench:factor": "npm run build:wasm && node scripts/factor-dynamics-bench.ts",
     "sweep:mass": "npm run build:wasm && node scripts/mass-sweep.ts",
     "check:falsification": "npm run ensure:wasm && node scripts/falsification-check.ts",
     "sweep:scattering": "npm run build:wasm && node scripts/scattering-sweep.ts",

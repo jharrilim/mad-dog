@@ -44,17 +44,18 @@ Run: `npm run check:falsification` or **Experiments → Falsification Tests**.
 | **I′** | Pauli stabilizer generators on branch subspace | ≥1 generator, distance ≥1, window scaling |
 | **S′** | Defect more localized in ordered phase | `orderedLongerLived` on h=0.5 vs 2.5 |
 | **T′** | Branch Born weights co-move with distinguishability | Env-entropy vs overlap ρ or strong imbalance ρ |
-| **U′** | EFT dimension counting vs stabilizer code rate | `dofAgreement` within tolerance |
 | **U′** | EFT DOF per site vs stabilizer code rate | `dofAgreement` within tolerance |
+| **V′** | In-place tensor split relieves pressure | `inPlaceImproves` at peak-pressure trigger |
+| **W′** | Holographic bound n_min finite with plateau | `nMin` Some and `boundScales` on chain sweep |
 | **M** | Negative controls reject fake locality | `random` n=6 and scrambled-spectrum shuffled chain do not recover |
 
-**K**, **L**, **L′**, **O**, **P**, **Q**, **R′**, **F′**, **C′**, **I′**, **S′**, **T′**, **U′**, and **M** target [roadmap.md](./roadmap.md) signatures **S1**, **S4**, **S5**, **S6–S8**, and **S9**.
+**K**, **L**, **L′**, **O**, **P**, **Q**, **R′**, **F′**, **C′**, **I′**, **S′**, **T′**, **U′**, **V′**, **W′**, and **M** target [roadmap.md](./roadmap.md) signatures **S1**, **S4**, **S5**, **S6–S8**, **S9**, and **S10**.
 
 ## Planned extensions
 
 | ID | Signature | Target criterion (not yet in battery) |
 |----|-----------|----------------------------------------|
-| _(none — I′ shipped)_ | | |
+| _(none — V′/W′ shipped)_ | | |
 
 ## Implementation
 
