@@ -19,7 +19,7 @@ A separate page (`/lab`) showing **three emergent spatial dimensions + one emerg
 | 2×2×2 (default) | 8 | Fast; ground-state dim inconclusive |
 | 2×2×3 | 12 | **dim=3 benchmark** (ground + quench); slower |
 
-**Clock slices (UI):** 12–80 on 2×2×2, 12–56 on 2×2×3; default 36 slices at Δt=0.25 (T≈9). Increase slices to probe late-time convergence of emergent geometry and defect signal.
+**Clock slices (UI):** 12–80 on 2×2×2, 12–56 on 2×2×3; default 16 slices at Δt=0.25 (T≈9). Increase slices to probe late-time convergence of emergent geometry and defect signal.
 
 3×3×3 (27 qubits) remains out of scope for the reference engine.
 

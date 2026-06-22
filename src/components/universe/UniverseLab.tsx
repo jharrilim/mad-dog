@@ -46,7 +46,7 @@ const DEFAULT: Universe3DConfig & { preset: LatticePreset } = {
   lz: 2,
   field: 1,
   dt: 0.25,
-  steps: 36,
+  steps: 16,
 }
 
 function SpacetimeStrip({
