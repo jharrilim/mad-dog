@@ -1,6 +1,6 @@
 # Gauge-free MI geometry stability
 
-**Status:** prototype (2026-06). Measures whether **mutual-information distance matrices** stay structurally consistent across clock slices — without Procrustes alignment or `truePositions`.
+**Status:** Phase 2 (2026-06). Measures whether **mutual-information distance matrices** stay structurally consistent across clock slices — without Procrustes alignment or `truePositions`.
 
 ## Motivation
 
@@ -8,48 +8,57 @@ Emergent MDS coordinates require gauge choices (rotation, reflection). The MI-de
 
 ## Setup
 
-Central defect quench on TFIM chain (ordered phase h ≈ 1.2). At each slice k:
+Central defect quench on TFIM **chain**, **grid**, or **cube** (ordered phase h ≈ 1.2). At each slice k:
 
 1. Build MI matrix → distance matrix D(k) via `mi_to_distance`.
 2. Compare D(k) to D(k−1):
    - **Relative Frobenius drift** ‖D(k) − D(k−1)‖ / ‖D(k−1)‖
    - **Spearman ρ** on off-diagonal entries (gauge-free)
-3. Record emergent dimension and top Gram eigenvalues (also gauge-free).
+3. **Cross-embedding ρ** — Spearman between pairwise distances from **classical MDS** vs **Laplacian spectral** embedding on D(k).
+4. Record emergent dimension and top Gram eigenvalues.
 
 ## Pass criteria
 
-`geometryStable` ⇔ mean Spearman ρ > 0.85 across slices.
+| Flag | Criterion |
+|------|-----------|
+| `geometryStable` | mean Spearman ρ > 0.85 across slices |
+| `dimStable` | mean emergent dim ≥ expected − 1 and no slice dim = 0 |
 
-Absolute distance drift can be large during quench propagation; rank correlation is the primary invariant.
-
-Ordered phase (h=1.2) passes mean ρ > 0.85 in falsification test **J** (paramagnetic can also rank highly — contrast not required).
+Falsification **J** (chain), **J′** (2×2×3 cube quench).
 
 ## API
 
 ```typescript
 import { runGeometryStabilityAsync } from '@/sim/runner-async'
 
+// 3D cube quench
 const result = await runGeometryStabilityAsync({
-  n: 10,
+  kind: 'cube',
+  rows: 2,
+  cols: 2,
+  lz: 3,
   field: 1.2,
   dt: 0.2,
   steps: 20,
 })
 ```
 
-WASM: `run_geometry_stability_json` in `geometry_stability.rs`.
+Dim vs manifold sweep: `run_geometry_dim_sweep_json` — see `npm run bench:geometry`.
 
-## Measured (default config)
+## Measured (default configs)
 
-n=10, h=1.2, 20 steps: mean ρ ≈ 0.93, drift ≈ 0.45 (expected during propagation), dim σ ≈ 0.73.
+| Lattice | mean ρ | embed ρ | dim mean |
+|---------|--------|---------|----------|
+| chain n=10 | ≈ 0.93 | ≈ 0.95 | ≈ 1 |
+| cube 2×2×3 | > 0.85 | > 0.80 | ≈ 3 |
 
 ## UI / falsification
 
-- **Experiments** → *Gauge-free MI geometry stability*
-- Falsification test **J**: ordered-phase ranking stable vs paramagnetic contrast
+- **Experiments** → *Gauge-free MI geometry stability* — chain / grid / cube presets
+- Falsification **J**, **J′**
 
 ## Honest limits
 
-- 1D chain only; 2D/3D stability not yet scanned.
 - Does not prove a smooth manifold — only that MI rankings are persistent.
 - High drift means magnitudes change; use ρ for structural stability.
+- 2×2×2 cube ground dim remains inconclusive (see [universe-lab.md](./universe-lab.md)).

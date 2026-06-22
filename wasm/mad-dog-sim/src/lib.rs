@@ -17,6 +17,7 @@ mod rng;
 mod refinement;
 mod run_decoherence;
 mod run_excitation_subspace;
+mod run_geometry_dim_sweep;
 mod run_geometry_stability;
 mod run_factorization;
 mod run_factorization_ensemble;
@@ -38,6 +39,7 @@ mod spacetime;
 use emergence::{run_emergence, RunConfig as EmergenceConfig};
 use run_decoherence::{run_decoherence_quench, DecoherenceQuenchConfig};
 use run_excitation_subspace::{run_excitation_subspace_probe, ExcitationSubspaceConfig};
+use run_geometry_dim_sweep::run_geometry_dim_sweep;
 use run_geometry_stability::{run_geometry_stability, GeometryStabilityConfig};
 use run_factorization::{run_factorization_search, FactorizationSearchConfig};
 use run_factorization_ensemble::run_factorization_ensemble;
@@ -268,6 +270,14 @@ pub fn run_geometry_stability_json(config_json: &str) -> Result<String, JsValue>
     let config: GeometryStabilityConfig =
         serde_json::from_str(config_json).map_err(|e| JsValue::from_str(&e.to_string()))?;
     let mut result = run_geometry_stability(&config);
+    result.elapsed_ms = js_sys::Date::now() - start;
+    serde_json::to_string(&result).map_err(|e| JsValue::from_str(&e.to_string()))
+}
+
+#[wasm_bindgen]
+pub fn run_geometry_dim_sweep_json(_config_json: &str) -> Result<String, JsValue> {
+    let start = js_sys::Date::now();
+    let mut result = run_geometry_dim_sweep();
     result.elapsed_ms = js_sys::Date::now() - start;
     serde_json::to_string(&result).map_err(|e| JsValue::from_str(&e.to_string()))
 }

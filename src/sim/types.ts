@@ -662,8 +662,14 @@ export interface ExcitationSubspaceResult {
   backend?: SimBackend
 }
 
+export type GeometryStabilityKind = 'chain' | 'grid' | 'cube'
+
 export interface GeometryStabilityConfig {
-  n: number
+  kind?: GeometryStabilityKind
+  n?: number
+  rows?: number
+  cols?: number
+  lz?: number
   field: number
   dt: number
   steps: number
@@ -678,16 +684,42 @@ export interface GeometryStabilitySlice {
   topEigenvalues: number[]
   distanceDrift: number
   rankCorrelation: number
+  embeddingCorrelation: number
 }
 
 export interface GeometryStabilityResult {
+  kind: string
+  label: string
   sites: number
   field: number
+  expectedDim: number
   slices: GeometryStabilitySlice[]
   meanDistanceDrift: number
   meanRankCorrelation: number
+  meanEmbeddingCorrelation: number
   dimStd: number
+  meanEmergentDim: number
   geometryStable: boolean
+  dimStable: boolean
+  elapsedMs: number
+  backend?: SimBackend
+}
+
+export interface GeometryDimSweepCase {
+  label: string
+  kind: string
+  sites: number
+  expectedDim: number
+  emergentDim: number
+  embeddingCorrelation: number
+  passed: boolean
+}
+
+export interface GeometryDimSweepResult {
+  cases: GeometryDimSweepCase[]
+  passed: number
+  total: number
+  allPassed: boolean
   elapsedMs: number
   backend?: SimBackend
 }

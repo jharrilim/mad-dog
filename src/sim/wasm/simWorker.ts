@@ -19,6 +19,7 @@ import init, {
   run_decoherence_quench_json,
   run_excitation_subspace_json,
   run_geometry_stability_json,
+  run_geometry_dim_sweep_json,
   run_universe_3d_json,
   run_universe_slice_json,
   run_factorization_search_json,
@@ -45,6 +46,7 @@ export type WasmMethod =
   | 'decoherenceQuench'
   | 'excitationSubspace'
   | 'geometryStability'
+  | 'geometryDimSweep'
   | 'universe3d'
   | 'universeSlice'
   | 'factorizationSearch'
@@ -79,6 +81,7 @@ const runners: Record<WasmMethod, (json: string) => string> = {
   decoherenceQuench: run_decoherence_quench_json,
   excitationSubspace: run_excitation_subspace_json,
   geometryStability: run_geometry_stability_json,
+  geometryDimSweep: run_geometry_dim_sweep_json,
   universe3d: run_universe_3d_json,
   universeSlice: run_universe_slice_json,
   factorizationSearch: run_factorization_search_json,

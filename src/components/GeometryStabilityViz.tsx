@@ -13,6 +13,41 @@ import {
   runGeometryStabilityAsync,
   type GeometryStabilityResultWithBackend,
 } from '@/sim/runner-async'
+import type { GeometryStabilityConfig } from '@/sim/types'
+
+const PRESETS: { label: string; config: GeometryStabilityConfig }[] = [
+  {
+    label: 'Chain n=10',
+    config: { kind: 'chain', n: 10, field: 1.2, dt: 0.2, steps: 20, xi: 1.0, seed: 42 },
+  },
+  {
+    label: 'Grid 3×3',
+    config: {
+      kind: 'grid',
+      rows: 3,
+      cols: 3,
+      field: 1.2,
+      dt: 0.2,
+      steps: 20,
+      xi: 1.0,
+      seed: 42,
+    },
+  },
+  {
+    label: 'Cube 2×2×3',
+    config: {
+      kind: 'cube',
+      rows: 2,
+      cols: 2,
+      lz: 3,
+      field: 1.5,
+      dt: 0.2,
+      steps: 20,
+      xi: 1.0,
+      seed: 42,
+    },
+  },
+]
 
 function StabilityChart({ result }: { result: GeometryStabilityResultWithBackend }) {
   const W = 360
@@ -23,14 +58,16 @@ function StabilityChart({ result }: { result: GeometryStabilityResultWithBackend
   const slices = result.slices
   if (slices.length < 2) return null
 
-  const path = (key: 'rankCorrelation' | 'distanceDrift') => {
-    const pts = slices.map((s, i) => {
-      const x = pad.l + (i / (slices.length - 1)) * innerW
-      const v = s[key]
-      const y = pad.t + innerH * (1 - Math.min(v, key === 'rankCorrelation' ? 1 : 0.6) / (key === 'rankCorrelation' ? 1 : 0.6))
-      return `${i === 0 ? 'M' : 'L'} ${x} ${y}`
-    })
-    return pts.join(' ')
+  const path = (key: 'rankCorrelation' | 'distanceDrift' | 'embeddingCorrelation') => {
+    const max = key === 'rankCorrelation' || key === 'embeddingCorrelation' ? 1 : 0.6
+    return slices
+      .map((s, i) => {
+        const x = pad.l + (i / (slices.length - 1)) * innerW
+        const v = s[key]
+        const y = pad.t + innerH * (1 - Math.min(v, max) / max)
+        return `${i === 0 ? 'M' : 'L'} ${x} ${y}`
+      })
+      .join(' ')
   }
 
   return (
@@ -43,6 +80,12 @@ function StabilityChart({ result }: { result: GeometryStabilityResultWithBackend
       />
       <path
         fill="none"
+        stroke="oklch(0.72 0.12 160)"
+        strokeWidth={1.5}
+        d={path('embeddingCorrelation')}
+      />
+      <path
+        fill="none"
         stroke="oklch(0.55 0.08 250)"
         strokeWidth={1.5}
         strokeDasharray="4 3"
@@ -52,29 +95,23 @@ function StabilityChart({ result }: { result: GeometryStabilityResultWithBackend
         slice k →
       </text>
       <text x={W - 8} y={pad.t + 10} textAnchor="end" className="fill-muted-foreground text-[9px]">
-        solid = rank ρ, dashed = ΔD
+        ρ / embed / ΔD
       </text>
     </svg>
   )
 }
 
 export function GeometryStabilityViz() {
+  const [preset, setPreset] = useState(0)
   const [result, setResult] = useState<GeometryStabilityResultWithBackend | null>(null)
   const [loading, setLoading] = useState(false)
 
   const run = useCallback(() => {
     setLoading(true)
-    void runGeometryStabilityAsync({
-      n: 10,
-      field: 1.2,
-      dt: 0.2,
-      steps: 20,
-      xi: 1.0,
-      seed: 42,
-    })
+    void runGeometryStabilityAsync(PRESETS[preset].config)
       .then(setResult)
       .finally(() => setLoading(false))
-  }, [])
+  }, [preset])
 
   return (
     <Card>
@@ -82,11 +119,23 @@ export function GeometryStabilityViz() {
         <CardTitle>Gauge-free MI geometry stability</CardTitle>
         <CardDescription>
           Track mutual-information distance matrices across clock slices without
-          Procrustes alignment. Spearman rank correlation measures whether relative
-          qubit–qubit distances stay ordered as an excitation propagates.
+          Procrustes alignment. Spearman ρ measures ranking persistence; embedding
+          ρ compares MDS vs spectral layouts on the same MI distances.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        <div className="flex flex-wrap gap-2">
+          {PRESETS.map((p, i) => (
+            <Button
+              key={p.label}
+              size="sm"
+              variant={preset === i ? 'default' : 'outline'}
+              onClick={() => setPreset(i)}
+            >
+              {p.label}
+            </Button>
+          ))}
+        </div>
         <Button onClick={run} disabled={loading} size="sm">
           {loading ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -98,14 +147,16 @@ export function GeometryStabilityViz() {
         {result && (
           <>
             <div className="flex flex-wrap gap-2">
+              <Badge variant="outline">{result.label}</Badge>
               <Badge variant={result.geometryStable ? 'default' : 'secondary'}>
                 {result.geometryStable ? 'Stable ranking' : 'Unstable ranking'}
               </Badge>
-              <Badge variant="outline">
-                mean ρ {result.meanRankCorrelation.toFixed(3)}
+              <Badge variant={result.dimStable ? 'default' : 'secondary'}>
+                dim stable (mean {result.meanEmergentDim.toFixed(1)} / {result.expectedDim})
               </Badge>
+              <Badge variant="outline">mean ρ {result.meanRankCorrelation.toFixed(3)}</Badge>
               <Badge variant="outline">
-                mean ΔD {result.meanDistanceDrift.toFixed(3)}
+                embed ρ {result.meanEmbeddingCorrelation.toFixed(3)}
               </Badge>
               <Badge variant="outline">dim σ {result.dimStd.toFixed(2)}</Badge>
             </div>

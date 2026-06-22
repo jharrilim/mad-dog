@@ -26,6 +26,7 @@ import {
   run_decoherence_quench_json,
   run_excitation_subspace_json,
   run_geometry_stability_json,
+  run_geometry_dim_sweep_json,
   run_factorization_search_json,
 } from '../src/sim/wasm/pkg/mad_dog_sim.js'
 
@@ -397,15 +398,54 @@ for (const config of [
 {
   const r = JSON.parse(
     run_geometry_stability_json(
-      JSON.stringify({ n: 10, field: 1.2, dt: 0.2, steps: 20, xi: 1.0, seed: 42 }),
+      JSON.stringify({
+        kind: 'chain',
+        n: 10,
+        field: 1.2,
+        dt: 0.2,
+        steps: 20,
+        xi: 1.0,
+        seed: 42,
+      }),
     ),
   )
-  console.log('\ngeometry stability:')
+  console.log('\ngeometry stability (chain):')
   if (!r.geometryStable) fail('ordered-phase MI ranking unstable')
   else
     ok(
-      `rho=${r.meanRankCorrelation.toFixed(3)} drift=${r.meanDistanceDrift.toFixed(3)} dimStd=${r.dimStd.toFixed(2)}`,
+      `rho=${r.meanRankCorrelation.toFixed(3)} embed=${r.meanEmbeddingCorrelation.toFixed(3)} dimStd=${r.dimStd.toFixed(2)}`,
     )
+}
+
+{
+  const r = JSON.parse(
+    run_geometry_stability_json(
+      JSON.stringify({
+        kind: 'cube',
+        rows: 2,
+        cols: 2,
+        lz: 3,
+        field: 1.5,
+        dt: 0.2,
+        steps: 20,
+        xi: 1.0,
+        seed: 42,
+      }),
+    ),
+  )
+  console.log('\ngeometry stability (cube 2x2x3):')
+  if (!r.geometryStable || !r.dimStable) fail('cube geometry unstable')
+  else
+    ok(
+      `rho=${r.meanRankCorrelation.toFixed(3)} dimMean=${r.meanEmergentDim.toFixed(1)} expected=${r.expectedDim}`,
+    )
+}
+
+{
+  const r = JSON.parse(run_geometry_dim_sweep_json('{}'))
+  console.log('\ngeometry dim sweep:')
+  if (!r.allPassed) fail(`dim sweep ${r.passed}/${r.total}`)
+  else ok(`${r.passed}/${r.total} lattice cases passed`)
 }
 
 console.log(failures === 0 ? '\nAll WASM checks passed.' : `\n${failures} check(s) failed.`)

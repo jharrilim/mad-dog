@@ -367,10 +367,14 @@ pub fn run_falsification_battery() -> FalsificationBatteryResult {
         });
     }
 
-    // J — MI distance ranking stable without Procrustes (ordered phase)
+    // J — MI distance ranking stable without Procrustes (ordered phase, 1D chain)
     {
         let ordered = run_geometry_stability(&GeometryStabilityConfig {
+            kind: "chain".to_string(),
             n: 10,
+            rows: None,
+            cols: None,
+            lz: None,
             field: 1.2,
             dt: 0.2,
             steps: 20,
@@ -379,13 +383,43 @@ pub fn run_falsification_battery() -> FalsificationBatteryResult {
         });
         tests.push(FalsificationTest {
             id: "J".to_string(),
-            name: "Gauge-free MI geometry stable in ordered phase".to_string(),
+            name: "Gauge-free MI geometry stable in ordered phase (chain)".to_string(),
             passed: ordered.geometry_stable,
             detail: format!(
-                "drift={:.3} corr={:.3} dimStd={:.3}",
+                "drift={:.3} corr={:.3} embed={:.3} dimStd={:.3}",
                 ordered.mean_distance_drift,
                 ordered.mean_rank_correlation,
+                ordered.mean_embedding_correlation,
                 ordered.dim_std
+            ),
+        });
+    }
+
+    // J' — 3D cube quench: gauge-free geometry stable without Procrustes
+    {
+        let cube = run_geometry_stability(&GeometryStabilityConfig {
+            kind: "cube".to_string(),
+            n: 12,
+            rows: Some(2),
+            cols: Some(2),
+            lz: Some(3),
+            field: 1.5,
+            dt: 0.2,
+            steps: 20,
+            xi: 1.0,
+            seed: 42,
+        });
+        tests.push(FalsificationTest {
+            id: "J'".to_string(),
+            name: "Gauge-free MI geometry stable on 2×2×3 cube quench".to_string(),
+            passed: cube.geometry_stable && cube.dim_stable,
+            detail: format!(
+                "corr={:.3} embed={:.3} dimMean={:.2} expected={} dimStable={}",
+                cube.mean_rank_correlation,
+                cube.mean_embedding_correlation,
+                cube.mean_emergent_dim,
+                cube.expected_dim,
+                cube.dim_stable
             ),
         });
     }

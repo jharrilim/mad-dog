@@ -83,7 +83,15 @@ Dated bullets for decisions future agents should not relitigate without cause.
 ## 2026-06-21 — Phase 1 S1 (kill circularity)
 
 - **Model zoo:** `xx_chain`, `heisenberg_chain`, `sparse_local_chain` + shuffled factorization kinds.
-- **Ensemble K:** `run_factorization_ensemble` — TFIM/XX/Heisenberg/sparse, ≥80% spectrum recovery.
+- **Ensemble K:** `run_factorization_ensemble` — TFIM/XX/Heisenberg/sparse, ≥80% recovery.
 - **Uniqueness report** on top-k equivalence classes (`line_equiv_distance` clustering).
 - **Negative control M:** random nonlocal + `spectrumScramble` must not recover.
 - **Deferred:** true eigenvalue-only blind inference; 3D/torus graph factorization.
+
+## 2026-06-21 — Phase 2 S2 (space isn’t an artifact)
+
+- **Lattice kinds** in `geometry_stability.rs`: chain, grid, cube quenches.
+- **Cross-embedding ρ** — MDS vs Laplacian spectral layout on MI distances.
+- **`dimStable`** — emergent dim does not collapse on quench (cube 2×2×3).
+- **Falsification J′** — cube gauge-free geometry + dim stability.
+- **`bench:geometry`** — dim vs manifold sweep (`run_geometry_dim_sweep_json`).

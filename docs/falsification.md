@@ -27,7 +27,8 @@ Run: `npm run check:falsification` or **Experiments → Falsification Tests**.
 | **G** | Multi-clock not globally consistent | defectUniformR² > 0.95 and minPairwiseR² < 0.95 |
 | **H** | Adaptive split relieves pressure | Split triggers and accepted on default quench |
 | **I** | Branch excitations code-like | Sharpness gain > 1.03, window rank drops, branch overlap < 0.95 |
-| **J** | Gauge-free MI geometry stable | Ordered phase mean Spearman ρ > 0.85 |
+| **J** | Gauge-free MI geometry stable (chain) | Ordered phase mean Spearman ρ > 0.85 |
+| **J′** | 3D gauge-free geometry (2×2×3 cube) | mean ρ > 0.85 and `dimStable` on quench |
 | **K** | Ensemble blind locality recovery | Phase-1 model zoo: ≥80% recovery (spectrum; Pauli for Heisenberg/sparse) |
 | **L** | Directional causal isotropy (Lorentz proxy v0) | Cardinal front-speed CoV < 0.25 on 3×3 grid quench |
 | **M** | Negative controls reject fake locality | `random` n=6 and scrambled-spectrum shuffled chain do not recover |
@@ -38,7 +39,6 @@ Run: `npm run check:falsification` or **Experiments → Falsification Tests**.
 
 | ID | Signature | Target criterion (not yet in battery) |
 |----|-----------|----------------------------------------|
-| **J′** | S2 — 3D gauge-free geometry | 2×2×3 quench mean Spearman ρ > 0.85 |
 | **I′** | S8 — stabilizer identification | Pauli generating set on branch subspace |
 
 ## Implementation

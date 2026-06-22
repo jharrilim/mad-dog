@@ -325,6 +325,139 @@ pub fn classical_mds(distance: &[Vec<f64>], max_dim: usize) -> MdsResult {
     }
 }
 
+/// Pairwise Euclidean distances from coordinate rows.
+pub fn pairwise_from_coords(coords: &[Vec<f64>]) -> Vec<Vec<f64>> {
+    let n = coords.len();
+    let mut dist = vec![vec![0.0; n]; n];
+    for i in 0..n {
+        for j in (i + 1)..n {
+            let mut sq = 0.0;
+            for k in 0..coords[i].len() {
+                let diff = coords[i][k] - coords[j][k];
+                sq += diff * diff;
+            }
+            let d = sq.sqrt();
+            dist[i][j] = d;
+            dist[j][i] = d;
+        }
+    }
+    dist
+}
+
+/// Laplacian eigenmap embedding from a distance matrix (gauge-free alternative to MDS).
+pub fn spectral_embedding(distance: &[Vec<f64>], max_dim: usize) -> MdsResult {
+    let n = distance.len();
+    if n == 0 {
+        return MdsResult {
+            coords: vec![],
+            eigenvalues: vec![],
+            emergent_dim: 0,
+            explained_variance: vec![],
+        };
+    }
+
+    let mut upper = Vec::new();
+    for i in 0..n {
+        for j in (i + 1)..n {
+            if distance[i][j] > 1e-12 {
+                upper.push(distance[i][j]);
+            }
+        }
+    }
+    upper.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+    let sigma = if upper.is_empty() {
+        1.0
+    } else {
+        upper[upper.len() / 2].max(1e-6)
+    };
+
+    let mut affinity = vec![vec![0.0; n]; n];
+    for i in 0..n {
+        for j in 0..n {
+            if i == j {
+                continue;
+            }
+            let d = distance[i][j];
+            affinity[i][j] = (-d * d / (2.0 * sigma * sigma)).exp();
+        }
+    }
+
+    let mut degree = vec![0.0; n];
+    for i in 0..n {
+        degree[i] = affinity[i].iter().sum::<f64>();
+    }
+
+    let mut laplacian = vec![vec![0.0; n]; n];
+    for i in 0..n {
+        for j in 0..n {
+            if i == j {
+                laplacian[i][j] = 1.0;
+            } else if degree[i] > 1e-12 && degree[j] > 1e-12 {
+                laplacian[i][j] = -affinity[i][j] / (degree[i] * degree[j]).sqrt();
+            }
+        }
+    }
+
+    let EigenWrap { values, vectors } = {
+        let r = jacobi_eigen_symmetric(&laplacian);
+        EigenWrap {
+            values: r.values,
+            vectors: r.vectors,
+        }
+    };
+
+    let mut order: Vec<(f64, usize)> = values
+        .iter()
+        .copied()
+        .enumerate()
+        .map(|(i, v)| (v, i))
+        .collect();
+    order.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap_or(std::cmp::Ordering::Equal));
+
+    let eigenvalues: Vec<f64> = order.iter().map(|o| o.0).collect();
+    let positive: Vec<f64> = eigenvalues.iter().copied().filter(|v| *v > 1e-9).collect();
+    let total_positive: f64 = positive.iter().sum::<f64>().max(1.0);
+
+    let mut explained_variance = Vec::new();
+    let mut running = 0.0;
+    for &ev in &eigenvalues {
+        if ev > 1e-9 {
+            running += ev;
+        }
+        explained_variance.push(running / total_positive);
+    }
+
+    let emergent_dim = estimate_emergent_dimension(&eigenvalues, max_dim);
+    let dims = max_dim.min(n).max(1);
+    let mut coords = vec![vec![0.0; dims]; n];
+
+    // Skip the trivial near-zero mode when possible.
+    let start = if order.first().map(|o| o.0).unwrap_or(0.0) < 1e-8 {
+        1
+    } else {
+        0
+    };
+    for k in 0..dims {
+        let idx = start + k;
+        if idx >= order.len() {
+            break;
+        }
+        let lambda = order[idx].0.max(0.0);
+        let scale = lambda.sqrt();
+        let col = order[idx].1;
+        for i in 0..n {
+            coords[i][k] = vectors[i][col] * scale;
+        }
+    }
+
+    MdsResult {
+        coords,
+        eigenvalues,
+        emergent_dim,
+        explained_variance,
+    }
+}
+
 struct EigenWrap {
     values: Vec<f64>,
     vectors: Vec<Vec<f64>>,

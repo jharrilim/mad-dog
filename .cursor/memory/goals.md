@@ -9,8 +9,6 @@
 
 ## Near-term directions
 
-See phased signature program in [roadmap.md](../docs/roadmap.md) (S1–S10). **Phase 1 shipped.**
+See phased signature program in [roadmap.md](../docs/roadmap.md) (S1–S10). **Phase 2 shipped.**
 
-- **Phase 2:** **J′** — 3D gauge-free geometry stability.
-- **Phase 4:** extend **L** (Lorentz proxy scaling + dispersion).
-- **Phase 6:** **I′** — stabilizer search on excitation subspace.
+- **Phase 3:** clock networks on 2D/3D; modular vs physical clocks.

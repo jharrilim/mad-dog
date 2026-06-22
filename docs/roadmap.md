@@ -15,7 +15,7 @@ Operational checklist — each maps to falsification tests and roadmap phases.
 | ID | Signature | Battery | Phase | Status |
 |----|-----------|---------|-------|--------|
 | **S1** | Locality entanglement-readable | A, A′, **K**, **M** | 1 | **Shipped** — model zoo ensemble + negative controls |
-| **S2** | Low-dim MI geometry | B, J, J′ (planned) | 2 | J on 1D chain; 3D extension next |
+| **S2** | Low-dim MI geometry | B, J, **J′** | 2 | **Shipped** — chain + 2×2×3 cube; dim sweep bench |
 | **S3** | Relational time (no global clock) | D, G | 3 | Shipped |
 | **S4** | Causal light cones | E, B | 4 | Shipped (1D); grid via **L** |
 | **S5** | Holographic entanglement | C, F, H | 5 | Ground RT OK; quench dynamics partial |
@@ -47,19 +47,13 @@ Operational checklist — each maps to falsification tests and roadmap phases.
 | Factorization uniqueness report | `uniqueness` on search results + bench assertion |
 | Model zoo (XX, Heisenberg, sparse local) | [factorization.md](./factorization.md); `bench:factorization` |
 | Lorentz proxy v0 (directional isotropy) | Falsification **L** — cardinal speed CoV on 3×3 grid |
+| 3D gauge-free geometry (J′) | 2×2×3 cube quench; spectral vs MDS embedding ρ |
+| Dim vs manifold sweep | `bench:geometry` — chain/grid/cube ground states |
+| Quench dim stability | `dimStable` on cube quench (no collapse to dim=1) |
 
 ---
 
 ## Next up (ranked execution order)
-
-### Phase 2 — Space isn’t an artifact (S2)
-
-| Priority | Item | Deliverable | Pass criterion |
-|----------|------|-------------|----------------|
-| 1 | **J′** — 3D gauge-free geometry | Extend `geometry_stability.rs` to 2×2×3 quenches | mean Spearman ρ > 0.85 without Procrustes |
-| 2 | Dim vs manifold sweep | 1D / 2D / 3D lattices at growing n | Estimator tracks lattice dim |
-| 3 | Dim under quench + decoherence | Same stability test on product-state quenches | Predictable drift, not collapse to dim=1 |
-| 4 | Cross-embedding consistency | MDS vs spectral-on-distance-matrix | Spearman between pipelines > threshold |
 
 ### Phase 3 — Deepen relational time (S3)
 
