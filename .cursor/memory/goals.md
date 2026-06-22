@@ -9,6 +9,6 @@
 
 ## Near-term directions
 
-See phased signature program in [roadmap.md](../docs/roadmap.md) (S1–S10). **Phase 3 shipped.**
+See phased signature program in [roadmap.md](../docs/roadmap.md) (S1–S10). **Phase 4 shipped.**
 
-- **Phase 4:** Lorentz proxy scaling (L → n), dispersion relation.
+- **Phase 5:** holography under quench dynamics (RT time series).

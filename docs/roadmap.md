@@ -17,12 +17,12 @@ Operational checklist — each maps to falsification tests and roadmap phases.
 | **S1** | Locality entanglement-readable | A, A′, **K**, **M** | 1 | **Shipped** — model zoo ensemble + negative controls |
 | **S2** | Low-dim MI geometry | B, J, **J′** | 2 | **Shipped** — chain + 2×2×3 cube; dim sweep bench |
 | **S3** | Relational time (no global clock) | D, D′, G, G′, **N** | **Shipped** — grid/cube clocks; modular vs uniform; simultaneity bend |
-| **S4** | Causal light cones | E, B | 4 | Shipped (1D); grid via **L** |
+| **S4** | Causal light cones | E, B, **Q** | **Shipped** — scattering phase + grid isotropy |
 | **S5** | Holographic entanglement | C, F, H | 5 | Ground RT OK; quench dynamics partial |
 | **S6** | Particles = excitations | E | 6 | Shipped (domain walls + scatter) |
 | **S7** | Classical branches | I | 6 | Proto (decoherence quench) |
 | **S8** | IR subspace / code-like | I, I′ (planned) | 6 | Sharpness heuristic; stabilizer search next |
-| **S9** | Lorentz-ish IR causality | **L** (v0) | 4 | **L stub shipped** — directional CoV on 3×3 |
+| **S9** | Lorentz-ish IR causality | **L**, **L′**, **O**, **P** | **Shipped** — scaling, dispersion, boost invariance |
 | **S10** | Factor count not arbitrary | F, H | 7 | Split heuristic; in-place split deferred |
 
 **Progress metric:** signatures pass on **models we didn’t hand-tune**, at **growing n**, with **negative controls** failing loudly.
@@ -53,19 +53,14 @@ Operational checklist — each maps to falsification tests and roadmap phases.
 | Grid/cube multi-clock networks | Falsification **G′**; `bench:time` |
 | Modular + Z edge clocks vs uniform Δt | Falsification **D′** |
 | Emergent simultaneity surface bend | Falsification **N**; `run_simultaneity_json` |
+| Lorentz scaling sweep (3×3→4×4) | Falsification **L′**; `bench:causality` |
+| Dispersion ω(k) linear at small k | Falsification **O** |
+| Weak boost invariance (clock subset) | Falsification **P** |
+| Scattering exchange phase stability | Falsification **Q** |
 
 ---
 
 ## Next up (ranked execution order)
-
-### Phase 4 — Causality → Lorentz (S4 → S9)
-
-| Priority | Item | Deliverable | Pass criterion |
-|----------|------|-------------|----------------|
-| 1 | **L → scaling** | CoV of cardinal speeds vs n on grid/cube | CoV → 0 as n grows |
-| 2 | Dispersion relation | Fourier mode propagation on emergent lattice | ω(k) linear at small k |
-| 3 | Weak boost invariance | Light cones from different clock subsets | Shape invariant up to ε(n) |
-| 4 | Scattering phase shifts | JW-resolved exchange beyond separation-vs-time | Stable phase after interaction |
 
 ### Phase 5 — Holography under dynamics (S5)
 

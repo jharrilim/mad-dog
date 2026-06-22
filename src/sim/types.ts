@@ -445,6 +445,73 @@ export interface ScatteringResult {
   bothMoved: boolean
   crossed: boolean
   minSeparation: number
+  phaseSeries: number[]
+  postInteractionPhaseStd: number
+  phaseStable: boolean
+  elapsedMs: number
+  backend?: SimBackend
+}
+
+export interface LorentzScalingCase {
+  label: string
+  rows: number
+  cols: number
+  speedCv: number
+  passed: boolean
+}
+
+export interface LorentzScalingResult {
+  cases: LorentzScalingCase[]
+  covSmall: number
+  covLarge: number
+  covImproves: boolean
+  allPassed: boolean
+  elapsedMs: number
+  backend?: SimBackend
+}
+
+export interface DispersionMode {
+  k: number
+  groupVelocity: number
+  omega: number
+}
+
+export interface DispersionConfig {
+  n: number
+  field: number
+  dt: number
+  steps: number
+  modes?: number
+}
+
+export interface DispersionResult {
+  n: number
+  field: number
+  modes: DispersionMode[]
+  omegaSlope: number
+  omegaIntercept: number
+  linearR2: number
+  linearAtSmallK: boolean
+  elapsedMs: number
+  backend?: SimBackend
+}
+
+export interface BoostInvarianceConfig {
+  rows: number
+  cols: number
+  field: number
+  dt: number
+  steps: number
+  edgeSite?: number
+}
+
+export interface BoostInvarianceResult {
+  rows: number
+  cols: number
+  velocityUniform: number
+  velocityEdgeClock: number
+  relativeDelta: number
+  shapeInvariant: boolean
   elapsedMs: number
   backend?: SimBackend
 }

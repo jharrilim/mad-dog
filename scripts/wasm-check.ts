@@ -23,6 +23,9 @@ import {
   run_modular_dual_clock_json,
   run_multi_clock_json,
   run_simultaneity_json,
+  run_lorentz_scaling_json,
+  run_dispersion_json,
+  run_boost_invariance_json,
   run_scattering_json,
   run_decoherence_quench_json,
   run_excitation_subspace_json,
@@ -366,6 +369,8 @@ for (const config of [
   console.log('\nscattering (lite):')
   if (r.slices.length !== 0) fail('lite mode should omit slices')
   else ok(`crossed=${r.crossed} minSep=${r.minSeparation.toFixed(3)} bothMoved=${r.bothMoved}`)
+  if (!r.phaseStable) fail(`phase should stabilize post-interaction (residual=${r.postInteractionPhaseStd})`)
+  else ok(`phaseResidual=${r.postInteractionPhaseStd.toFixed(3)}`)
   if (r.separationSeries?.length !== 40) fail('separation series length')
   else ok(`separationSeries=${r.separationSeries.length}`)
 }
@@ -488,6 +493,22 @@ for (const config of [
   console.log('\ngeometry dim sweep:')
   if (!r.allPassed) fail(`dim sweep ${r.passed}/${r.total}`)
   else ok(`${r.passed}/${r.total} lattice cases passed`)
+}
+
+{
+  const r = JSON.parse(run_lorentz_scaling_json('{}'))
+  console.log('\nlorentz scaling:')
+  if (!r.allPassed) fail(`scaling covSmall=${r.covSmall} covLarge=${r.covLarge}`)
+  else ok(`covSmall=${r.covSmall.toFixed(3)} covLarge=${r.covLarge.toFixed(3)} improves=${r.covImproves}`)
+}
+
+{
+  const r = JSON.parse(
+    run_dispersion_json(JSON.stringify({ n: 16, field: 1.0, dt: 0.15, steps: 48, modes: 3 })),
+  )
+  console.log('\ndispersion:')
+  if (!r.linearAtSmallK) fail('omega(k) should be linear at small k')
+  else ok(`slope=${r.omegaSlope.toFixed(3)} R²=${r.linearR2.toFixed(3)}`)
 }
 
 console.log(failures === 0 ? '\nAll WASM checks passed.' : `\n${failures} check(s) failed.`)

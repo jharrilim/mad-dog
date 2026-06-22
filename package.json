@@ -14,6 +14,7 @@
     "bench:universe": "npm run build:wasm && node scripts/universe-bench.ts",
     "bench:geometry": "npm run build:wasm && node scripts/geometry-bench.ts",
     "bench:time": "npm run build:wasm && node scripts/time-bench.ts",
+    "bench:causality": "npm run build:wasm && node scripts/causality-bench.ts",
     "sweep:mass": "npm run build:wasm && node scripts/mass-sweep.ts",
     "check:falsification": "npm run ensure:wasm && node scripts/falsification-check.ts",
     "sweep:scattering": "npm run build:wasm && node scripts/scattering-sweep.ts",

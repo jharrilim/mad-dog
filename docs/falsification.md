@@ -34,9 +34,13 @@ Run: `npm run check:falsification` or **Experiments → Falsification Tests**.
 | **J′** | 3D gauge-free geometry (2×2×3 cube) | mean ρ > 0.85 and `dimStable` on quench |
 | **K** | Ensemble blind locality recovery | Phase-1 model zoo: ≥80% recovery (spectrum; Pauli for Heisenberg/sparse) |
 | **L** | Directional causal isotropy (Lorentz proxy v0) | Cardinal front-speed CoV < 0.25 on 3×3 grid quench |
+| **L′** | Cardinal speed CoV improves with grid size | 3×3→4×4 CoV non-increasing and both < 0.25 |
+| **O** | Dispersion ω(k) linear at small k | Wavepacket v_g CoV < 0.35 and ω∝k fit R² > 0.85 |
+| **P** | Weak boost invariance | Uniform vs edge-clock light-cone speed relΔ < 0.20 |
+| **Q** | Scattering exchange phase stable | Detrended post-interaction phase residual std < 0.55 |
 | **M** | Negative controls reject fake locality | `random` n=6 and scrambled-spectrum shuffled chain do not recover |
 
-**K**, **L**, and **M** target [roadmap.md](./roadmap.md) signatures **S1** and **S9**. **L** is a stub — extend to n-scaling and dispersion before treating as a strong Lorentz claim.
+**K**, **L**, **L′**, **O**, **P**, **Q**, and **M** target [roadmap.md](./roadmap.md) signatures **S1**, **S4**, and **S9**.
 
 ## Planned extensions
 

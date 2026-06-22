@@ -126,6 +126,7 @@ pub fn run_universe_3d(config: &Universe3DConfig) -> Universe3DResult {
         track_worldline: true,
         defect_site: Some(defect_site),
         seed: 42,
+        signal_reference_site: None,
     });
     let light_cone = measure_light_cone(&spacetime, 0.12, Some(defect_site), Some(&site_distances));
     Universe3DResult {

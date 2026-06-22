@@ -59,6 +59,7 @@ pub fn run_spacetime(config: &SpacetimeRunConfig) -> SpacetimeResult {
         track_worldline: true,
         defect_site: Some(center),
         seed: config.seed,
+        signal_reference_site: None,
     });
     result.light_cone = Some(measure_light_cone(&result, 0.12, Some(center), None));
     result
@@ -86,6 +87,7 @@ pub fn run_spacetime_2d(config: &Spacetime2DConfig) -> SpacetimeResult {
         track_worldline: true,
         defect_site: Some(center),
         seed: 42,
+        signal_reference_site: None,
     });
     result.light_cone = Some(measure_light_cone(&result, 0.12, Some(center), None));
     result

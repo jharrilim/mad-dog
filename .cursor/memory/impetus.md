@@ -95,6 +95,14 @@ Dated bullets for decisions future agents should not relitigate without cause.
 - **Simultaneity surfaces** — `run_simultaneity_json`; foliation bend **N**.
 - **`bench:time`** — grid/cube clocks + modular + simultaneity smoke.
 
+## 2026-06-21 — Phase 4 S4→S9 (causality → Lorentz)
+
+- **Lorentz scaling** — `run_lorentz_scaling_json`; cardinal CoV 3×3→4×4 (**L′**).
+- **Dispersion** — wavepacket ω(k) proxy on TFIM chain (**O**).
+- **Boost invariance** — `signalReferenceSite` observer; relΔ (**P**).
+- **Scattering phase** — detrended exchange phase residual (**Q**).
+- **`bench:causality`** — scaling + dispersion + boost + phase smoke.
+
 ## 2026-06-21 — Phase 2 S2 (space isn’t an artifact)
 
 - **Lattice kinds** in `geometry_stability.rs`: chain, grid, cube quenches.

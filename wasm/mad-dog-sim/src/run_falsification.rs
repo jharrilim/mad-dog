@@ -16,52 +16,12 @@ use crate::run_refinement::{
 use crate::run_excitation_subspace::{run_excitation_subspace_probe, ExcitationSubspaceConfig};
 use crate::run_geometry_stability::{run_geometry_stability, GeometryStabilityConfig};
 use crate::run_multi_clock::{run_multi_clock, MultiClockRunConfig};
-use crate::run_spacetime::{run_spacetime_2d, Spacetime2DConfig};
+use crate::boost_invariance::{run_boost_invariance, BoostInvarianceConfig};
+use crate::dispersion::{run_dispersion, DispersionConfig};
+use crate::lorentz::grid_cardinal_speed_cv;
+use crate::run_lorentz_scaling::run_lorentz_scaling;
 use crate::scattering::{run_two_defect_scattering, ScatteringConfig};
 use serde::Serialize;
-
-/// Coefficient of variation of cardinal-direction front speeds on a 2D grid quench.
-fn grid_directional_speed_cv(rows: usize, cols: usize, field: f64, dt: f64, steps: usize) -> f64 {
-    let result = run_spacetime_2d(&Spacetime2DConfig {
-        rows,
-        cols,
-        field,
-        dt,
-        steps,
-    });
-    let lc = result
-        .light_cone
-        .expect("spacetime_2d attaches light_cone");
-    let center = (rows / 2) * cols + cols / 2;
-    let r0 = center / cols;
-    let c0 = center % cols;
-    let neighbors = [
-        (r0 as i32 - 1, c0 as i32),
-        (r0 as i32 + 1, c0 as i32),
-        (r0 as i32, c0 as i32 - 1),
-        (r0 as i32, c0 as i32 + 1),
-    ];
-    let mut speeds = Vec::new();
-    for (r, c) in neighbors {
-        if r < 0 || r >= rows as i32 || c < 0 || c >= cols as i32 {
-            continue;
-        }
-        let site = r as usize * cols + c as usize;
-        let t = lc.arrivals[site];
-        if t.is_finite() && t > 1e-9 {
-            speeds.push(1.0 / t);
-        }
-    }
-    if speeds.len() < 2 {
-        return f64::INFINITY;
-    }
-    let mean = speeds.iter().sum::<f64>() / speeds.len() as f64;
-    if mean < 1e-9 {
-        return f64::INFINITY;
-    }
-    let var = speeds.iter().map(|s| (s - mean).powi(2)).sum::<f64>() / speeds.len() as f64;
-    var.sqrt() / mean
-}
 
 fn rt_ratio_std(n: usize, field: f64, seed: u32) -> f64 {
     let model = tfim_chain(n, 1.0, field);
@@ -576,16 +536,91 @@ pub fn run_falsification_battery() -> FalsificationBatteryResult {
         });
     }
 
-    // L — emergent causal isotropy proxy (signature S9 v0; see docs/roadmap.md Phase 4)
+    // L — emergent causal isotropy proxy (signature S9 v0)
     {
         const CV_MAX: f64 = 0.25;
-        let cv = grid_directional_speed_cv(3, 3, 1.2, 0.2, 28);
+        let cv = grid_cardinal_speed_cv(3, 3, 1.2, 0.2, 28);
         tests.push(FalsificationTest {
             id: "L".to_string(),
             name: "Directional front speeds isotropic on 3×3 grid (Lorentz proxy v0)".to_string(),
             passed: cv < CV_MAX,
+            detail: format!("cardinal speed CoV={cv:.3} (pass if < {CV_MAX})"),
+        });
+    }
+
+    // L′ — cardinal speed CoV improves with lattice size (scaling)
+    {
+        let scaling = run_lorentz_scaling();
+        tests.push(FalsificationTest {
+            id: "L′".to_string(),
+            name: "Cardinal speed CoV improves with grid size".to_string(),
+            passed: scaling.all_passed,
             detail: format!(
-                "cardinal speed CoV={cv:.3} (pass if < {CV_MAX}); stub — extend to n-scaling + dispersion"
+                "covSmall={:.3}, covLarge={:.3}, improves={}",
+                scaling.cov_small, scaling.cov_large, scaling.cov_improves
+            ),
+        });
+    }
+
+    // O — dispersion linear at small k
+    {
+        let d = run_dispersion(&DispersionConfig {
+            n: 16,
+            field: 1.0,
+            dt: 0.15,
+            steps: 48,
+            modes: 3,
+        });
+        tests.push(FalsificationTest {
+            id: "O".to_string(),
+            name: "Dispersion ω(k) linear at small k".to_string(),
+            passed: d.linear_at_small_k,
+            detail: format!(
+                "slope={:.3}, intercept={:.3}, R²={:.3}",
+                d.omega_slope, d.omega_intercept, d.linear_r2
+            ),
+        });
+    }
+
+    // P — weak boost invariance (clock-subset observers)
+    {
+        let b = run_boost_invariance(&BoostInvarianceConfig {
+            rows: 4,
+            cols: 4,
+            field: 1.2,
+            dt: 0.2,
+            steps: 32,
+            edge_site: Some(0),
+        });
+        tests.push(FalsificationTest {
+            id: "P".to_string(),
+            name: "Light-cone speed invariant under clock-subset observer".to_string(),
+            passed: b.shape_invariant,
+            detail: format!(
+                "vUniform={:.3}, vEdgeClock={:.3}, relDelta={:.3}",
+                b.velocity_uniform, b.velocity_edge_clock, b.relative_delta
+            ),
+        });
+    }
+
+    // Q — scattering exchange phase stabilizes post-interaction
+    {
+        let s = run_two_defect_scattering(&ScatteringConfig {
+            n: 12,
+            field: 0.7,
+            dt: 0.12,
+            steps: 40,
+            defect_sites: Some([3, 8]),
+            lite: true,
+            taylor_order: 4,
+        });
+        tests.push(FalsificationTest {
+            id: "Q".to_string(),
+            name: "Scattering exchange phase stable after interaction".to_string(),
+            passed: s.phase_stable,
+            detail: format!(
+                "postPhaseStd={:.3}, minSep={:.1}",
+                s.post_interaction_phase_std, s.min_separation
             ),
         });
     }

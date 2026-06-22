@@ -5,6 +5,7 @@ import { Spacetime2DViz } from '@/components/Spacetime2DViz'
 import { RelationalTimeViz } from '@/components/RelationalTimeViz'
 import { MultiClockViz } from '@/components/MultiClockViz'
 import { SimultaneityViz } from '@/components/SimultaneityViz'
+import { CausalityViz } from '@/components/CausalityViz'
 import { HolographyViz } from '@/components/HolographyViz'
 import { RtMassViz } from '@/components/RtMassViz'
 import { RefinementViz } from '@/components/RefinementViz'
@@ -73,6 +74,7 @@ function Experiments() {
           <RelationalTimeViz />
           <MultiClockViz />
           <SimultaneityViz />
+          <CausalityViz />
         </section>
 
         <Separator />

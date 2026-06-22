@@ -2,6 +2,7 @@
 
 use crate::models::tfim_chain;
 use crate::quantum::QuantumState;
+use crate::relational_time::{evolve_trajectory, fit_affine};
 use crate::spacetime::{build_light_cone_trajectory, SpacetimeConfig, SpacetimeSlice, WorldlinePoint};
 use serde::{Deserialize, Serialize};
 
@@ -56,6 +57,9 @@ pub struct ScatteringResult {
     pub both_moved: bool,
     pub crossed: bool,
     pub min_separation: f64,
+    pub phase_series: Vec<f64>,
+    pub post_interaction_phase_std: f64,
+    pub phase_stable: bool,
     pub elapsed_ms: f64,
     pub backend: &'static str,
 }
@@ -122,6 +126,86 @@ fn analyze_crossing(
     )
 }
 
+fn amplitude_at(psi: &QuantumState, index: usize) -> (f64, f64) {
+    (psi.data[2 * index], psi.data[2 * index + 1])
+}
+
+fn exchange_phase(psi: &QuantumState, d1: usize, d2: usize) -> f64 {
+    let i00 = 0;
+    let i10 = 1 << d1;
+    let i01 = 1 << d2;
+    let i11 = i10 | i01;
+    let phases = [i00, i10, i01, i11].map(|idx| {
+        let (re, im) = amplitude_at(psi, idx);
+        im.atan2(re)
+    });
+    let delta = phases[3] + phases[0] - phases[1] - phases[2];
+    // Wrap to [-π, π]
+    let mut wrapped = delta;
+    while wrapped > std::f64::consts::PI {
+        wrapped -= std::f64::consts::TAU;
+    }
+    while wrapped < -std::f64::consts::PI {
+        wrapped += std::f64::consts::TAU;
+    }
+    wrapped
+}
+
+fn unwrap_phases(phases: &[f64]) -> Vec<f64> {
+    if phases.is_empty() {
+        return Vec::new();
+    }
+    let mut out = vec![phases[0]];
+    let mut offset = 0.0;
+    for i in 1..phases.len() {
+        let mut d = phases[i] - phases[i - 1];
+        while d > std::f64::consts::PI {
+            d -= std::f64::consts::TAU;
+        }
+        while d < -std::f64::consts::PI {
+            d += std::f64::consts::TAU;
+        }
+        offset += d;
+        out.push(phases[0] + offset);
+    }
+    out
+}
+
+fn track_exchange_phases(
+    hamiltonian: &crate::quantum::Hamiltonian,
+    initial: &QuantumState,
+    reference: &QuantumState,
+    dt: f64,
+    steps: usize,
+    order: usize,
+    d1: usize,
+    d2: usize,
+) -> (Vec<f64>, f64, bool) {
+    let trajectory = evolve_trajectory(hamiltonian, initial, Some(reference), dt, steps, order);
+    let phase_series: Vec<f64> = trajectory
+        .iter()
+        .map(|p| exchange_phase(&p.psi, d1, d2))
+        .collect();
+    let start = phase_series.len() * 60 / 100;
+    let unwrapped = unwrap_phases(&phase_series[start..]);
+    if unwrapped.len() < 3 {
+        return (phase_series, f64::INFINITY, false);
+    }
+    let times: Vec<f64> = (0..unwrapped.len()).map(|i| i as f64).collect();
+    let (slope, intercept, fit_r2) = fit_affine(&times, &unwrapped);
+    let residual_std = {
+        let res: Vec<f64> = unwrapped
+            .iter()
+            .zip(times.iter())
+            .map(|(&p, &t)| p - (slope * t + intercept))
+            .collect();
+        let rmean = res.iter().sum::<f64>() / res.len() as f64;
+        let var = res.iter().map(|r| (r - rmean).powi(2)).sum::<f64>() / res.len() as f64;
+        var.sqrt()
+    };
+    (phase_series, residual_std, fit_r2 > 0.85 && residual_std < 0.55)
+}
+
 pub fn run_two_defect_scattering(config: &ScatteringConfig) -> ScatteringResult {
     let d1 = config.defect_sites.map(|s| s[0]).unwrap_or(3);
     let d2 = config.defect_sites.map(|s| s[1]).unwrap_or(config.n - 4);
@@ -137,6 +221,8 @@ pub fn run_two_defect_scattering(config: &ScatteringConfig) -> ScatteringResult 
     };
 
     let lite = config.lite;
+    let initial_for_phase = initial.clone_state();
+    let reference_for_phase = reference.clone_state();
     let spacetime = build_light_cone_trajectory(SpacetimeConfig {
         hamiltonian: &model.hamiltonian,
         initial,
@@ -153,6 +239,7 @@ pub fn run_two_defect_scattering(config: &ScatteringConfig) -> ScatteringResult 
         track_worldline: false,
         defect_site: None,
         seed: 42,
+        signal_reference_site: None,
     });
 
     let [raw1, raw2] = spacetime
@@ -172,6 +259,16 @@ pub fn run_two_defect_scattering(config: &ScatteringConfig) -> ScatteringResult 
         fit_site_velocity(&wl2, 0.15),
     ];
     let both_moved = worldline_moved(&wl1, d1) && worldline_moved(&wl2, d2);
+    let (phase_series, post_interaction_phase_std, phase_stable) = track_exchange_phases(
+        &model.hamiltonian,
+        &initial_for_phase,
+        &reference_for_phase,
+        config.dt,
+        config.steps,
+        config.taylor_order,
+        d1,
+        d2,
+    );
 
     ScatteringResult {
         n: config.n,
@@ -188,6 +285,9 @@ pub fn run_two_defect_scattering(config: &ScatteringConfig) -> ScatteringResult 
         both_moved,
         crossed,
         min_separation,
+        phase_series,
+        post_interaction_phase_std,
+        phase_stable,
         elapsed_ms: 0.0,
         backend: "wasm",
     }

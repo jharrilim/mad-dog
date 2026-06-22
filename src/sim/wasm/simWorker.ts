@@ -16,6 +16,9 @@ import init, {
   run_multi_clock_json,
   run_modular_dual_clock_json,
   run_simultaneity_json,
+  run_lorentz_scaling_json,
+  run_dispersion_json,
+  run_boost_invariance_json,
   run_scattering_json,
   run_decoherence_quench_json,
   run_excitation_subspace_json,
@@ -44,6 +47,9 @@ export type WasmMethod =
   | 'multiClock'
   | 'modularDualClock'
   | 'simultaneity'
+  | 'lorentzScaling'
+  | 'dispersion'
+  | 'boostInvariance'
   | 'scattering'
   | 'decoherenceQuench'
   | 'excitationSubspace'
@@ -80,6 +86,9 @@ const runners: Record<WasmMethod, (json: string) => string> = {
   multiClock: run_multi_clock_json,
   modularDualClock: run_modular_dual_clock_json,
   simultaneity: run_simultaneity_json,
+  lorentzScaling: run_lorentz_scaling_json,
+  dispersion: run_dispersion_json,
+  boostInvariance: run_boost_invariance_json,
   scattering: run_scattering_json,
   decoherenceQuench: run_decoherence_quench_json,
   excitationSubspace: run_excitation_subspace_json,

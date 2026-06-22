@@ -2,8 +2,8 @@
 
 use crate::quantum::{expectation_z, QuantumState};
 use crate::relational_time::{
-    evolve_trajectory, fit_affine, physical_clock_indices, physical_clock_uniform_r2,
-    physical_time_at_uniform, TimeMapPoint,
+    evolve_trajectory, fit_affine, physical_clock_indices, physical_time_at_uniform,
+    TimeMapPoint,
 };
 use serde::{Deserialize, Serialize};
 

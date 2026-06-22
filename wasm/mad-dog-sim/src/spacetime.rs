@@ -58,6 +58,8 @@ pub struct SpacetimeConfig<'a> {
     /// Track a single excitation (centroid/peak); requires defect site for half-chain split at center.
     pub track_worldline: bool,
     pub defect_site: Option<usize>,
+    /// When set, subtract ⟨Z_ref⟩ at this site from every site's signal (clock-subset observer).
+    pub signal_reference_site: Option<usize>,
     /// RNG seed for spectral-radius estimate.
     pub seed: u32,
 }
@@ -215,7 +217,15 @@ pub fn build_spacetime(config: SpacetimeConfig<'_>) -> SpacetimeResult {
         }
 
         let z_expectation = expectation_z_all(&psi);
-        let ref_z: Vec<f64> = if let Some(ref r) = ref_state {
+        let ref_z: Vec<f64> = if let Some(site) = config.signal_reference_site {
+            if let Some(ref r) = ref_state {
+                let rz = crate::quantum::expectation_z(r, site);
+                vec![rz; sites]
+            } else {
+                let rz = base_z[site.min(sites.saturating_sub(1))];
+                vec![rz; sites]
+            }
+        } else if let Some(ref r) = ref_state {
             expectation_z_all(r)
         } else {
             base_z.clone()

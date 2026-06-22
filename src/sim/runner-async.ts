@@ -33,6 +33,12 @@ import type {
   RunResult,
   SimultaneityConfig,
   SimultaneityResult,
+  LorentzScalingResult,
+  DispersionConfig,
+  DispersionResult,
+  BoostInvarianceConfig,
+  BoostInvarianceResult,
+  ScatteringConfig,
   ScatteringResult,
   DecoherenceQuenchConfig,
   DecoherenceQuenchResult,
@@ -184,6 +190,24 @@ export async function runSimultaneityAsync(
   config: SimultaneityConfig,
 ): Promise<SimultaneityResultWithBackend> {
   return runWasm('simultaneity', config)
+}
+
+export type BoostInvarianceResultWithBackend = BoostInvarianceResult & { backend: SimBackend }
+
+export async function runLorentzScalingAsync(): Promise<LorentzScalingResult & { backend: SimBackend }> {
+  return runWasm('lorentzScaling', {})
+}
+
+export async function runDispersionAsync(
+  config: DispersionConfig,
+): Promise<DispersionResult & { backend: SimBackend }> {
+  return runWasm('dispersion', config)
+}
+
+export async function runBoostInvarianceAsync(
+  config: BoostInvarianceConfig,
+): Promise<BoostInvarianceResultWithBackend> {
+  return runWasm('boostInvariance', config)
 }
 
 export async function runScatteringAsync(

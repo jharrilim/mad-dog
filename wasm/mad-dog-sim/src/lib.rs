@@ -26,7 +26,11 @@ mod run_falsification;
 mod run_holography;
 mod multi_clock;
 mod modular_time;
+mod boost_invariance;
+mod dispersion;
+mod lorentz;
 mod run_light_cone_compare;
+mod run_lorentz_scaling;
 mod run_multi_clock;
 mod run_modular_dual_clock;
 mod run_refinement;
@@ -53,6 +57,9 @@ use run_holography::{
     run_holography, run_rt_mass, HolographyRunConfig, RtMassRunConfig,
 };
 use run_light_cone_compare::{run_light_cone_compare, LightConeCompareConfig};
+use boost_invariance::{run_boost_invariance, BoostInvarianceConfig};
+use dispersion::{run_dispersion, DispersionConfig};
+use run_lorentz_scaling::run_lorentz_scaling;
 use run_multi_clock::{run_multi_clock, MultiClockRunConfig};
 use run_modular_dual_clock::run_modular_dual_clock;
 use modular_time::ModularDualClockConfig;
@@ -291,6 +298,34 @@ pub fn run_geometry_stability_json(config_json: &str) -> Result<String, JsValue>
 pub fn run_geometry_dim_sweep_json(_config_json: &str) -> Result<String, JsValue> {
     let start = js_sys::Date::now();
     let mut result = run_geometry_dim_sweep();
+    result.elapsed_ms = js_sys::Date::now() - start;
+    serde_json::to_string(&result).map_err(|e| JsValue::from_str(&e.to_string()))
+}
+
+#[wasm_bindgen]
+pub fn run_lorentz_scaling_json(_config_json: &str) -> Result<String, JsValue> {
+    let start = js_sys::Date::now();
+    let mut result = run_lorentz_scaling();
+    result.elapsed_ms = js_sys::Date::now() - start;
+    serde_json::to_string(&result).map_err(|e| JsValue::from_str(&e.to_string()))
+}
+
+#[wasm_bindgen]
+pub fn run_dispersion_json(config_json: &str) -> Result<String, JsValue> {
+    let start = js_sys::Date::now();
+    let config: DispersionConfig =
+        serde_json::from_str(config_json).map_err(|e| JsValue::from_str(&e.to_string()))?;
+    let mut result = run_dispersion(&config);
+    result.elapsed_ms = js_sys::Date::now() - start;
+    serde_json::to_string(&result).map_err(|e| JsValue::from_str(&e.to_string()))
+}
+
+#[wasm_bindgen]
+pub fn run_boost_invariance_json(config_json: &str) -> Result<String, JsValue> {
+    let start = js_sys::Date::now();
+    let config: BoostInvarianceConfig =
+        serde_json::from_str(config_json).map_err(|e| JsValue::from_str(&e.to_string()))?;
+    let mut result = run_boost_invariance(&config);
     result.elapsed_ms = js_sys::Date::now() - start;
     serde_json::to_string(&result).map_err(|e| JsValue::from_str(&e.to_string()))
 }
