@@ -11,23 +11,47 @@ Open hypothesis from [open-questions.md](./open-questions.md): given spectral da
 
 Spectrum scoring uses low-lying eigenstate weights (heavier weight on ground state) and measures how compact each eigenvector’s support is along the **candidate line** after permuting qubit indices — not raw Hamming weight, which ignores the permutation. On an open chain, the reflected labeling (k ↦ n−1−k) is equivalent; recovery uses `line_equiv_distance`.
 
-## Recovery benchmarks (2026-06)
+## Model zoo (Phase 1, 2026-06)
 
-| Case | Pauli+MI | Spectrum |
-|------|----------|----------|
-| shuffled chain n=4 | ✓ | ✓ |
-| shuffled chain n=6 | ✓ | ✓ |
-| shuffled chain n=8 (exact) | ✓ | ✓ |
-| random n=6 | no ground truth | — |
+| `kind` | Builder | Blind shuffle |
+|--------|---------|---------------|
+| `shuffled_chain` | TFIM | yes |
+| `shuffled_xx_chain` | XX + transverse Z | yes |
+| `shuffled_heisenberg_chain` | XXX+YYY+ZZZ | yes |
+| `shuffled_sparse_chain` | Random NN Pauli subset | yes |
+| `shuffled_grid` | TFIM grid | yes |
+| `random` | `random_nonlocal` | no ground truth |
 
-Run `npm run bench:factorization` for the full matrix. Spectrum mode still sees eigenvectors in the **hidden computational basis** — a toy stand-in for true blind inference from {Eₙ} alone.
+## Recovery benchmarks
+
+| Case | Spectrum recovery |
+|------|-------------------|
+| TFIM shuffled n=4–8 | ✓ |
+| XX / Sparse n=6 | ✓ spectrum |
+| Heisenberg n=6 | ✓ Pauli+MI in ensemble (spectrum scorer weak) |
+| scrambled spectrum (negative) | ✗ (by design) |
+| random n=6 | no ground truth |
+
+Run `npm run bench:factorization` for the full matrix plus Phase-1 ensemble (`run_factorization_ensemble_json`). Falsification **K** (≥80% ensemble) and **M** (negative controls) in [falsification.md](./falsification.md).
+
+## Uniqueness report
+
+When ground-truth shuffle is known, results include `uniqueness`:
+
+- `equivalenceClassCount` — clusters in top-k by line reflection equivalence
+- `bestClassSize` — size of highest-scoring class (2 = reflection degeneracy only)
+- `trueInTopK`, `trueClassRank`, `scoreGapToSecondClass`
+
+## Negative control: `spectrumScramble`
+
+Set `spectrumScramble: true` to permute qubit labels in eigenvector amplitudes before scoring (eigenvalues unchanged). Recovery should fail — used in falsification **M**.
 
 ## What the code does
 
-1. Build a Hamiltonian — **shuffled chain/grid**, or **random non-local**.
-2. Find `k` low-energy states (Gram–Schmidt deflation) or diagonalize for spectrum mode.
+1. Build a Hamiltonian — shuffled local model or random non-local.
+2. Find `k` low-energy states or diagonalize for spectrum mode.
 3. Search permutations maximizing locality on a **line** or **grid** graph.
-4. Return baseline vs best MI heatmaps, coupling graph, and top-k candidates.
+4. Return baseline vs best MI heatmaps, coupling graph, top-k candidates, uniqueness.
 
 **Search methods:** `exact` (n≤8), `annealing` (default n>8), `greedy`.
 
@@ -37,42 +61,41 @@ Run `npm run bench:factorization` for the full matrix. Spectrum mode still sees 
 import { runFactorizationSearchAsync } from '@/sim/runner-async'
 
 const result = await runFactorizationSearchAsync({
-  kind: 'shuffled_chain',
+  kind: 'shuffled_heisenberg_chain',
   n: 6,
   field: 1.5,
   seed: 4242,
-  inputMode: 'pauli',
-  eigenstateCount: 3,
+  inputMode: 'spectrum',
+  eigenstateCount: 4,
   searchMethod: 'exact',
 })
 ```
 
-Joint quench study (links to [refinement.md](./refinement.md)):
+Ensemble (Phase 1 battery):
 
 ```ts
-import { runFactorizationRefinementStudyAsync } from '@/sim/runner-async'
-
-const study = await runFactorizationRefinementStudyAsync({
-  n: 10, field: 1.5, dt: 0.2, steps: 14, seed: 7711,
-})
+// scripts/factorization-bench.ts calls WASM directly:
+// run_factorization_ensemble_json('{}')
 ```
 
-WASM: `factorizationSearch`, `factorizationRefinement`.
+WASM: `factorizationSearch`, `factorizationRefinement`, `factorizationEnsemble`.
 
 ## UI
 
-- **Experiments** → *Locality from H and low-energy states* (`FactorizationViz`)
+- **Experiments** → *Locality from H and low-energy states* (`FactorizationViz`) — model zoo buttons + uniqueness panel
 - **Experiments** → *Quench + factorization drift* (`FactorizationRefinementViz`)
 
 ## Limits
 
 - Line/grid permutations only — no dynamic factor splitting.
-- Spectrum mode is a **toy**: eigenvectors in the hidden computational basis, not true “only {Eₙ}” inference; recovery works on small shuffled chains with the improved scorer but may fail on random Hamiltonians or larger n with annealing.
+- Spectrum mode is a **toy**: eigenvectors in the hidden computational basis, not true “only {Eₙ}” inference.
+- Torus/cube builders exist but are not factorization targets yet.
 - `n > 8` uses simulated annealing (tune via `annealingSteps`).
 
 ## Checks
 
 - `npm run check:wasm` — WASM smoke + structural invariants
-- `npm run bench:factorization` — recovery matrix (WASM-only; n=6,8,10 + spectrum)
+- `npm run bench:factorization` — recovery matrix + ensemble
+- `npm run check:falsification` — battery **K**, **M**
 
 All calculations run in Rust/WASM; there is no TypeScript fallback.

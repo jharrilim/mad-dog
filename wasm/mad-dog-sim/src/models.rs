@@ -51,13 +51,7 @@ pub fn tfim_chain(n: usize, j: f64, h: f64) -> BuiltModel {
             }],
         });
     }
-    let true_positions = (0..n)
-        .map(|i| TruePosition {
-            x: i as f64,
-            y: 0.0,
-            z: None,
-        })
-        .collect();
+    let true_positions = chain_true_positions(n);
     BuiltModel {
         hamiltonian: Hamiltonian::new(n, terms),
         layout: LatticeLayout {
@@ -65,6 +59,154 @@ pub fn tfim_chain(n: usize, j: f64, h: f64) -> BuiltModel {
             expected_dim: 1,
         },
         label: format!("TFIM chain (n={n})"),
+    }
+}
+
+fn chain_true_positions(n: usize) -> Vec<TruePosition> {
+    (0..n)
+        .map(|i| TruePosition {
+            x: i as f64,
+            y: 0.0,
+            z: None,
+        })
+        .collect()
+}
+
+/// XX chain with transverse Z field: -j Σ X_i X_{i+1} - h Σ Z_i.
+pub fn xx_chain(n: usize, j: f64, h: f64) -> BuiltModel {
+    let mut terms = Vec::new();
+    for i in 0..(n - 1) {
+        terms.push(PauliTerm {
+            coeff: -j,
+            ops: vec![
+                PauliOp {
+                    qubit: i,
+                    letter: PauliLetter::X,
+                },
+                PauliOp {
+                    qubit: i + 1,
+                    letter: PauliLetter::X,
+                },
+            ],
+        });
+    }
+    for i in 0..n {
+        terms.push(PauliTerm {
+            coeff: -h,
+            ops: vec![PauliOp {
+                qubit: i,
+                letter: PauliLetter::Z,
+            }],
+        });
+    }
+    BuiltModel {
+        hamiltonian: Hamiltonian::new(n, terms),
+        layout: LatticeLayout {
+            true_positions: chain_true_positions(n),
+            expected_dim: 1,
+        },
+        label: format!("XX chain (n={n})"),
+    }
+}
+
+/// Heisenberg XXX+YYY+ZZZ chain with optional transverse Z (XXZ) for gapped spectrum.
+pub fn heisenberg_chain(n: usize, j: f64, h: f64) -> BuiltModel {
+    let mut terms = Vec::new();
+    for i in 0..(n - 1) {
+        for letter in [PauliLetter::X, PauliLetter::Y, PauliLetter::Z] {
+            terms.push(PauliTerm {
+                coeff: -j,
+                ops: vec![
+                    PauliOp {
+                        qubit: i,
+                        letter,
+                    },
+                    PauliOp {
+                        qubit: i + 1,
+                        letter,
+                    },
+                ],
+            });
+        }
+    }
+    if h.abs() > 1e-12 {
+        for i in 0..n {
+            terms.push(PauliTerm {
+                coeff: -h,
+                ops: vec![PauliOp {
+                    qubit: i,
+                    letter: PauliLetter::Z,
+                }],
+            });
+        }
+    }
+    BuiltModel {
+        hamiltonian: Hamiltonian::new(n, terms),
+        layout: LatticeLayout {
+            true_positions: chain_true_positions(n),
+            expected_dim: 1,
+        },
+        label: format!("Heisenberg chain (n={n})"),
+    }
+}
+
+/// Random subset of nearest-neighbour 1- and 2-body Pauli terms on an open chain.
+pub fn sparse_local_chain(n: usize, seed: u32) -> BuiltModel {
+    let mut rng = Rng::new(seed);
+    let letters = [PauliLetter::X, PauliLetter::Y, PauliLetter::Z];
+    let mut terms = Vec::new();
+    for i in 0..n {
+        if rng.next() > 0.35 {
+            terms.push(PauliTerm {
+                coeff: rng.next() * 1.6 - 0.8,
+                ops: vec![PauliOp {
+                    qubit: i,
+                    letter: letters[(rng.next() * 3.0).floor() as usize % 3],
+                }],
+            });
+        }
+    }
+    for i in 0..(n - 1) {
+        if rng.next() > 0.45 {
+            let pa = letters[(rng.next() * 3.0).floor() as usize % 3];
+            let pb = letters[(rng.next() * 3.0).floor() as usize % 3];
+            terms.push(PauliTerm {
+                coeff: rng.next() * 1.6 - 0.8,
+                ops: vec![
+                    PauliOp {
+                        qubit: i,
+                        letter: pa,
+                    },
+                    PauliOp {
+                        qubit: i + 1,
+                        letter: pb,
+                    },
+                ],
+            });
+        }
+    }
+    if terms.is_empty() {
+        terms.push(PauliTerm {
+            coeff: -1.0,
+            ops: vec![
+                PauliOp {
+                    qubit: 0,
+                    letter: PauliLetter::Z,
+                },
+                PauliOp {
+                    qubit: 1.min(n - 1),
+                    letter: PauliLetter::Z,
+                },
+            ],
+        });
+    }
+    BuiltModel {
+        hamiltonian: Hamiltonian::new(n, terms),
+        layout: LatticeLayout {
+            true_positions: chain_true_positions(n),
+            expected_dim: 1,
+        },
+        label: format!("Sparse local chain (n={n}, seed={seed})"),
     }
 }
 

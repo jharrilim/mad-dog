@@ -1,5 +1,20 @@
 # Open Questions
 
+## Signature program (does the universe behave Mad-Dog-ly?)
+
+We are **not** trying to prove Mad-Dog from axioms or solve the measurement problem. We **are** building a falsifiable checklist of structural behaviors Carroll–Singh emergence requires — see signatures **S1–S10** in [roadmap.md](./roadmap.md).
+
+| Layer | What we can do computationally |
+|-------|--------------------------------|
+| **Necessary conditions** | Falsification battery A–L; extend as claims sharpen |
+| **Toy demonstrations** | Universe Lab, scattering, decoherence, factorization search |
+| **Scaling / uniqueness** | Open — biggest gap between “mechanism” and “our-universe-likeness” |
+| **Observational export** | Map sim thresholds to Lorentz / entropy bounds (Phase 8) |
+
+Automated today: **K** (multi-model ensemble), **M** (negative controls), **L** (directional isotropy v0). Next ranked: **J′**, stabilizer **I′**, **L** scaling.
+
+**Phase 1 shipped (2026-06):** model zoo (XX, Heisenberg, sparse), ensemble **K**, uniqueness report, **M** controls. Remaining S1 gap: true {Eₙ}-only inference (no eigenvector amplitudes); torus/cube factorization.
+
 ## From the paper (not yet simulated)
 
 - **Lorentz invariance** — no finite-dimensional unitary Lorentz reps on factors; how approximate is emergent Lorentz symmetry?
@@ -74,19 +89,9 @@ In simulator terms: instead of hand-picking `tfimChain(n+1)`, detect failure of 
 - **Decoherence** — minimal env-coupling quench with branch-resolved worldlines ([decoherence.md](./decoherence.md)); QECC subspace ID still open.
 - **Bundle size** — Three.js adds ~1.3MB; lab route could be code-split.
 
-## Roadmap ideas (from project)
+## Roadmap
 
-Full dated backlog: [roadmap.md](./roadmap.md).
-
-- ~~Worldline tracking and two-particle scattering.~~ **Done (2026-06)** — see [scattering.md](./scattering.md).
-- Three-or-more-clock consistency networks.
-- Adaptive holographic refinement (dynamical splitting).
-- Spectrum-only factorization blind tests.
-- ~~Minimal decoherence / branch-resolved tracks.~~ **Done (2026-06)** — [decoherence.md](./decoherence.md).
-- ~~Curved space via stronger controlled mass concentrations.~~ **Done (2026-06)** — multi-insertion `sweep:mass`.
-- ~~Larger 3D lattices (2×2×3) for dim=3 question.~~ **Done (2026-06)** — [universe-lab.md](./universe-lab.md), `bench:universe`.
-- WebGPU backend validated against WASM reference.
-- Code-split `/lab` for faster essay page load.
+Phased attack order and signature map: [roadmap.md](./roadmap.md).
 
 ## How to extend notes
 

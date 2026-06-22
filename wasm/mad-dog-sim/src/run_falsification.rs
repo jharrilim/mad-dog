@@ -5,6 +5,7 @@ use crate::models::{line_locality_fraction, tfim_chain, tfim_torus};
 use crate::quantum::ground_state;
 use crate::rng::Rng;
 use crate::run_factorization::{run_factorization_search, FactorizationSearchConfig};
+use crate::run_factorization_ensemble::run_factorization_ensemble;
 use crate::run_light_cone_compare::{run_light_cone_compare, LightConeCompareConfig};
 use crate::modular_time::ModularDualClockConfig;
 use crate::run_modular_dual_clock::run_modular_dual_clock;
@@ -15,8 +16,52 @@ use crate::run_refinement::{
 use crate::run_excitation_subspace::{run_excitation_subspace_probe, ExcitationSubspaceConfig};
 use crate::run_geometry_stability::{run_geometry_stability, GeometryStabilityConfig};
 use crate::run_multi_clock::{run_multi_clock, MultiClockRunConfig};
+use crate::run_spacetime::{run_spacetime_2d, Spacetime2DConfig};
 use crate::scattering::{run_two_defect_scattering, ScatteringConfig};
 use serde::Serialize;
+
+/// Coefficient of variation of cardinal-direction front speeds on a 2D grid quench.
+fn grid_directional_speed_cv(rows: usize, cols: usize, field: f64, dt: f64, steps: usize) -> f64 {
+    let result = run_spacetime_2d(&Spacetime2DConfig {
+        rows,
+        cols,
+        field,
+        dt,
+        steps,
+    });
+    let lc = result
+        .light_cone
+        .expect("spacetime_2d attaches light_cone");
+    let center = (rows / 2) * cols + cols / 2;
+    let r0 = center / cols;
+    let c0 = center % cols;
+    let neighbors = [
+        (r0 as i32 - 1, c0 as i32),
+        (r0 as i32 + 1, c0 as i32),
+        (r0 as i32, c0 as i32 - 1),
+        (r0 as i32, c0 as i32 + 1),
+    ];
+    let mut speeds = Vec::new();
+    for (r, c) in neighbors {
+        if r < 0 || r >= rows as i32 || c < 0 || c >= cols as i32 {
+            continue;
+        }
+        let site = r as usize * cols + c as usize;
+        let t = lc.arrivals[site];
+        if t.is_finite() && t > 1e-9 {
+            speeds.push(1.0 / t);
+        }
+    }
+    if speeds.len() < 2 {
+        return f64::INFINITY;
+    }
+    let mean = speeds.iter().sum::<f64>() / speeds.len() as f64;
+    if mean < 1e-9 {
+        return f64::INFINITY;
+    }
+    let var = speeds.iter().map(|s| (s - mean).powi(2)).sum::<f64>() / speeds.len() as f64;
+    var.sqrt() / mean
+}
 
 fn rt_ratio_std(n: usize, field: f64, seed: u32) -> f64 {
     let model = tfim_chain(n, 1.0, field);
@@ -87,6 +132,7 @@ pub fn run_falsification_battery() -> FalsificationBatteryResult {
             cols: None,
             distance_decay: None,
             annealing_steps: None,
+            spectrum_scramble: None,
         });
         tests.push(FalsificationTest {
             id: "A".to_string(),
@@ -115,6 +161,7 @@ pub fn run_falsification_battery() -> FalsificationBatteryResult {
             cols: Some(3),
             distance_decay: None,
             annealing_steps: None,
+            spectrum_scramble: None,
         });
         let grid_on_line = run_factorization_search(&FactorizationSearchConfig {
             kind: "shuffled_grid".to_string(),
@@ -130,6 +177,7 @@ pub fn run_falsification_battery() -> FalsificationBatteryResult {
             cols: Some(3),
             distance_decay: None,
             annealing_steps: None,
+            spectrum_scramble: None,
         });
         let score_gap = grid_on_grid.best.score - grid_on_line.best.score;
         let torus_locality = line_locality_fraction(&tfim_torus(3, 3, 1.0, 1.5).hamiltonian);
@@ -338,6 +386,97 @@ pub fn run_falsification_battery() -> FalsificationBatteryResult {
                 ordered.mean_distance_drift,
                 ordered.mean_rank_correlation,
                 ordered.dim_std
+            ),
+        });
+    }
+
+    // K — ensemble spectrum-only blind recovery (signature S1; Phase 1 model zoo)
+    {
+        let ensemble = run_factorization_ensemble();
+        let mut by_kind: std::collections::BTreeMap<String, (usize, usize)> =
+            std::collections::BTreeMap::new();
+        for c in &ensemble.cases {
+            let entry = by_kind.entry(c.kind.clone()).or_insert((0, 0));
+            entry.1 += 1;
+            if c.recovered_identity {
+                entry.0 += 1;
+            }
+        }
+        let breakdown: Vec<String> = by_kind
+            .iter()
+            .map(|(k, (r, t))| format!("{k}={r}/{t}"))
+            .collect();
+        tests.push(FalsificationTest {
+            id: "K".to_string(),
+            name: "Ensemble spectrum-only blind locality recovery".to_string(),
+            passed: ensemble.passed,
+            detail: format!(
+                "recovery {:.0}% ({}/{}) [{}]",
+                ensemble.recovery_rate * 100.0,
+                ensemble.recovered,
+                ensemble.total,
+                breakdown.join(", ")
+            ),
+        });
+    }
+
+    // M — negative controls (random nonlocal + scrambled spectrum)
+    {
+        let random = run_factorization_search(&FactorizationSearchConfig {
+            kind: "random".to_string(),
+            n: 6,
+            field: 1.5,
+            seed: 777,
+            top_k: 3,
+            input_mode: Some("spectrum".to_string()),
+            search_method: Some("exact".to_string()),
+            eigenstate_count: Some(3),
+            graph_kind: None,
+            rows: None,
+            cols: None,
+            distance_decay: None,
+            annealing_steps: None,
+            spectrum_scramble: None,
+        });
+        let scrambled = run_factorization_search(&FactorizationSearchConfig {
+            kind: "shuffled_chain".to_string(),
+            n: 6,
+            field: 1.5,
+            seed: 4242,
+            top_k: 3,
+            input_mode: Some("spectrum".to_string()),
+            search_method: Some("exact".to_string()),
+            eigenstate_count: Some(3),
+            graph_kind: None,
+            rows: None,
+            cols: None,
+            distance_decay: None,
+            annealing_steps: None,
+            spectrum_scramble: Some(true),
+        });
+        let m1 = !random.recovered_identity;
+        let m2 = !scrambled.recovered_identity;
+        tests.push(FalsificationTest {
+            id: "M".to_string(),
+            name: "Negative controls reject fake locality".to_string(),
+            passed: m1 && m2,
+            detail: format!(
+                "randomRecovered={} scrambledRecovered={} (both should be false)",
+                random.recovered_identity, scrambled.recovered_identity
+            ),
+        });
+    }
+
+    // L — emergent causal isotropy proxy (signature S9 v0; see docs/roadmap.md Phase 4)
+    {
+        const CV_MAX: f64 = 0.25;
+        let cv = grid_directional_speed_cv(3, 3, 1.2, 0.2, 28);
+        tests.push(FalsificationTest {
+            id: "L".to_string(),
+            name: "Directional front speeds isotropic on 3×3 grid (Lorentz proxy v0)".to_string(),
+            passed: cv < CV_MAX,
+            detail: format!(
+                "cardinal speed CoV={cv:.3} (pass if < {CV_MAX}); stub — extend to n-scaling + dispersion"
             ),
         });
     }

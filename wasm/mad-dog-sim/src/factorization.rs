@@ -57,6 +57,7 @@ pub struct SearchParams {
     pub distance_decay: f64,
     pub annealing_steps: usize,
     pub emergent_dim_weight: f64,
+    pub spectrum_scrambled: bool,
 }
 
 impl Default for SearchParams {
@@ -71,6 +72,7 @@ impl Default for SearchParams {
             distance_decay: 0.0,
             annealing_steps: 3000,
             emergent_dim_weight: 0.1,
+            spectrum_scrambled: false,
         }
     }
 }
@@ -351,7 +353,9 @@ pub fn score_permutation(
     let mut total_weight = 0.0;
     let mut nonlocal = 0usize;
     if let Some(ham) = h {
-        if params.input_mode == InputMode::Pauli {
+        if params.input_mode == InputMode::Pauli
+            || (params.input_mode == InputMode::Spectrum && !params.spectrum_scrambled)
+        {
             for term in &ham.terms {
                 if let Some((i, j)) = two_body_qubits(term) {
                     let dist = graph_distance(
@@ -415,7 +419,10 @@ pub fn score_permutation(
             let bw = spectrum_eigenvectors
                 .map(|ev| line_support_bandwidth(ev, perm, n))
                 .unwrap_or(0.0);
-            0.5 * mi_term + 0.35 * bw + 0.15 * dim_bonus
+            let loc_w = if params.spectrum_scrambled { 0.0 } else { 0.40 };
+            let mi_w = if params.spectrum_scrambled { 0.50 } else { 0.30 };
+            let bw_w = if params.spectrum_scrambled { 0.35 } else { 0.25 };
+            loc_w * locality_fraction + mi_w * mi_term + bw_w * bw + 0.15 * dim_bonus
         }
     };
 
@@ -574,8 +581,13 @@ pub fn search_factorization(
         InputMode::Pauli => (Some(h), mi_list_from_states(states), None),
         InputMode::Spectrum => {
             let spec = spectrum.expect("spectrum data required");
+            let h_ref = if params.spectrum_scrambled {
+                None
+            } else {
+                Some(h)
+            };
             (
-                None,
+                h_ref,
                 mi_list_from_eigenvectors(n, &spec.eigenvectors),
                 Some(spec.eigenvectors.as_slice()),
             )
@@ -729,4 +741,110 @@ pub fn line_equiv_distance(perm: &[usize], target: &[usize]) -> usize {
 
 pub fn line_equiv_match(perm: &[usize], target: &[usize]) -> bool {
     line_equiv_distance(perm, target) == 0
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UniquenessReport {
+    pub equivalence_class_count: usize,
+    pub best_class_size: usize,
+    pub true_in_top_k: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub true_class_rank: Option<usize>,
+    pub score_gap_to_second_class: f64,
+}
+
+/// Cluster top-k candidates by open-chain reflection equivalence.
+pub fn uniqueness_report(
+    top_candidates: &[FactorizationCandidate],
+    true_inv_shuffle: &[usize],
+) -> UniquenessReport {
+    if top_candidates.is_empty() {
+        return UniquenessReport {
+            equivalence_class_count: 0,
+            best_class_size: 0,
+            true_in_top_k: false,
+            true_class_rank: None,
+            score_gap_to_second_class: 0.0,
+        };
+    }
+
+    let mut classes: Vec<(f64, Vec<usize>)> = Vec::new();
+    for (idx, cand) in top_candidates.iter().enumerate() {
+        let mut placed = false;
+        for class in classes.iter_mut() {
+            if line_equiv_match(&cand.permutation, &top_candidates[class.1[0]].permutation) {
+                class.1.push(idx);
+                class.0 = class.0.max(cand.score);
+                placed = true;
+                break;
+            }
+        }
+        if !placed {
+            classes.push((cand.score, vec![idx]));
+        }
+    }
+    classes.sort_by(|a, b| {
+        b.0.partial_cmp(&a.0)
+            .unwrap_or(std::cmp::Ordering::Equal)
+            .then_with(|| a.1.len().cmp(&b.1.len()))
+    });
+
+    let equivalence_class_count = classes.len();
+    let best_class_size = classes.first().map(|c| c.1.len()).unwrap_or(0);
+    let true_in_top_k = top_candidates
+        .iter()
+        .any(|c| line_equiv_match(&c.permutation, true_inv_shuffle));
+    let true_class_rank = classes.iter().position(|class| {
+        class
+            .1
+            .iter()
+            .any(|&idx| line_equiv_match(&top_candidates[idx].permutation, true_inv_shuffle))
+    });
+    let score_gap_to_second_class = if classes.len() > 1 {
+        classes[0].0 - classes[1].0
+    } else {
+        0.0
+    };
+
+    UniquenessReport {
+        equivalence_class_count,
+        best_class_size,
+        true_in_top_k,
+        true_class_rank: true_class_rank.map(|r| r + 1),
+        score_gap_to_second_class,
+    }
+}
+
+fn permute_basis_index(s: usize, qubit_perm: &[usize]) -> usize {
+    let mut out = 0usize;
+    for (q, &p) in qubit_perm.iter().enumerate() {
+        if (s >> q) & 1 == 1 {
+            out |= 1 << p;
+        }
+    }
+    out
+}
+
+/// Scramble qubit labels in eigenvector amplitudes (negative control — eigenvalues unchanged).
+pub fn shuffle_spectrum_components(spectrum: &mut SpectrumData, seed: u32) {
+    let n = if spectrum.eigenvectors.is_empty() {
+        return;
+    } else {
+        let dim = spectrum.eigenvectors[0].len() / 2;
+        (dim as f64).log2() as usize
+    };
+    let mut rng = Rng::new(seed.wrapping_add(9001));
+    let qubit_perm = random_permutation(n, &mut rng);
+
+    for ev in spectrum.eigenvectors.iter_mut() {
+        let dim = 1 << n;
+        let mut scrambled = vec![0.0; 2 * dim];
+        for s in 0..dim {
+            let t = permute_basis_index(s, &qubit_perm);
+            scrambled[2 * t] = ev[2 * s];
+            scrambled[2 * t + 1] = ev[2 * s + 1];
+        }
+        *ev = scrambled;
+    }
 }

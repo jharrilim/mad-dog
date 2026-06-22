@@ -264,6 +264,26 @@ for (const config of [
   else ok(`scorer=${r.scorerUsed} permMatch=${r.permMatchDistance ?? '?'} score=${r.best.score.toFixed(3)}`)
 }
 
+{
+  const r = JSON.parse(
+    run_factorization_search_json(
+      JSON.stringify({
+        kind: 'shuffled_xx_chain',
+        n: 6,
+        field: 1.5,
+        seed: 4242,
+        topK: 3,
+        inputMode: 'spectrum',
+        eigenstateCount: 3,
+        searchMethod: 'exact',
+      }),
+    ),
+  )
+  console.log('\nfactorization XX spectrum:')
+  if (!r.recoveredIdentity) fail('XX spectrum identity not recovered')
+  else ok(`score=${r.best.score.toFixed(3)}`)
+}
+
 // --- Light cone compare ---
 {
   const r = JSON.parse(

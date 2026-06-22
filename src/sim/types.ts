@@ -498,10 +498,24 @@ export interface FactorizationCandidate {
   emergentDim: number
 }
 
-export type FactorizationKind = 'shuffled_chain' | 'random' | 'shuffled_grid'
+export type FactorizationKind =
+  | 'shuffled_chain'
+  | 'shuffled_xx_chain'
+  | 'shuffled_heisenberg_chain'
+  | 'shuffled_sparse_chain'
+  | 'random'
+  | 'shuffled_grid'
 export type FactorizationInputMode = 'pauli' | 'spectrum'
 export type FactorizationSearchMethod = 'exact' | 'annealing' | 'greedy'
 export type FactorizationGraphKind = 'line' | 'grid'
+
+export interface FactorizationUniquenessReport {
+  equivalenceClassCount: number
+  bestClassSize: number
+  trueInTopK: boolean
+  trueClassRank?: number
+  scoreGapToSecondClass: number
+}
 
 export interface FactorizationSearchConfig {
   kind: FactorizationKind
@@ -517,6 +531,7 @@ export interface FactorizationSearchConfig {
   cols?: number
   distanceDecay?: number
   annealingSteps?: number
+  spectrumScramble?: boolean
 }
 
 export interface FactorizationSearchResult {
@@ -529,6 +544,7 @@ export interface FactorizationSearchResult {
   recoveredIdentity: boolean
   permMatchDistance?: number
   trueShuffle?: number[]
+  uniqueness?: FactorizationUniquenessReport
   baselineMi: number[][]
   bestMi: number[][]
   couplingEdges: CouplingEdge[]
@@ -536,6 +552,25 @@ export interface FactorizationSearchResult {
   scorerUsed: string
   searchMethod: string
   searchIters: number
+  elapsedMs: number
+  backend?: SimBackend
+}
+
+export interface FactorizationEnsembleCaseResult {
+  label: string
+  kind: string
+  n: number
+  seed: number
+  recoveredIdentity: boolean
+  score: number
+}
+
+export interface FactorizationEnsembleResult {
+  cases: FactorizationEnsembleCaseResult[]
+  recovered: number
+  total: number
+  recoveryRate: number
+  passed: boolean
   elapsedMs: number
   backend?: SimBackend
 }

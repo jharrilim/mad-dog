@@ -19,6 +19,7 @@ mod run_decoherence;
 mod run_excitation_subspace;
 mod run_geometry_stability;
 mod run_factorization;
+mod run_factorization_ensemble;
 mod run_factorization_refinement;
 mod run_falsification;
 mod run_holography;
@@ -39,6 +40,7 @@ use run_decoherence::{run_decoherence_quench, DecoherenceQuenchConfig};
 use run_excitation_subspace::{run_excitation_subspace_probe, ExcitationSubspaceConfig};
 use run_geometry_stability::{run_geometry_stability, GeometryStabilityConfig};
 use run_factorization::{run_factorization_search, FactorizationSearchConfig};
+use run_factorization_ensemble::run_factorization_ensemble;
 use run_factorization_refinement::{
     run_factorization_refinement_study, FactorizationRefinementConfig,
 };
@@ -228,6 +230,14 @@ pub fn run_factorization_refinement_json(config_json: &str) -> Result<String, Js
     let config: FactorizationRefinementConfig =
         serde_json::from_str(config_json).map_err(|e| JsValue::from_str(&e.to_string()))?;
     let mut result = run_factorization_refinement_study(&config);
+    result.elapsed_ms = js_sys::Date::now() - start;
+    serde_json::to_string(&result).map_err(|e| JsValue::from_str(&e.to_string()))
+}
+
+#[wasm_bindgen]
+pub fn run_factorization_ensemble_json(_config_json: &str) -> Result<String, JsValue> {
+    let start = js_sys::Date::now();
+    let mut result = run_factorization_ensemble();
     result.elapsed_ms = js_sys::Date::now() - start;
     serde_json::to_string(&result).map_err(|e| JsValue::from_str(&e.to_string()))
 }

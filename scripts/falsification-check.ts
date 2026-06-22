@@ -13,8 +13,8 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 initSync({ module: readFileSync(join(__dirname, '../src/sim/wasm/pkg/mad_dog_sim_bg.wasm')) })
 
 console.warn(
-  '[mad-dog factorization] Falsification battery includes exact n=8 and grid n=9 ' +
-    'factorization searches — may take several minutes.',
+  '[mad-dog factorization] Falsification battery includes exact factorization searches, ' +
+    'Phase-1 ensemble (K), and negative controls (M) — may take several minutes.',
 )
 
 const result = JSON.parse(run_falsification_battery_json('{}')) as FalsificationBatteryResult

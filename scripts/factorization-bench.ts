@@ -9,9 +9,14 @@ import { dirname, join } from 'node:path'
 import {
   initSync,
   run_factorization_search_json,
+  run_factorization_ensemble_json,
 } from '../src/sim/wasm/pkg/mad_dog_sim.js'
 import { warnIfExpensiveFactorizationSearch } from '../src/sim/factorization-warnings.ts'
-import type { FactorizationSearchConfig } from '../src/sim/types.ts'
+import type {
+  FactorizationEnsembleResult,
+  FactorizationSearchConfig,
+  FactorizationSearchResult,
+} from '../src/sim/types.ts'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 initSync({ module: readFileSync(join(__dirname, '../src/sim/wasm/pkg/mad_dog_sim_bg.wasm')) })
@@ -49,6 +54,63 @@ const cases: { label: string; config: FactorizationSearchConfig; expectRecover?:
     expectRecover: true,
   },
   {
+    label: 'spectrum XX n=6',
+    config: {
+      kind: 'shuffled_xx_chain',
+      n: 6,
+      field: 1.5,
+      seed: 4242,
+      topK: 3,
+      inputMode: 'spectrum',
+      eigenstateCount: 3,
+      searchMethod: 'exact',
+    },
+    expectRecover: true,
+  },
+  {
+    label: 'pauli Heisenberg n=6',
+    config: {
+      kind: 'shuffled_heisenberg_chain',
+      n: 6,
+      field: 1.5,
+      seed: 4242,
+      topK: 3,
+      inputMode: 'pauli',
+      eigenstateCount: 3,
+      searchMethod: 'exact',
+    },
+    expectRecover: true,
+  },
+  {
+    label: 'spectrum Sparse n=6',
+    config: {
+      kind: 'shuffled_sparse_chain',
+      n: 6,
+      field: 1.5,
+      seed: 4242,
+      topK: 3,
+      inputMode: 'spectrum',
+      eigenstateCount: 4,
+      searchMethod: 'exact',
+    },
+    expectRecover: true,
+  },
+  {
+    label: 'scrambled spectrum n=6',
+    config: {
+      kind: 'shuffled_chain',
+      n: 6,
+      field: 1.5,
+      seed: 4242,
+      topK: 3,
+      inputMode: 'spectrum',
+      eigenstateCount: 3,
+      searchMethod: 'exact',
+      spectrumScramble: true,
+    },
+    expectRecover: false,
+  },
+  {
     label: 'grid vs line n=9',
     config: {
       kind: 'shuffled_grid',
@@ -68,13 +130,13 @@ const cases: { label: string; config: FactorizationSearchConfig; expectRecover?:
 let failures = 0
 
 console.warn(
-  '[mad-dog factorization] bench runs WASM only; n=8 exact and n=10 annealing may take minutes.',
+  '[mad-dog factorization] bench runs WASM only; n=8 exact, ensemble, and n=10 annealing may take minutes.',
 )
 
 for (const { label, config, expectRecover } of cases) {
   warnIfExpensiveFactorizationSearch(config, label)
   const t0 = performance.now()
-  const wasm = JSON.parse(run_factorization_search_json(JSON.stringify(config)))
+  const wasm = JSON.parse(run_factorization_search_json(JSON.stringify(config))) as FactorizationSearchResult
   const elapsedMs = performance.now() - t0
 
   const recoverOk = expectRecover === undefined || wasm.recoveredIdentity === expectRecover
@@ -86,7 +148,27 @@ for (const { label, config, expectRecover } of cases) {
   if (wasm.permMatchDistance !== undefined) {
     console.log(`  permMatchDistance=${wasm.permMatchDistance}`)
   }
+  if (wasm.uniqueness && label === 'spectrum n=6') {
+    const u = wasm.uniqueness
+    const uniqOk = u.trueInTopK && u.bestClassSize <= 2
+    if (!uniqOk) failures++
+    console.log(
+      `  uniqueness classes=${u.equivalenceClassCount} bestSize=${u.bestClassSize} trueInTopK=${u.trueInTopK}${uniqOk ? ' OK' : ' FAIL'}`,
+    )
+  }
   console.log(`  best score=${wasm.best.score.toFixed(3)}  locality=${(wasm.best.localityFraction * 100).toFixed(0)}%  method=${wasm.searchMethod}`)
+}
+
+console.log('\n--- Phase-1 ensemble (K) ---')
+const tEns = performance.now()
+const ensemble = JSON.parse(run_factorization_ensemble_json('{}')) as FactorizationEnsembleResult
+const ensMs = performance.now() - tEns
+console.log(
+  `  recovery ${(ensemble.recoveryRate * 100).toFixed(0)}% (${ensemble.recovered}/${ensemble.total}) in ${ensMs.toFixed(0)} ms`,
+)
+if (!ensemble.passed) failures++
+for (const c of ensemble.cases.filter((x) => !x.recoveredIdentity)) {
+  console.log(`  FAIL: ${c.label} score=${c.score.toFixed(3)}`)
 }
 
 console.log(failures === 0 ? '\nAll factorization benchmarks passed.' : `\n${failures} case(s) failed.`)

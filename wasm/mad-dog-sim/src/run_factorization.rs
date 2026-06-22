@@ -2,12 +2,15 @@
 
 use crate::factorization::{
     line_equiv_distance, line_equiv_match, perm_distance, score_permutation, search_factorization,
-    shuffle_hamiltonian, spectrum_from_hamiltonian, FactorizationCandidate, GraphKind,
-    InputMode, SearchMethod, SearchParams,
+    shuffle_hamiltonian, shuffle_spectrum_components, spectrum_from_hamiltonian,
+    uniqueness_report, FactorizationCandidate, GraphKind, InputMode, SearchMethod, SearchParams,
+    UniquenessReport,
 };
 use crate::geometry::mutual_information_matrix;
-use crate::models::{random_nonlocal, tfim_chain, tfim_grid};
-use crate::quantum::low_energy_states;
+use crate::models::{
+    heisenberg_chain, random_nonlocal, sparse_local_chain, tfim_chain, tfim_grid, xx_chain,
+};
+use crate::quantum::{Hamiltonian, low_energy_states};
 use crate::rng::Rng;
 use serde::{Deserialize, Serialize};
 
@@ -36,6 +39,8 @@ pub struct FactorizationSearchConfig {
     pub distance_decay: Option<f64>,
     #[serde(default)]
     pub annealing_steps: Option<usize>,
+    #[serde(default)]
+    pub spectrum_scramble: Option<bool>,
 }
 
 fn default_top_k() -> usize {
@@ -56,6 +61,8 @@ pub struct FactorizationSearchResult {
     pub perm_match_distance: Option<usize>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub true_shuffle: Option<Vec<usize>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub uniqueness: Option<UniquenessReport>,
     pub baseline_mi: Vec<Vec<f64>>,
     pub best_mi: Vec<Vec<f64>>,
     pub coupling_edges: Vec<crate::factorization::CouplingEdge>,
@@ -109,6 +116,7 @@ fn build_params(config: &FactorizationSearchConfig) -> SearchParams {
         distance_decay: config.distance_decay.unwrap_or(0.0),
         annealing_steps: config.annealing_steps.unwrap_or(3000),
         emergent_dim_weight: 0.1,
+        spectrum_scrambled: config.spectrum_scramble == Some(true),
     }
 }
 
@@ -120,19 +128,57 @@ fn inverse_shuffle(shuffle: &[usize]) -> Vec<usize> {
     inv
 }
 
+fn shuffled_local_model(
+    kind: &str,
+    n: usize,
+    field: f64,
+    seed: u32,
+) -> (String, Hamiltonian, Vec<usize>) {
+    match kind {
+        "shuffled_chain" => {
+            let model = tfim_chain(n, 1.0, field);
+            let (shuffled, shuffle_perm) = shuffle_hamiltonian(&model.hamiltonian, seed);
+            (format!("Shuffled TFIM chain (n={n})"), shuffled, shuffle_perm)
+        }
+        "shuffled_xx_chain" => {
+            let model = xx_chain(n, 1.0, field);
+            let (shuffled, shuffle_perm) = shuffle_hamiltonian(&model.hamiltonian, seed);
+            (format!("Shuffled XX chain (n={n})"), shuffled, shuffle_perm)
+        }
+        "shuffled_heisenberg_chain" => {
+            let model = heisenberg_chain(n, 1.0, field);
+            let (shuffled, shuffle_perm) = shuffle_hamiltonian(&model.hamiltonian, seed);
+            (
+                format!("Shuffled Heisenberg chain (n={n})"),
+                shuffled,
+                shuffle_perm,
+            )
+        }
+        "shuffled_sparse_chain" => {
+            let model = sparse_local_chain(n, seed.wrapping_add(17));
+            let (shuffled, shuffle_perm) = shuffle_hamiltonian(&model.hamiltonian, seed);
+            (
+                format!("Shuffled sparse local chain (n={n})"),
+                shuffled,
+                shuffle_perm,
+            )
+        }
+        other => panic!("unknown shuffled local kind: {other}"),
+    }
+}
+
 pub fn run_factorization_search(config: &FactorizationSearchConfig) -> FactorizationSearchResult {
     let top_k = config.top_k.clamp(1, 20);
     let mut params = build_params(config);
 
     let (label, hamiltonian, true_shuffle) = match config.kind.as_str() {
-        "shuffled_chain" => {
-            let model = tfim_chain(config.n, 1.0, config.field);
-            let (shuffled, shuffle_perm) = shuffle_hamiltonian(&model.hamiltonian, config.seed);
-            (
-                format!("Shuffled TFIM chain (n={})", config.n),
-                shuffled,
-                Some(shuffle_perm),
-            )
+        "shuffled_chain"
+        | "shuffled_xx_chain"
+        | "shuffled_heisenberg_chain"
+        | "shuffled_sparse_chain" => {
+            let (label, h, shuffle_perm) =
+                shuffled_local_model(&config.kind, config.n, config.field, config.seed);
+            (label, h, Some(shuffle_perm))
         }
         "shuffled_grid" => {
             let rows = config.rows.unwrap_or(3);
@@ -148,6 +194,11 @@ pub fn run_factorization_search(config: &FactorizationSearchConfig) -> Factoriza
                 Some(shuffle_perm),
             )
         }
+        "random" => {
+            let mut rng = Rng::new(config.seed);
+            let model = random_nonlocal(config.n, &mut rng);
+            (model.label.clone(), model.hamiltonian, None)
+        }
         _ => {
             let mut rng = Rng::new(config.seed);
             let model = random_nonlocal(config.n, &mut rng);
@@ -162,11 +213,16 @@ pub fn run_factorization_search(config: &FactorizationSearchConfig) -> Factoriza
         .collect();
     let energy = hamiltonian.expectation(&states[0]);
 
-    let spectrum = if params.input_mode == InputMode::Spectrum {
+    let mut spectrum = if params.input_mode == InputMode::Spectrum {
         Some(spectrum_from_hamiltonian(&hamiltonian, k))
     } else {
         None
     };
+    if config.spectrum_scramble == Some(true) {
+        if let Some(ref mut spec) = spectrum {
+            shuffle_spectrum_components(spec, config.seed);
+        }
+    }
 
     let outcome = search_factorization(
         &hamiltonian,
@@ -203,8 +259,12 @@ pub fn run_factorization_search(config: &FactorizationSearchConfig) -> Factoriza
                 || (recovery.locality_fraction > 0.99 && recovery.nonlocal_terms == 0)
         }
     } else {
-        outcome.best.score > outcome.baseline.score + 0.05
+        false
     };
+
+    let uniqueness = true_shuffle.as_ref().map(|shuffle| {
+        uniqueness_report(&outcome.top_candidates, &inverse_shuffle(shuffle))
+    });
 
     let input_mode_str = match params.input_mode {
         InputMode::Pauli => "pauli",
@@ -222,6 +282,7 @@ pub fn run_factorization_search(config: &FactorizationSearchConfig) -> Factoriza
         recovered_identity,
         perm_match_distance,
         true_shuffle,
+        uniqueness,
         baseline_mi: outcome.baseline_mi,
         best_mi: outcome.best_mi,
         coupling_edges: outcome.coupling_edges,
@@ -238,24 +299,35 @@ mod tests {
     use super::*;
     use crate::factorization::line_equiv_distance;
 
-    #[test]
-    fn spectrum_recovers_shuffled_chain_n6() {
-        let config = FactorizationSearchConfig {
-            kind: "shuffled_chain".to_string(),
-            n: 6,
+    fn spectrum_config(kind: &str, n: usize, seed: u32) -> FactorizationSearchConfig {
+        let eigenstate_count = if kind == "shuffled_heisenberg_chain" {
+            n.min(6)
+        } else if kind == "shuffled_sparse_chain" {
+            4
+        } else {
+            3
+        };
+        FactorizationSearchConfig {
+            kind: kind.to_string(),
+            n,
             field: 1.5,
-            seed: 4242,
-            top_k: 3,
+            seed,
+            top_k: 5,
             input_mode: Some("spectrum".to_string()),
             search_method: Some("exact".to_string()),
-            eigenstate_count: Some(3),
+            eigenstate_count: Some(eigenstate_count),
             graph_kind: None,
             rows: None,
             cols: None,
             distance_decay: None,
             annealing_steps: None,
-        };
-        let result = run_factorization_search(&config);
+            spectrum_scramble: None,
+        }
+    }
+
+    #[test]
+    fn spectrum_recovers_shuffled_chain_n6() {
+        let result = run_factorization_search(&spectrum_config("shuffled_chain", 6, 4242));
         assert!(
             result.recovered_identity,
             "score={} perm={:?} dist={:?}",
@@ -264,6 +336,47 @@ mod tests {
             result.perm_match_distance
         );
         assert_eq!(result.perm_match_distance, Some(0));
+    }
+
+    #[test]
+    fn spectrum_recovers_shuffled_xx_chain_n6() {
+        let result = run_factorization_search(&spectrum_config("shuffled_xx_chain", 6, 4242));
+        assert!(result.recovered_identity, "xx chain failed");
+    }
+
+    #[test]
+    fn pauli_recovers_shuffled_heisenberg_chain_n6() {
+        let mut config = spectrum_config("shuffled_heisenberg_chain", 6, 4242);
+        config.input_mode = Some("pauli".to_string());
+        config.eigenstate_count = Some(3);
+        let result = run_factorization_search(&config);
+        assert!(
+            result.recovered_identity,
+            "pauli heisenberg failed: dist={:?}",
+            result.perm_match_distance
+        );
+    }
+
+    #[test]
+    fn spectrum_recovers_shuffled_sparse_chain_n6() {
+        let result =
+            run_factorization_search(&spectrum_config("shuffled_sparse_chain", 6, 4242));
+        assert!(
+            result.recovered_identity,
+            "sparse chain failed: dist={:?}",
+            result.perm_match_distance
+        );
+    }
+
+    #[test]
+    fn spectrum_scramble_prevents_recovery() {
+        let mut config = spectrum_config("shuffled_chain", 6, 4242);
+        config.spectrum_scramble = Some(true);
+        let result = run_factorization_search(&config);
+        assert!(
+            !result.recovered_identity,
+            "scrambled spectrum should not recover"
+        );
     }
 
     #[test]

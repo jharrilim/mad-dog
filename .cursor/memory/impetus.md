@@ -79,3 +79,11 @@ Dated bullets for decisions future agents should not relitigate without cause.
 ## Documentation
 
 - **`docs/` for research notes**, **`.cursor/memory/` for goals/non-goals/impetus** — different audiences and update triggers.
+
+## 2026-06-21 — Phase 1 S1 (kill circularity)
+
+- **Model zoo:** `xx_chain`, `heisenberg_chain`, `sparse_local_chain` + shuffled factorization kinds.
+- **Ensemble K:** `run_factorization_ensemble` — TFIM/XX/Heisenberg/sparse, ≥80% spectrum recovery.
+- **Uniqueness report** on top-k equivalence classes (`line_equiv_distance` clustering).
+- **Negative control M:** random nonlocal + `spectrumScramble` must not recover.
+- **Deferred:** true eigenvalue-only blind inference; 3D/torus graph factorization.

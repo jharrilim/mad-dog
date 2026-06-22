@@ -9,10 +9,8 @@
 
 ## Near-term directions
 
-- ~~Spectrum-only factorization blind tests (see [roadmap.md](../docs/roadmap.md)).~~
-- ~~Minimal decoherence branch for branch-resolved worldlines.~~ — shipped 2026-06.
-- ~~Larger 3D lattices + dim=3 resolution.~~ — shipped 2026-06 (`bench:universe`).
-- ~~Curved space / mass concentration sweeps.~~ — shipped 2026-06 (`sweep:mass`).
-- ~~Adaptive holographic refinement~~ — shipped 2026-06.
-- ~~Three-or-more-clock consistency networks~~ — shipped 2026-06.
-- ~~Worldline tracking, two-particle scattering~~ — shipped 2026-06.
+See phased signature program in [roadmap.md](../docs/roadmap.md) (S1–S10). **Phase 1 shipped.**
+
+- **Phase 2:** **J′** — 3D gauge-free geometry stability.
+- **Phase 4:** extend **L** (Lorentz proxy scaling + dispersion).
+- **Phase 6:** **I′** — stabilizer search on excitation subspace.

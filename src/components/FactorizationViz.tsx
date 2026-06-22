@@ -48,7 +48,7 @@ export function FactorizationViz() {
       graphKind: kind === 'shuffled_grid' ? 'grid' : 'line',
       eigenstateCount: inputMode === 'spectrum' ? 3 : 1,
       searchMethod:
-        kind === 'shuffled_chain' && inputMode === 'pauli' ? 'exact' : undefined,
+        kind !== 'random' && kind !== 'shuffled_grid' ? 'exact' : undefined,
     }
   }, [kind, inputMode])
 
@@ -82,7 +82,28 @@ export function FactorizationViz() {
             variant={kind === 'shuffled_chain' ? 'default' : 'outline'}
             onClick={() => setKind('shuffled_chain')}
           >
-            Shuffled chain
+            TFIM chain
+          </Button>
+          <Button
+            size="sm"
+            variant={kind === 'shuffled_xx_chain' ? 'default' : 'outline'}
+            onClick={() => setKind('shuffled_xx_chain')}
+          >
+            XX chain
+          </Button>
+          <Button
+            size="sm"
+            variant={kind === 'shuffled_heisenberg_chain' ? 'default' : 'outline'}
+            onClick={() => setKind('shuffled_heisenberg_chain')}
+          >
+            Heisenberg
+          </Button>
+          <Button
+            size="sm"
+            variant={kind === 'shuffled_sparse_chain' ? 'default' : 'outline'}
+            onClick={() => setKind('shuffled_sparse_chain')}
+          >
+            Sparse local
           </Button>
           <Button
             size="sm"
@@ -177,6 +198,36 @@ export function FactorizationViz() {
                 </dl>
               </div>
             </div>
+
+            {result.uniqueness && (
+              <div className="rounded-md border p-3 text-sm space-y-1">
+                <p className="font-medium">Uniqueness (top-k equivalence classes)</p>
+                <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-muted-foreground">
+                  <dt>classes</dt>
+                  <dd className="text-foreground tabular-nums">
+                    {result.uniqueness.equivalenceClassCount}
+                  </dd>
+                  <dt>best class size</dt>
+                  <dd className="text-foreground tabular-nums">
+                    {result.uniqueness.bestClassSize}
+                  </dd>
+                  <dt>true in top-k</dt>
+                  <dd className="text-foreground">{result.uniqueness.trueInTopK ? 'yes' : 'no'}</dd>
+                  {result.uniqueness.trueClassRank !== undefined && (
+                    <>
+                      <dt>true class rank</dt>
+                      <dd className="text-foreground tabular-nums">
+                        {result.uniqueness.trueClassRank}
+                      </dd>
+                    </>
+                  )}
+                  <dt>score gap</dt>
+                  <dd className="text-foreground tabular-nums">
+                    {result.uniqueness.scoreGapToSecondClass.toFixed(3)}
+                  </dd>
+                </dl>
+              </div>
+            )}
 
             <div className="grid sm:grid-cols-2 gap-6">
               <MiHeatmap title="MI — baseline labeling" mi={result.baselineMi} />

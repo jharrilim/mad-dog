@@ -23,6 +23,7 @@ import init, {
   run_universe_slice_json,
   run_factorization_search_json,
   run_factorization_refinement_json,
+  run_factorization_ensemble_json,
   run_falsification_battery_json,
 } from './pkg/mad_dog_sim.js'
 import wasmUrl from './pkg/mad_dog_sim_bg.wasm?url'
@@ -48,6 +49,7 @@ export type WasmMethod =
   | 'universeSlice'
   | 'factorizationSearch'
   | 'factorizationRefinement'
+  | 'factorizationEnsemble'
   | 'falsificationBattery'
 
 export type WorkerRequest = {
@@ -81,6 +83,7 @@ const runners: Record<WasmMethod, (json: string) => string> = {
   universeSlice: run_universe_slice_json,
   factorizationSearch: run_factorization_search_json,
   factorizationRefinement: run_factorization_refinement_json,
+  factorizationEnsemble: run_factorization_ensemble_json,
   falsificationBattery: run_falsification_battery_json,
 }
 

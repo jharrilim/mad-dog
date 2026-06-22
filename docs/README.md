@@ -22,7 +22,8 @@ These are **working learnings**, not claims of new physics. They record what the
 | [qecc-probe.md](./qecc-probe.md) | Branch-resolved excitation subspace (QECC / EFT proto) |
 | [geometry-stability.md](./geometry-stability.md) | Gauge-free MI distance stability across slices |
 | [multi-clock.md](./multi-clock.md) | N-clock consistency networks |
-| [roadmap.md](./roadmap.md) | Exploration backlog (dated) |
+| [roadmap.md](./roadmap.md) | Signature program S1–S10 + phased backlog |
+| [falsification.md](./falsification.md) | Automated Mad-Dog claim tests (A–L) |
 | [open-questions.md](./open-questions.md) | Honest limits and next experiments |
 
 ## Code map
