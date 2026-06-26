@@ -15,8 +15,8 @@ use crate::run_refinement::{
 };
 use crate::run_matter::{
     run_branch_born_probe, run_eft_dimension_probe, run_particle_stability_probe,
-    run_stabilizer_search, BranchBornConfig, EftDimensionConfig, ParticleStabilityConfig,
-    StabilizerSearchConfig,
+    run_qecc_probe, run_stabilizer_search, BranchBornConfig, EftDimensionConfig,
+    ParticleStabilityConfig, StabilizerSearchConfig,
 };
 use crate::run_factor_dynamics::{
     run_holographic_bound_probe, run_inplace_split_probe,
@@ -38,10 +38,12 @@ use crate::run_excitation_subspace::run_excitation_subspace_probe;
 use crate::run_geometry_stability::{run_geometry_stability, GeometryStabilityConfig};
 use crate::run_multi_clock::{run_multi_clock, MultiClockRunConfig};
 use crate::boost_invariance::{run_boost_invariance, BoostInvarianceConfig};
+use crate::poincare::{run_poincare_composite, PoincareCompositeConfig};
 use crate::dispersion::{run_dispersion, DispersionConfig};
 use crate::lorentz::grid_cardinal_speed_cv;
 use crate::run_lorentz_scaling::run_lorentz_scaling;
 use crate::scattering::{run_two_defect_scattering, ScatteringConfig};
+use crate::locality_spectrum::run_locality_spectrum_battery;
 use serde::Serialize;
 
 fn rt_ratio_std(n: usize, field: f64, seed: u32) -> f64 {
@@ -879,6 +881,107 @@ pub fn run_falsification_battery() -> FalsificationBatteryResult {
                 locality_at_nmin
                     .map(|l| format!("{l:.2}"))
                     .unwrap_or_else(|| "n/a".to_string())
+            ),
+        });
+    }
+
+    // X — code subspace identified: branch states inside, mixed state relatively outside
+    {
+        let q = run_qecc_probe(&StabilizerSearchConfig {
+            excitation: ExcitationSubspaceConfig {
+                n: 8,
+                field: 1.2,
+                dt: 0.2,
+                steps: 22,
+                couple_step: 7,
+                coupling: 0.9,
+                seed: 4242,
+                window_radius: 2,
+            },
+        });
+        let passed = q.qecc.code_subspace_found && q.qecc.fidelity_selectivity > 1.1;
+        tests.push(FalsificationTest {
+            id: "X".to_string(),
+            name: "Code subspace identified: branches inside, mixed state less so".to_string(),
+            passed,
+            detail: format!(
+                "{} k={} d={} b0={:.3} b1={:.3} mixed={:.3} sel={:.2}×",
+                q.qecc.code_label,
+                q.qecc.k_logical,
+                q.qecc.d_distance,
+                q.qecc.branch0_code_fidelity,
+                q.qecc.branch1_code_fidelity,
+                q.qecc.mixed_code_fidelity,
+                q.qecc.fidelity_selectivity,
+            ),
+        });
+    }
+
+    // Y + Z — Poincaré composite (shared run): compute once, emit two tests
+    {
+        let pc = run_poincare_composite(&PoincareCompositeConfig {
+            rows: 4,
+            cols: 4,
+            field: 1.2,
+            dt: 0.2,
+            steps: 28,
+            n_chain: 16,
+            chain_modes: 3,
+            chain_field: 1.0,
+            chain_dt: 0.15,
+            chain_steps: 48,
+        });
+
+        // Y — multi-frame boost: 4 spatially distinct observer frames; extends P from 2 to 4 frames.
+        tests.push(FalsificationTest {
+            id: "Y".to_string(),
+            name: "Multi-frame boost: light-cone speed consistent across 4 observer frames".to_string(),
+            passed: pc.boost_ok,
+            detail: format!(
+                "boost_cv={:.3} frames=[{}]",
+                pc.boost_cv,
+                pc.boost_frames
+                    .iter()
+                    .map(|f| format!("{:.3}", f.velocity))
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            ),
+        });
+
+        // Z — full Poincaré composite: rotation + multi-frame boost + dispersion all pass simultaneously.
+        tests.push(FalsificationTest {
+            id: "Z".to_string(),
+            name: "Full Poincaré composite: rotation + boost + dispersion all pass".to_string(),
+            passed: pc.all_poincare_ok,
+            detail: format!(
+                "{}/{} pillars; rot_cv={:.3} boost_cv={:.3} disp_r2={:.3}",
+                pc.tests_passed,
+                pc.tests_total,
+                pc.rotation_cv,
+                pc.boost_cv,
+                pc.dispersion_linear_r2,
+            ),
+        });
+    }
+
+    // AA — locality from spectrum: blind MI+bandwidth inference recovers chain factorization
+    {
+        let ls = run_locality_spectrum_battery();
+        let detail_cases: Vec<String> = ls
+            .cases
+            .iter()
+            .map(|c| format!("{}×{}", if c.recovered { "✓" } else { "✗" }, c.seed))
+            .collect();
+        tests.push(FalsificationTest {
+            id: "AA".to_string(),
+            name: "Locality from spectrum: MI+bandwidth recovers chain factorization (no Ĥ)".to_string(),
+            passed: ls.pass,
+            detail: format!(
+                "{}/{} recovered ({:.0}%): {}",
+                ls.recovered,
+                ls.total,
+                ls.recovery_rate * 100.0,
+                detail_cases.join(" ")
             ),
         });
     }

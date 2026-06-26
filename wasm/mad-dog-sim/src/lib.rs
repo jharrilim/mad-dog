@@ -27,6 +27,9 @@ mod run_geometry_stability;
 mod run_factorization;
 mod run_factorization_ensemble;
 mod run_factorization_refinement;
+mod locality_spectrum;
+mod poincare;
+mod qecc;
 mod run_falsification;
 mod run_holography;
 mod multi_clock;
@@ -71,6 +74,7 @@ use run_holography::{
 };
 use run_light_cone_compare::{run_light_cone_compare, LightConeCompareConfig};
 use boost_invariance::{run_boost_invariance, BoostInvarianceConfig};
+use poincare::{run_poincare_composite, PoincareCompositeConfig};
 use dispersion::{run_dispersion, DispersionConfig};
 use run_lorentz_scaling::run_lorentz_scaling;
 use run_multi_clock::{run_multi_clock, MultiClockRunConfig};
@@ -83,12 +87,13 @@ use run_refinement::{
     RefinementQuenchConfig,
 };
 use run_factor_dynamics::{run_holographic_bound_probe, run_inplace_split_probe};
+use locality_spectrum::run_locality_spectrum_battery;
 use crate::holographic_bound::HolographicBoundConfig;
 use crate::tensor_split::InplaceSplitConfig;
 use run_matter::{
     run_branch_born_probe, run_eft_dimension_probe, run_particle_stability_probe,
-    run_stabilizer_search, BranchBornConfig, EftDimensionConfig, ParticleStabilityConfig,
-    StabilizerSearchConfig,
+    run_qecc_probe, run_stabilizer_search, BranchBornConfig, EftDimensionConfig,
+    ParticleStabilityConfig, QeccProbeConfig, StabilizerSearchConfig,
 };
 use run_rt_quench::{
     run_curvature_proxy_quench, run_rt_quench, CurvatureProxyQuenchConfig, RtQuenchConfig,
@@ -376,6 +381,16 @@ pub fn run_dispersion_json(config_json: &str) -> Result<String, JsValue> {
 }
 
 #[wasm_bindgen]
+pub fn run_poincare_json(config_json: &str) -> Result<String, JsValue> {
+    let start = js_sys::Date::now();
+    let config: PoincareCompositeConfig =
+        serde_json::from_str(config_json).map_err(|e| JsValue::from_str(&e.to_string()))?;
+    let mut result = run_poincare_composite(&config);
+    result.elapsed_ms = js_sys::Date::now() - start;
+    serde_json::to_string(&result).map_err(|e| JsValue::from_str(&e.to_string()))
+}
+
+#[wasm_bindgen]
 pub fn run_boost_invariance_json(config_json: &str) -> Result<String, JsValue> {
     let start = js_sys::Date::now();
     let config: BoostInvarianceConfig =
@@ -436,11 +451,29 @@ pub fn run_branch_born_json(config_json: &str) -> Result<String, JsValue> {
 }
 
 #[wasm_bindgen]
+pub fn run_qecc_json(config_json: &str) -> Result<String, JsValue> {
+    let start = js_sys::Date::now();
+    let config: QeccProbeConfig =
+        serde_json::from_str(config_json).map_err(|e| JsValue::from_str(&e.to_string()))?;
+    let mut result = run_qecc_probe(&config);
+    result.elapsed_ms = js_sys::Date::now() - start;
+    serde_json::to_string(&result).map_err(|e| JsValue::from_str(&e.to_string()))
+}
+
+#[wasm_bindgen]
 pub fn run_eft_dimension_json(config_json: &str) -> Result<String, JsValue> {
     let start = js_sys::Date::now();
     let config: EftDimensionConfig =
         serde_json::from_str(config_json).map_err(|e| JsValue::from_str(&e.to_string()))?;
     let mut result = run_eft_dimension_probe(&config);
+    result.elapsed_ms = js_sys::Date::now() - start;
+    serde_json::to_string(&result).map_err(|e| JsValue::from_str(&e.to_string()))
+}
+
+#[wasm_bindgen]
+pub fn run_locality_spectrum_json(_config_json: &str) -> Result<String, JsValue> {
+    let start = js_sys::Date::now();
+    let mut result = run_locality_spectrum_battery();
     result.elapsed_ms = js_sys::Date::now() - start;
     serde_json::to_string(&result).map_err(|e| JsValue::from_str(&e.to_string()))
 }

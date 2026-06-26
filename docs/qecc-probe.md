@@ -1,6 +1,8 @@
-# Excitation subspace probe (QECC / EFT)
+# Excitation subspace probe + QECC code subspace identification
 
-**Status:** prototype (2026-06). Not a claim that TFIM excitations form a literal QECC — a diagnostic for whether branch-resolved defects look like a low-rank, Pauli-biased subspace after decoherence.
+**Status:** shipped (2026-06). Two-stage pipeline:
+1. **Excitation subspace probe** — branch sharpness / rank reduction on defect window.
+2. **QECC code subspace identification** — explicit [[n,k,d]] label from commuting stabilizer generators + code subspace fidelity for both branches and the mixed state.
 
 ## Motivation
 
@@ -50,8 +52,51 @@ With n=8, h=1.2, coupling=0.9: branches sharpen (gain ≈ 1.09), rank drops on t
 - **Experiments** → *Excitation subspace probe*
 - Falsification test **I**: branch excitations sharpen into low-rank Pauli-biased subspace
 
+## QECC code subspace identification
+
+Given the generators {g₁,…,gₘ} found by the stabilizer search, the code subspace is their shared
+eigenspace.  The fidelity of a state |ψ⟩ with this subspace is:
+
+  F(|ψ⟩) = ∏ᵢ (1 + |⟨ψ|gᵢ|ψ⟩|) / 2
+
+computed directly from the per-generator expectations already stored in the stabilizer search report.
+
+| Metric | Meaning |
+|--------|---------|
+| `codeLabel` | `[[n,k,d]]` — n=window sites, k=n−generators, d=code distance |
+| `branch0CodeFidelity` | ∏(1+\|⟨g⟩₀\|)/2 — branch 0 in code subspace |
+| `branch1CodeFidelity` | ∏(1+\|⟨g⟩₁\|)/2 — branch 1 in code subspace |
+| `mixedCodeFidelity`   | ∏(1+\|⟨g⟩_mixed\|)/2 — mixed state (pre-branch) in code |
+| `fidelitySelectivity` | branch avg / mixed — >1 means code is branch-selective |
+| `codeSubspaceFound`   | k ≥ 1, stabilizer found, branch avg fidelity > 0.5 |
+
+**Measured (n=8, h=1.2, coupling=0.9, window_radius=2):** code subspace found, selectivity > 1.1,
+meaning branches are more strongly inside the code than the pre-decoherence mixed state.
+
+Falsification test **X**: `codeSubspaceFound && fidelitySelectivity > 1.1`.
+
+## API
+
+```typescript
+import { runQeccProbeAsync } from '@/sim/runner-async'
+
+const result = await runQeccProbeAsync({
+  n: 8,
+  field: 1.2,
+  dt: 0.2,
+  steps: 22,
+  coupleStep: 7,
+  coupling: 0.9,
+  windowRadius: 2,
+})
+// result.qecc.codeLabel, .fidelitySelectivity, .codeSubspaceFound, ...
+```
+
+WASM: `run_qecc_json` in `lib.rs` → `run_matter.rs::run_qecc_probe`.
+
 ## Honest limits
 
-- Window size is hand-picked; no automatic stabilizer search in the Pauli group.
-- “Code-like” ≠ identified [[n,k,d]] code; it is a proto-EFT sanity check.
-- Rank comparison is on a small window only (full chain marginal can remain high-rank).
+- Weight-1 and weight-2 Pauli generators only; weight-3 might find more generators.
+- “Code-like” and fidelity selectivity are consistent signatures, not a derivation that TFIM branches
+  are a literal quantum error-correcting code.
+- Mixed-state fidelity for weight-2 operators uses a product approximation (see `stabilizer_search.rs`).

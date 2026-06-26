@@ -11,16 +11,16 @@ We are **not** trying to prove Mad-Dog from axioms or solve the measurement prob
 | **Scaling / uniqueness** | Open — biggest gap between “mechanism” and “our-universe-likeness” |
 | **Observational export** | Map sim thresholds to Lorentz / entropy bounds | **Shipped** — [observational-bridge.md](./observational-bridge.md), `npm run bench:observational` |
 
-Automated today: full falsification battery **A–W′** (31 tests). Signature program **S1–S10** complete through Phase 9.
+Automated today: full falsification battery **A–AA** (35 tests). Signature program **S1–S10** complete; QECC subspace ID (X), full Poincaré composite (Y+Z), and locality-from-spectrum blind inference (AA) shipped.
 
-**Phases 1–9 shipped (2026-06).** Next ranked: full Lorentz/Poincaré test, QECC subspace ID, locality-from-spectrum blind inference; deferred engineering (WebGPU). See [roadmap.md](./roadmap.md).
+**All S1–S10 shipped (2026-06).** Next ranked: 2×2×2 dim=3 resolution; weight-3 stabilizers. See [roadmap.md](./roadmap.md).
 
 ## From the paper (not yet simulated)
 
 - **Lorentz invariance** — no finite-dimensional unitary Lorentz reps on factors; how approximate is emergent Lorentz symmetry?
-- **Effective field theory / QECC** — are IR matter degrees of freedom a code subspace? **Proto-probe:** [qecc-probe.md](./qecc-probe.md) (branch Pauli sharpness + window rank after decoherence).
+- **Effective field theory / QECC** — are IR matter degrees of freedom a code subspace? **Shipped:** [qecc-probe.md](./qecc-probe.md) — branch fidelity > 0.5 with [[n,k,d]] subspace; mixed-state selectivity > 1.1; falsification test X. Open: weight-3 generators, non-TFIM models.
 - **Problem of time** — what picks the clock subsystem? (We use explicit Δt ticks or site-based physical clocks — not derived from Wheeler–DeWitt constraint.)
-- **Locality from spectrum** — search for factorizations that make a given Ĥ look local.
+- **Locality from spectrum** — search for factorizations that make a given Ĥ look local. **Shipped (AA):** MI + bandwidth alone recovers chain factorization for TFIM ordered/critical/paramagnet (n=6, 9/9 cases); XX gapless chain fails as expected (MI is non-local in gapless phase — a correct negative). See `locality_spectrum.rs`.
 - **Factor count and Hilbert-space growth** — Mad-Dog takes ℋ = ⊗ₐ ℋₐ and the number of micro-factors as primitive. It does not explain why *this* factorization, *this* dimension, or whether new fundamental degrees of freedom can appear over time (cosmological “creation” of qubits, growing Hilbert space in quantum gravity, etc.). Our simulator fixes `n` at model-build time; it never adds a tensor factor.
 
 ## Factor count: hypotheses (speculative)

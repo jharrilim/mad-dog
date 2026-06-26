@@ -57,6 +57,11 @@ import type {
   BranchBornResult,
   EftDimensionConfig,
   EftDimensionResult,
+  QeccProbeConfig,
+  QeccProbeResult,
+  PoincareCompositeConfig,
+  PoincareCompositeResult,
+  LocalitySpectrumResult,
   InplaceSplitConfig,
   InplaceSplitResult,
   HolographicBoundConfig,
@@ -345,6 +350,22 @@ export async function runFactorizationRefinementStudyAsync(
 
 export async function runFalsificationBatteryAsync(): Promise<FalsificationBatteryResultWithBackend> {
   return runWasm('falsificationBattery', {})
+}
+
+export async function runPoincareCompositeAsync(
+  config: PoincareCompositeConfig = {},
+): Promise<PoincareCompositeResult & { backend: SimBackend }> {
+  return runWasm('poincareComposite', config)
+}
+
+export async function runQeccProbeAsync(
+  config: QeccProbeConfig,
+): Promise<QeccProbeResult & { backend: SimBackend }> {
+  return runWasm('qeccProbe', config)
+}
+
+export async function runLocalitySpectrumAsync(): Promise<LocalitySpectrumResult & { backend: SimBackend }> {
+  return runWasm('localitySpectrum', {})
 }
 
 export { probeWasmBackend } from './wasm/client.ts'

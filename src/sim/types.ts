@@ -595,6 +595,43 @@ export interface BoostInvarianceResult {
   backend?: SimBackend
 }
 
+export interface BoostFrame {
+  label: string
+  referenceSite: number | null
+  velocity: number
+}
+
+export interface PoincareCompositeConfig {
+  rows?: number
+  cols?: number
+  field?: number
+  dt?: number
+  steps?: number
+  nChain?: number
+  chainModes?: number
+  chainField?: number
+  chainDt?: number
+  chainSteps?: number
+}
+
+export interface PoincareCompositeResult {
+  gridRows: number
+  gridCols: number
+  rotationCv: number
+  rotationOk: boolean
+  boostFrames: BoostFrame[]
+  boostCv: number
+  boostOk: boolean
+  dispersionLinearR2: number
+  dispersionVelocityCov: number
+  dispersionOk: boolean
+  testsPassed: number
+  testsTotal: number
+  allPoincareOk: boolean
+  elapsedMs: number
+  backend?: SimBackend
+}
+
 export interface DecoherenceQuenchConfig {
   n: number
   field: number
@@ -953,6 +990,29 @@ export interface EftDimensionResult {
   backend?: SimBackend
 }
 
+export interface QeccIdentification {
+  nPhysical: number
+  kLogical: number
+  dDistance: number
+  codeLabel: string
+  branch0CodeFidelity: number
+  branch1CodeFidelity: number
+  mixedCodeFidelity: number
+  branchAvgFidelity: number
+  fidelitySelectivity: number
+  codeSubspaceFound: boolean
+}
+
+export interface QeccProbeConfig extends ExcitationSubspaceConfig {}
+
+export interface QeccProbeResult {
+  excitation: ExcitationSubspaceResult
+  stabilizer: StabilizerSearchReport
+  qecc: QeccIdentification
+  elapsedMs: number
+  backend?: SimBackend
+}
+
 export interface InplaceSplitConfig {
   n: number
   field: number
@@ -1072,6 +1132,26 @@ export interface GeometryDimSweepResult {
   passed: number
   total: number
   allPassed: boolean
+  elapsedMs: number
+  backend?: SimBackend
+}
+
+export interface LocalitySpectrumCase {
+  model: string
+  n: number
+  field: number
+  seed: number
+  recovered: boolean
+  score: number
+  miNnRatio: number
+}
+
+export interface LocalitySpectrumResult {
+  total: number
+  recovered: number
+  recoveryRate: number
+  pass: boolean
+  cases: LocalitySpectrumCase[]
   elapsedMs: number
   backend?: SimBackend
 }

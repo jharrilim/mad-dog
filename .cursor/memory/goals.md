@@ -11,4 +11,4 @@
 
 See phased signature program in [roadmap.md](../docs/roadmap.md) (S1–S10). **Phases 1–9 complete.**
 
-Next: full Lorentz/Poincaré test, QECC subspace identification, locality-from-spectrum blind inference, 2×2×2 dim=3 resolution.
+Next: locality-from-spectrum blind inference, 2×2×2 dim=3 resolution, weight-3 stabilizer extension.

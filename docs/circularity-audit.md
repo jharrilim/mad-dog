@@ -123,9 +123,13 @@ Battery **pass/fail** is hold-out 3/3 only; calibration run reported for regress
 | ID | Independence | Notes |
 |----|--------------|-------|
 | **W′** | Mad-Dog | **Fixed 2026-06-22** — blind factorization locality on \|ψ⟩; hold-out ground seeds |
+| **AA** | Mad-Dog | **Shipped 2026-06-26** — locality-from-spectrum blind inference; MI+bandwidth only (no Ĥ); TFIM ordered/critical/paramagnet n=6; 9/9 recover; XX gapless fails (MI is non-local — correct negative result) |
 | **U′** | Mad-Dog | **Fixed 2026-06-22** — participation-ratio third estimator; two-of-three agreement |
 | **T′** | Mad-Dog | **Fixed 2026-06-26** — hold-out (n, field, couple_step) grid; 3/3 pass |
 | **I′** | Mad-Dog | **Fixed 2026-06-26** — hold-out (coupling, window_radius) grid; 3/3 pass |
+| **X** | Mad-Dog | **Shipped 2026-06-26** — stabilizer code subspace fidelity; branches in code, mixed state less so; selectivity > 1.1 |
+| **Y** | Mad-Dog | **Shipped 2026-06-26** — 4-frame boost: extends P from 2 observer frames to 4 (uniform, TL corner, top-edge, BR corner); CV of light-cone velocities < 0.25 |
+| **Z** | Mad-Dog | **Shipped 2026-06-26** — full Poincaré composite: rotation (J) + multi-frame boost (K) + linear dispersion (H) all pass simultaneously |
 | **A**, **K**, **M** | Mad-Dog | Blind / ensemble factorization — Phase 1 guards |
 | **A′** | Mad-Dog | Cross-graph structure — line vs grid / torus locality |
 | **B** | Generic | MI emergent distance vs lattice LR velocity — holds broadly for local QI systems |

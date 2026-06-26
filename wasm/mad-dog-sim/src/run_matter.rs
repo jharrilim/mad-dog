@@ -7,6 +7,7 @@ use crate::excitation_subspace::{
     run_excitation_subspace_probe, ExcitationSubspaceConfig, ExcitationSubspaceResult,
 };
 use crate::particle_stability::{run_particle_stability, ParticleStabilityResult};
+use crate::qecc::{identify_qecc, QeccIdentification};
 use crate::stabilizer_search::{
     distance_scales_with_window, search_stabilizers, StabilizerSearchReport,
 };
@@ -214,6 +215,45 @@ pub fn run_eft_dimension_probe(config: &EftDimensionConfig) -> EftDimensionResul
         predicted_independent_agree,
         dof_agreement,
         stabilizer,
+        elapsed_ms: 0.0,
+        backend: "wasm",
+    }
+}
+
+/// QECC probe shares the same config shape as the stabilizer search.
+pub type QeccProbeConfig = StabilizerSearchConfig;
+
+#[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct QeccProbeResult {
+    pub excitation: ExcitationSubspaceResult,
+    pub stabilizer: StabilizerSearchReport,
+    pub qecc: QeccIdentification,
+    pub elapsed_ms: f64,
+    pub backend: &'static str,
+}
+
+pub fn run_qecc_probe(config: &QeccProbeConfig) -> QeccProbeResult {
+    let excitation = run_excitation_subspace_probe(&config.excitation);
+    let deco_config = DecoherenceQuenchConfig {
+        n: config.excitation.n,
+        field: config.excitation.field,
+        dt: config.excitation.dt,
+        steps: config.excitation.steps,
+        couple_step: config.excitation.couple_step,
+        coupling: config.excitation.coupling,
+        seed: config.excitation.seed,
+    };
+    let (psi, n_chain, env_q) = decoherence_final_state(&deco_config);
+    let branch0 = chain_conditional_state(&psi, n_chain, env_q, 0);
+    let branch1 = chain_conditional_state(&psi, n_chain, env_q, 1);
+    let window = excitation.window_sites.clone();
+    let stabilizer = search_stabilizers(&psi, n_chain, env_q, &branch0, &branch1, &window);
+    let qecc = identify_qecc(&stabilizer, window.len());
+    QeccProbeResult {
+        excitation,
+        stabilizer,
+        qecc,
         elapsed_ms: 0.0,
         backend: "wasm",
     }

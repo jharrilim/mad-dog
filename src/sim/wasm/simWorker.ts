@@ -39,6 +39,9 @@ import init, {
   run_eft_dimension_json,
   run_inplace_split_json,
   run_holographic_bound_json,
+  run_qecc_json,
+  run_poincare_json,
+  run_locality_spectrum_json,
 } from './pkg/mad_dog_sim.js'
 import wasmUrl from './pkg/mad_dog_sim_bg.wasm?url'
 
@@ -79,6 +82,9 @@ export type WasmMethod =
   | 'eftDimension'
   | 'inplaceSplit'
   | 'holographicBound'
+  | 'qeccProbe'
+  | 'poincareComposite'
+  | 'localitySpectrum'
 
 export type WorkerRequest = {
   id: number
@@ -127,6 +133,9 @@ const runners: Record<WasmMethod, (json: string) => string> = {
   eftDimension: run_eft_dimension_json,
   inplaceSplit: run_inplace_split_json,
   holographicBound: run_holographic_bound_json,
+  qeccProbe: run_qecc_json,
+  poincareComposite: run_poincare_json,
+  localitySpectrum: run_locality_spectrum_json,
 }
 
 let initPromise: Promise<void> | null = null

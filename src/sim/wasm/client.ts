@@ -77,6 +77,9 @@ export type WasmMethod =
   | 'eftDimension'
   | 'inplaceSplit'
   | 'holographicBound'
+  | 'qeccProbe'
+  | 'poincareComposite'
+  | 'localitySpectrum'
 
 export function callWasm<T>(method: WasmMethod, config: unknown): Promise<T> {
   const id = nextId++

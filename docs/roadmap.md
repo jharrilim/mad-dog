@@ -21,8 +21,8 @@ Operational checklist — each maps to falsification tests and roadmap phases.
 | **S5** | Holographic entanglement | C, C′, F, F′, H, **R′** | **Shipped** — RT quench series, predictive split, geodesic proxy |
 | **S6** | Particles = excitations | E, **S′** | **Shipped** — ordered-phase defect localization |
 | **S7** | Classical branches | I, **T′** | **Shipped** — Born-weight / distinguishability correlation |
-| **S8** | IR subspace / code-like | I, **I′**, **U′** | **Shipped** — stabilizer search + two-of-three EFT DOF |
-| **S9** | Lorentz-ish IR causality | **L**, **L′**, **O**, **P** | **Shipped** — scaling, dispersion, boost invariance |
+| **S8** | IR subspace / code-like | I, **I′**, **U′**, **X** | **Shipped** — stabilizer search + two-of-three EFT DOF + QECC code subspace ID |
+| **S9** | Lorentz-ish IR causality | **L**, **L′**, **O**, **P**, **Y**, **Z** | **Shipped** — scaling, dispersion, boost invariance, multi-frame boost, Poincaré composite |
 | **S10** | Factor count not arbitrary | F, H, **V′**, **W′** | **Shipped** — in-place split + blind-locality holographic n_min |
 
 **Progress metric:** signatures pass on **models we didn’t hand-tune**, at **growing n**, with **negative controls** failing loudly.
@@ -40,7 +40,7 @@ Operational checklist — each maps to falsification tests and roadmap phases.
 | Minimal decoherence / Everett branching | [decoherence.md](./decoherence.md) |
 | Larger 3D lattices + dim=3 resolution | [universe-lab.md](./universe-lab.md); `bench:universe` |
 | Curved space via mass concentrations | [holography.md](./holography.md); `sweep:mass` |
-| QECC / EFT subspace probe | [qecc-probe.md](./qecc-probe.md); falsification **I** |
+| QECC / EFT subspace probe + code subspace ID | [qecc-probe.md](./qecc-probe.md); falsification **I**, **X** — `run_qecc_json` |
 | Gauge-free MI geometry stability | [geometry-stability.md](./geometry-stability.md); falsification **J** |
 | Ensemble spectrum blind recovery | Falsification **K** — TFIM/XX/Heisenberg/sparse ≥80% |
 | Negative controls (random + scrambled spectrum) | Falsification **M** |
@@ -115,10 +115,9 @@ Phase 9 is complete. The next meaningful physics-advance items are:
 
 | Priority | Item | Notes |
 |----------|------|-------|
-| 1 | **Full Lorentz / Poincaré test** | Beyond L v0; needs dispersion + scaling across larger grids |
-| 2 | **QECC subspace identification** | Decoherence prerequisite shipped; subspace ID still open |
-| 3 | **Locality from spectrum** | Spectrum-only blind inference; factorization search prototype exists |
-| 4 | **3D space emergence (2×2×2)** | Ground-state dim=3 on 8-site cube still inconclusive; needs dim-detector work |
+| ~~1~~ | ~~**Locality from spectrum**~~ | **Shipped 2026-06-26** — `locality_spectrum.rs`; falsification **AA**; 9/9 TFIM cases recover; XX gapless fails (expected — MI non-local) |
+| 2 | **3D space emergence (2×2×2)** | Ground-state dim=3 on 8-site cube still inconclusive; needs dim-detector work |
+| 3 | **Weight-3 stabilizers** | Extend `candidate_strings` to ZZZ/XXX triples; may find more generators |
 
 **Not in scope:** Phase 8 observational bridge (external literature caps — category-error risk only).
 
