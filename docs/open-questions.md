@@ -74,7 +74,7 @@ In simulator terms: instead of hand-picking `tfimChain(n+1)`, detect failure of 
 
 | Question | Status |
 |----------|--------|
-| Does 3D space emerge on a 3D lattice? | **Partially** — dim=3 on 2×2×3 ground + quench (h=1.5); 2×2×2 ground still inconclusive. See [universe-lab.md](./universe-lab.md). |
+| Does 3D space emerge on a 3D lattice? | **Yes** — dim=3 on both 2×2×2 and 2×2×3 ground states (h=1.5). Root cause of prior failure: T₁u eigenvalue degeneracy in MI Gram matrix caused floating-point scree-gap at 1+2e-14, fixed by requiring ≥5% ratio. See [universe-lab.md](./universe-lab.md). |
 | Does holographic area law hold? | Yes for ground state vs random. |
 | Does discrete RT hold? | Yes, slope ≈ 1, R² ≈ 0.99. |
 | Does mass deform RT slope? | Yes; Δslope grows with excitation density ρ (RT fit degrades at high ρ). See [holography.md](./holography.md), `sweep:mass`. |

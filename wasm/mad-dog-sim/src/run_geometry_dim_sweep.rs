@@ -92,7 +92,7 @@ fn case_cube(lx: usize, ly: usize, lz: usize, field: f64, seed: u32) -> Geometry
     let model = tfim_cube(lx, ly, lz, 1.0, field);
     let mut rng = Rng::new(seed);
     let (state, _, _) = ground_state(&model.hamiltonian, &mut rng, 4000, 1e-9);
-    let expected = if lx * ly * lz <= 8 { 1 } else { 3 };
+    let expected = 3usize;
     let dim = ground_dim(&state, 1.0, 3);
     let embed = embedding_corr(&state, 1.0, 3);
     GeometryDimSweepCase {

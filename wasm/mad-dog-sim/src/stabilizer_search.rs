@@ -74,6 +74,13 @@ fn mixed_pauli_expectation(
             let e1 = mixed_pauli_expectation(psi, n_chain, env_q, &[ops[1]]);
             e0 * e1
         }
+        // Weight-3 same-letter: product approximation (valid when sites decorrelate in mixed state)
+        3 if ops[0].1 == ops[1].1 && ops[1].1 == ops[2].1 => {
+            let e0 = mixed_pauli_expectation(psi, n_chain, env_q, &[ops[0]]);
+            let e1 = mixed_pauli_expectation(psi, n_chain, env_q, &[ops[1]]);
+            let e2 = mixed_pauli_expectation(psi, n_chain, env_q, &[ops[2]]);
+            e0 * e1 * e2
+        }
         _ => 0.0,
     }
 }
@@ -105,6 +112,11 @@ fn candidate_strings(window: &[usize]) -> Vec<(String, Vec<(usize, PauliLetter)>
         let (a, b) = (w[0], w[1]);
         out.push((format!("Z{a}Z{b}"), vec![(a, PauliLetter::Z), (b, PauliLetter::Z)]));
         out.push((format!("X{a}X{b}"), vec![(a, PauliLetter::X), (b, PauliLetter::X)]));
+    }
+    for w in window.windows(3) {
+        let (a, b, c) = (w[0], w[1], w[2]);
+        out.push((format!("Z{a}Z{b}Z{c}"), vec![(a, PauliLetter::Z), (b, PauliLetter::Z), (c, PauliLetter::Z)]));
+        out.push((format!("X{a}X{b}X{c}"), vec![(a, PauliLetter::X), (b, PauliLetter::X), (c, PauliLetter::X)]));
     }
     out
 }
@@ -266,5 +278,34 @@ mod tests {
             r.generator_count,
             r.code_distance
         );
+    }
+
+    #[test]
+    fn candidate_strings_includes_weight_3_triples() {
+        let window = vec![2usize, 3, 4, 5];
+        let strings = candidate_strings(&window);
+        let labels: Vec<&str> = strings.iter().map(|(l, _)| l.as_str()).collect();
+        assert!(labels.contains(&"Z2Z3Z4"), "ZZZ triple missing");
+        assert!(labels.contains(&"X2X3X4"), "XXX triple missing");
+        assert!(labels.contains(&"Z3Z4Z5"), "ZZZ triple at offset missing");
+        // Weight-3 triples should have exactly 3 ops
+        for (label, ops) in &strings {
+            if label.starts_with('Z') && label.len() > 4 {
+                assert!(ops.len() <= 3, "unexpected op count for {label}");
+            }
+        }
+    }
+
+    #[test]
+    fn weight_3_candidates_evaluated_without_panic() {
+        let (psi, n_chain, env_q, b0, b1, window) = branch_states();
+        // Smoke test: run with weight-3 candidates present (window ≥ 3 sites)
+        assert!(window.len() >= 3, "window too small for weight-3 test");
+        let r = search_stabilizers(&psi, n_chain, env_q, &b0, &b1, &window);
+        // Check if any weight-3 generator was found
+        let w3 = r.generators.iter().filter(|g| g.weight == 3).count();
+        println!("weight-3 generators found: {w3} / total: {}", r.generator_count);
+        // The search should still find at least one generator (weight-2 still present)
+        assert!(r.stabilizer_found, "lost stabilizer after adding weight-3 candidates");
     }
 }

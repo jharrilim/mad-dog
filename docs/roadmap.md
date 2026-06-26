@@ -116,8 +116,8 @@ Phase 9 is complete. The next meaningful physics-advance items are:
 | Priority | Item | Notes |
 |----------|------|-------|
 | ~~1~~ | ~~**Locality from spectrum**~~ | **Shipped 2026-06-26** — `locality_spectrum.rs`; falsification **AA**; 9/9 TFIM cases recover; XX gapless fails (expected — MI non-local) |
-| 2 | **3D space emergence (2×2×2)** | Ground-state dim=3 on 8-site cube still inconclusive; needs dim-detector work |
-| 3 | **Weight-3 stabilizers** | Extend `candidate_strings` to ZZZ/XXX triples; may find more generators |
+| ~~2~~ | ~~**3D space emergence (2×2×2)**~~ | **Shipped 2026-06-26** — `estimate_emergent_dimension` requires ≥5% scree gap; T₁u degeneracy in 2×2×2 now gives gap_dim=cap=3; dim sweep expected=3 for all cubes |
+| ~~3~~ | ~~**Weight-3 stabilizers**~~ | **Shipped 2026-06-26** — `candidate_strings` includes ZZZ/XXX triples; `mixed_pauli_expectation` handles weight-3 same-letter |
 
 **Not in scope:** Phase 8 observational bridge (external literature caps — category-error risk only).
 

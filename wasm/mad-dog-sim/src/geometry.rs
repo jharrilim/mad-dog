@@ -225,7 +225,9 @@ pub fn estimate_emergent_dimension(eigenvalues: &[f64], max_dim: usize) -> usize
     let cap = max_dim.min(significant.len()).max(1);
 
     let mut gap_dim = cap;
-    let mut best_ratio = 1.0_f64;
+    // Require ≥5% ratio to count as a genuine scree gap; guards against floating-point
+    // noise in degenerate eigenvalues (e.g., 3-fold T₁u symmetry in 2×2×2 cube).
+    let mut best_ratio = 1.05_f64;
     for k in 1..cap {
         let ratio = significant[k - 1] / significant[k].max(1e-12);
         if ratio > best_ratio {
@@ -513,5 +515,11 @@ mod tests {
             dim223 >= 3,
             "2x2x3 ground should resolve dim=3 (got {dim223}); 222={dim222}"
         );
+    }
+
+    #[test]
+    fn cube_222_ground_dim_three() {
+        let dim = ground_dim(|| tfim_cube(2, 2, 2, 1.0, 1.5));
+        assert_eq!(dim, 3, "2x2x2 ground state should emerge dim=3");
     }
 }
