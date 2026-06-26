@@ -221,42 +221,15 @@ mod tests {
     }
 
     #[test]
-    fn r_prime_holdout_grid_passes() {
-        let eval = eval_r_prime_holdout();
+    fn all_holdout_grids_pass() {
+        let r = eval_r_prime_holdout();
+        let f = eval_f_prime_holdout();
+        let c = eval_c_prime_holdout();
+        let v = eval_v_prime_holdout();
         assert!(
-            eval.all_passed(),
-            "R′ hold-out failed: {}",
-            eval.summary()
-        );
-    }
-
-    #[test]
-    fn f_prime_holdout_grid_passes() {
-        let eval = eval_f_prime_holdout();
-        assert!(
-            eval.all_passed(),
-            "F′ hold-out failed: {}",
-            eval.summary()
-        );
-    }
-
-    #[test]
-    fn c_prime_holdout_grid_passes() {
-        let eval = eval_c_prime_holdout();
-        assert!(
-            eval.all_passed(),
-            "C′ hold-out failed: {}",
-            eval.summary()
-        );
-    }
-
-    #[test]
-    fn v_prime_holdout_grid_passes() {
-        let eval = eval_v_prime_holdout();
-        assert!(
-            eval.all_passed(),
-            "V′ hold-out failed: {}",
-            eval.summary()
+            r.all_passed() && f.all_passed() && c.all_passed() && v.all_passed(),
+            "R′:{} F′:{} C′:{} V′:{}",
+            r.summary(), f.summary(), c.summary(), v.summary()
         );
     }
 }

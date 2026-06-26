@@ -251,48 +251,16 @@ mod tests {
     }
 
     #[test]
-    fn poincare_rotation_ok_on_4x4() {
-        let r = run_poincare_composite(&demo_config());
-        assert!(
-            r.rotation_ok,
-            "rotation_cv={:.3} (max={ROTATION_CV_MAX})",
-            r.rotation_cv
-        );
-    }
-
-    #[test]
-    fn poincare_boost_multi_frame_ok() {
-        let r = run_poincare_composite(&demo_config());
-        assert!(
-            r.boost_ok,
-            "boost_cv={:.3} (max={BOOST_CV_MAX}) frames={:?}",
-            r.boost_cv,
-            r.boost_frames.iter().map(|f| f.velocity).collect::<Vec<_>>()
-        );
-    }
-
-    #[test]
-    fn poincare_dispersion_linear() {
-        let r = run_poincare_composite(&demo_config());
-        assert!(
-            r.dispersion_ok,
-            "r2={:.3} vel_cov={:.3}",
-            r.dispersion_linear_r2,
-            r.dispersion_velocity_cov
-        );
-    }
-
-    #[test]
     fn poincare_composite_all_pass() {
         let r = run_poincare_composite(&demo_config());
         assert!(
             r.all_poincare_ok,
-            "passed {}/{}: rot={} boost={} disp={}",
+            "passed {}/{}: rot_cv={:.3} boost_cv={:.3} disp_r2={:.3}",
             r.tests_passed,
             r.tests_total,
-            r.rotation_ok,
-            r.boost_ok,
-            r.dispersion_ok,
+            r.rotation_cv,
+            r.boost_cv,
+            r.dispersion_linear_r2,
         );
     }
 }
