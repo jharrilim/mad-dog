@@ -236,12 +236,15 @@ mod tests {
     use super::*;
 
     fn demo_config() -> PoincareCompositeConfig {
+        // Reduced grid for unit-test speed: 3×3 = 2⁹ vs 4×4 = 2¹⁶ (128× smaller state).
+        // Chain kept at n=12 (2¹²=4096) — n=8 is too short for linear dispersion fit.
+        // The browser battery uses a 4×4 grid via run_poincare_composite_json.
         PoincareCompositeConfig {
-            rows: 4,
-            cols: 4,
+            rows: 3,
+            cols: 3,
             field: 1.2,
             dt: 0.2,
-            steps: 28,
+            steps: 22,
             n_chain: 16,
             chain_modes: 3,
             chain_field: 1.0,
