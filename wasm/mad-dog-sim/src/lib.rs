@@ -18,6 +18,7 @@ mod quantum;
 mod relational_time;
 mod rng;
 mod refinement;
+mod matter_holdout;
 mod refinement_holdout;
 mod run_decoherence;
 mod run_excitation_subspace;

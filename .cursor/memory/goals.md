@@ -9,6 +9,6 @@
 
 ## Near-term directions
 
-See phased signature program in [roadmap.md](../docs/roadmap.md) (S1–S10). **Phase 8 shipped.**
+See phased signature program in [roadmap.md](../docs/roadmap.md) (S1–S10). **Phases 1–9 complete.**
 
-- **Phase 9 (3/5):** W′ blind locality, F′ hold-outs, U′ third DOF shipped; T′/I′ hold-outs + full circularity audit remain.
+Next: full Lorentz/Poincaré test, QECC subspace identification, locality-from-spectrum blind inference, 2×2×2 dim=3 resolution.

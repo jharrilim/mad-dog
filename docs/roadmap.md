@@ -2,7 +2,7 @@
 
 Dated backlog for testing whether systems **behave Mad-Dog-ly** — recoverable locality, relational time, holographic entanglement, excitations, branches, and (eventually) Lorentz-ish causality — without claiming to derive our universe from axioms.
 
-**Last updated:** 2026-06-22
+**Last updated:** 2026-06-26
 
 See also: [falsification.md](./falsification.md) (automated battery), [open-questions.md](./open-questions.md) (honest limits).
 
@@ -96,27 +96,29 @@ Operational checklist — each maps to falsification tests and roadmap phases.
 | Orchestrator | `npm run bench:observational` |
 | Doc | [observational-bridge.md](./observational-bridge.md) |
 
-### Phase 9 — Circularity hardening — partial (3/5) — 2026-06-22
+### Phase 9 — Circularity hardening — **complete** — 2026-06-26
 
 | Item | Notes |
 |------|-------|
 | W′ blind locality on \|ψ⟩ | `holographic_bound.rs` — factorization search, not native Ĥ |
 | F′/V′/R′/C′ hold-out grid | `refinement_holdout.rs`; battery pass on 3/3 hold-outs; relabeled diagnostic |
 | U′ third DOF estimator | `eft_dof.rs` — participation ratio; two-of-three agreement |
-| Circularity index (partial) | [circularity-audit.md](./circularity-audit.md) — W′, F′ family, U′ indexed |
-
-**Remaining:** T′/I′ hold-outs (priority 4); complete audit rows for all **′** tests (priority 5).
+| T′ Born hold-out | `matter_holdout.rs`; 3/3 hold-out (n, field, couple_step) grid; battery pass |
+| I′ stabilizer hold-out | `matter_holdout.rs`; 3/3 hold-out (coupling, window_radius) grid; battery pass |
+| Circularity index complete | [circularity-audit.md](./circularity-audit.md) — all ′ tests indexed |
 
 ---
 
-## Next up (ranked execution order)
+## Next up
 
-### Phase 9 — Circularity hardening (remaining)
+Phase 9 is complete. The next meaningful physics-advance items are:
 
-| Priority | Item | Affected tests | Deliverable | Pass / done criterion |
-|----------|------|----------------|-------------|------------------------|
-| 4 | **Born / stabilizer hold-outs** | **T′**, **I′** | Fix pass bands on calibration quenches; evaluate on held-out `(coupling, windowRadius)` sweep | Significant ρ / generator count on hold-out without retuning thresholds |
-| 5 | **Circularity index doc** | All | Complete [circularity-audit.md](./circularity-audit.md) rows for every **′** test; link from falsification table | F, H, I, S, T′, I′, etc. indexed |
+| Priority | Item | Notes |
+|----------|------|-------|
+| 1 | **Full Lorentz / Poincaré test** | Beyond L v0; needs dispersion + scaling across larger grids |
+| 2 | **QECC subspace identification** | Decoherence prerequisite shipped; subspace ID still open |
+| 3 | **Locality from spectrum** | Spectrum-only blind inference; factorization search prototype exists |
+| 4 | **3D space emergence (2×2×2)** | Ground-state dim=3 on 8-site cube still inconclusive; needs dim-detector work |
 
 **Not in scope:** Phase 8 observational bridge (external literature caps — category-error risk only).
 

@@ -23,6 +23,11 @@ use crate::run_factor_dynamics::{
 };
 use crate::holographic_bound::HolographicBoundConfig;
 use crate::tensor_split::InplaceSplitConfig;
+use crate::matter_holdout::{
+    eval_i_prime_holdout, eval_t_prime_holdout,
+    BornHoldoutCase, BORN_TUNING_DEFAULT,
+    StabHoldoutCase, STAB_TUNING_DEFAULT,
+};
 use crate::refinement_holdout::{
     eval_c_prime_holdout, eval_f_prime_holdout, eval_r_prime_holdout, eval_v_prime_holdout,
     REFINEMENT_TUNING_DEFAULT,
@@ -718,27 +723,31 @@ pub fn run_falsification_battery() -> FalsificationBatteryResult {
         });
     }
 
-    // I′ — Pauli stabilizer generators on branch excitation window
+    // I′ — Pauli stabilizer generators (hold-out coupling/window grid; calibrated on coupling=0.9, window_radius=2)
     {
-        let s = run_stabilizer_search(&StabilizerSearchConfig {
+        let cal = run_stabilizer_search(&StabilizerSearchConfig {
             excitation: ExcitationSubspaceConfig {
-                n: 8,
-                field: 1.2,
-                dt: 0.2,
-                steps: 22,
-                couple_step: 7,
-                coupling: 0.9,
-                seed: 4242,
-                window_radius: 2,
+                n: StabHoldoutCase::N,
+                field: StabHoldoutCase::FIELD,
+                dt: StabHoldoutCase::DT,
+                steps: StabHoldoutCase::STEPS,
+                couple_step: StabHoldoutCase::COUPLE_STEP,
+                coupling: STAB_TUNING_DEFAULT.coupling,
+                seed: StabHoldoutCase::SEED,
+                window_radius: STAB_TUNING_DEFAULT.window_radius,
             },
         });
+        let holdout = eval_i_prime_holdout();
         tests.push(FalsificationTest {
             id: "I′".to_string(),
             name: "Pauli stabilizer generators on branch subspace".to_string(),
-            passed: s.stabilizer.stabilizer_found && s.distance_scales,
+            passed: holdout.all_passed(),
             detail: format!(
-                "generators={}, distance={}, scales={}",
-                s.stabilizer.generator_count, s.stabilizer.code_distance, s.distance_scales
+                "{}; cal generators={} distance={} scales={}",
+                holdout.summary(),
+                cal.stabilizer.generator_count,
+                cal.stabilizer.code_distance,
+                cal.distance_scales
             ),
         });
     }
@@ -761,22 +770,25 @@ pub fn run_falsification_battery() -> FalsificationBatteryResult {
         });
     }
 
-    // T′ — env branch weights track distinguishability
+    // T′ — env branch weights track distinguishability (hold-out grid; calibrated on n=8, field=1.2, couple_step=7)
     {
-        let b = run_branch_born_probe(&BranchBornConfig {
-            n: 8,
-            field: 1.2,
-            dt: 0.2,
-            steps: 22,
-            couple_step: 7,
+        let cal = run_branch_born_probe(&BranchBornConfig {
+            n: BORN_TUNING_DEFAULT.n,
+            field: BORN_TUNING_DEFAULT.field,
+            dt: BornHoldoutCase::DT,
+            steps: BornHoldoutCase::STEPS,
+            couple_step: BORN_TUNING_DEFAULT.couple_step,
         });
+        let holdout = eval_t_prime_holdout();
         tests.push(FalsificationTest {
             id: "T′".to_string(),
             name: "Branch Born weights co-move with distinguishability".to_string(),
-            passed: b.inner.born_consistent,
+            passed: holdout.all_passed(),
             detail: format!(
-                "entropyCorr={:.3}, imbalanceCorr={:.3}",
-                b.inner.entropy_overlap_corr, b.inner.imbalance_overlap_corr
+                "{}; cal entropyCorr={:.3} imbalanceCorr={:.3}",
+                holdout.summary(),
+                cal.inner.entropy_overlap_corr,
+                cal.inner.imbalance_overlap_corr
             ),
         });
     }

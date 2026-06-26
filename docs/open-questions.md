@@ -11,9 +11,9 @@ We are **not** trying to prove Mad-Dog from axioms or solve the measurement prob
 | **Scaling / uniqueness** | Open — biggest gap between “mechanism” and “our-universe-likeness” |
 | **Observational export** | Map sim thresholds to Lorentz / entropy bounds | **Shipped** — [observational-bridge.md](./observational-bridge.md), `npm run bench:observational` |
 
-Automated today: full falsification battery **A–W′** (31 tests). Signature program **S1–S10** complete through Phase 8.
+Automated today: full falsification battery **A–W′** (31 tests). Signature program **S1–S10** complete through Phase 9.
 
-**Phases 1–8 shipped (2026-06).** Next ranked: **Phase 9** circularity hardening (see [roadmap.md](./roadmap.md)); deferred engineering (WebGPU, full Poincaré).
+**Phases 1–9 shipped (2026-06).** Next ranked: full Lorentz/Poincaré test, QECC subspace ID, locality-from-spectrum blind inference; deferred engineering (WebGPU). See [roadmap.md](./roadmap.md).
 
 ## From the paper (not yet simulated)
 
