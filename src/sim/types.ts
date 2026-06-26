@@ -942,7 +942,7 @@ export interface ParticleStabilityResult {
   ordered: ParticleLifetimeCase
   disordered: ParticleLifetimeCase
   orderedLongerLived: boolean
-  elapsedMs?: number
+  elapsedMs: number
   backend?: SimBackend
 }
 
@@ -969,7 +969,7 @@ export interface BranchBornResult {
   imbalanceOverlapCorr: number
   entropyOverlapCorr: number
   bornConsistent: boolean
-  elapsedMs?: number
+  elapsedMs: number
   backend?: SimBackend
 }
 

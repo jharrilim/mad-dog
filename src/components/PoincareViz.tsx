@@ -14,12 +14,6 @@ import type { PoincareCompositeResult } from '@/sim/types'
 
 type Result = PoincareCompositeResult & { backend: string }
 
-const PILLAR_LABELS: [keyof Result, string, string][] = [
-  ['rotationOk',   'Rotation (J)',       'Cardinal 4-dir CV'],
-  ['boostOk',      'Boost (K) × 4',      '4-frame velocity CV'],
-  ['dispersionOk', 'Dispersion (H)',      'ω(k) linear R²'],
-]
-
 function PillarRow({
   label,
   sublabel,
