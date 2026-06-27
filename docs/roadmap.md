@@ -2,7 +2,7 @@
 
 Dated backlog for testing whether systems **behave Mad-Dog-ly** — recoverable locality, relational time, holographic entanglement, excitations, branches, and (eventually) Lorentz-ish causality — without claiming to derive our universe from axioms.
 
-**Last updated:** 2026-06-27 (Phase 11 AK — eigenvalue-only impossibility)
+**Last updated:** 2026-06-27 (Phase 12 backlog)
 
 See also: [falsification.md](./falsification.md) (automated battery), [open-questions.md](./open-questions.md) (honest limits).
 
@@ -123,7 +123,7 @@ Operational checklist — each maps to falsification tests and roadmap phases.
 
 ---
 
-### Phase 11 (partial) — Scattering extensions — **shipped 2026-06-27**
+### Phase 11 — Scattering, factorization, clocks — **shipped 2026-06-27**
 
 | Item | Notes |
 |------|-------|
@@ -147,15 +147,53 @@ Operational checklist — each maps to falsification tests and roadmap phases.
 
 ---
 
-## Next up — Phase 11 (physics extensions)
+## Next up — Phase 12 (generalization and depth)
 
-Phase 11 **shipped 2026-06-27**. Remaining backlog:
+Phases 1–11 and signatures **S1–S10** are shipped. The main gap is no longer missing demos — it is whether behaviors **scale**, **generalize across models**, and **fail loudly** when they should.
 
-| Priority | Item | Notes | Doc |
-|----------|------|-------|-----|
-| **Research** | ~~**True eigenvalue-only blind inference**~~ | **Shipped (AK)** — impossibility documented; {Eₙ}-only cannot recover labeling | [factorization.md](./factorization.md) |
+**Suggested first pick:** Scaling battery (pass-rate vs `n`).
 
-**Suggested first pick:** Review open questions / observational bridge extensions.
+### Priority 1 — Scaling and uniqueness
+
+| Item | Question | Notes | Doc |
+|------|----------|-------|-----|
+| **Scaling battery** | Do S1–S10 signatures hold at growing `n`? | Pass-rate curves for K, AA, L/L′, G/G′, AJ, etc.; report where annealing luck dominates | [falsification.md](./falsification.md) |
+| **Uniqueness tightening** | Is factorization non-arbitrary beyond top-k? | `equivalenceClassCount`, `scoreGapToSecondClass` vs `n` and model zoo | [factorization.md](./factorization.md) |
+| **Negative controls at scale** | Do random / scrambled-spectrum cases still fail at larger `n`? | Extend **M** grid | [factorization.md](./factorization.md) |
+
+### Priority 2 — Spectrum-first locality (post-AK)
+
+| Item | Question | Notes | Doc |
+|------|----------|-------|-----|
+| **Grid/torus blind spectrum** | Does MI+bandwidth recover 2D labelings? | Extend **AA** beyond chain TFIM; 3×3 grid, 2×2 torus | [factorization.md](./factorization.md) |
+| **Gapless / frustrated limits** | Is XX failure fundamental for MI-only blind search? | Document or extend scorer; XX remains negative control | `locality_spectrum.rs` |
+| **Minimal extra data** | What beyond {Eₙ} is needed to recover labeling? | **AK** closed {Eₙ}-only; probe correlators / low-weight Pauli expectations | [factorization.md](./factorization.md) |
+
+### Priority 3 — Factor count dynamics
+
+| Item | Question | Notes | Doc |
+|------|----------|-------|-----|
+| **Dynamic factor refinement** | When must factor count grow? | Turn AB pressure signal into split-when-diagnostics-fail rule (not just track light cone on fixed chain) | [refinement.md](./refinement.md), `factor_count_dynamics.rs` |
+| **Scale-dependent decomposition** | Same \|ψ⟩, different effective site count? | Coarse-graining / embed-truncate study beyond **AG** spot checks | [factorization.md](./factorization.md) |
+| **n_min beyond phase transition** | Does holographic `n_min` track anything above h_c? | **AC** showed phase transition, not growing n above criticality — revisit with pressure metric | [holography.md](./holography.md) |
+
+### Priority 4 — Time, matter, observational bridge
+
+| Item | Question | Notes | Doc |
+|------|----------|-------|-----|
+| **Clock subsystem selection** | What picks the clock? | Still hand-injected Δt / site clocks — no Wheeler–DeWitt derivation | [emergent-time.md](./emergent-time.md), [multi-clock.md](./multi-clock.md) |
+| **Modular cube falsification** | Does modular-flow network fail globally on cube? | Grid **AJ** shipped; cube battery not wired | [multi-clock.md](./multi-clock.md) |
+| **Stronger QECC / IR** | Code subspace at larger n, 2D, longer quench? | Extend **X**, **AI** beyond tuned demos | [qecc-probe.md](./qecc-probe.md) |
+| **Emergent Fock space** | Occupation-number IR DOF vs branch counting? | Tie to **U′** EFT estimators | [qecc-probe.md](./qecc-probe.md) |
+| **Observational exports** | Do bridge mappings sharpen with scaling? | Add modular desync + AK impossibility to exports; state falsifiers per mapping | [observational-bridge.md](./observational-bridge.md) |
+
+### Priority 5 — Carroll–Singh paper (conceptual, partial sim)
+
+| Item | Question | Status |
+|------|----------|--------|
+| **Lorentz invariance** | How approximate is emergent Lorentz symmetry? | **Proxies shipped (S9)** — not full QFT Lorentz derivation |
+| **Problem of time** | Primitive clock vs derived relational time | Demos shipped; selection principle open |
+| **Dynamic Hilbert space** | Can ⊗ factor count grow cosmologically? | Not in sim — fixed `n` by design |
 
 ## Deferred (not rejected)
 

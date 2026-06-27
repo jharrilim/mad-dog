@@ -9,6 +9,4 @@
 
 ## Near-term directions
 
-See phased signature program in [roadmap.md](../docs/roadmap.md) (S1–S10). **Phases 1–10 complete.**
-
-Next (Phase 11): factorization embedding comparison, 3D/torus search — see roadmap.
+Phases 1–11 and signatures **S1–S10** are complete. Next: **Phase 12** (scaling, spectrum blind on 2D, dynamic factor refinement) — see [roadmap.md](../docs/roadmap.md).

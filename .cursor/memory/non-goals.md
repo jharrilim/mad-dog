@@ -14,4 +14,4 @@
 - WebGPU acceleration until WASM is insufficient for current lattice sizes.
 - Holography / relational-clock panels on Universe Lab v1 (focused on 3+1 snapshot).
 - ~~Lorentz invariance.~~ — S9 shipped (L, L′, O, P, Y, Z); not a full QFT Lorentz derivation.
-- ~~Locality-from-spectrum search.~~ **Shipped (AA)** 2026-06-26; true eigenvalue-only inference remains Phase 11 research item.
+- ~~Locality-from-spectrum search.~~ **Shipped (AA)** 2026-06-26; ~~eigenvalue-only inference~~ **Resolved (AK)** 2026-06-27 — impossibility documented.
