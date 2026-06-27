@@ -153,6 +153,8 @@ Phases 1–11 and signatures **S1–S10** are shipped. The main gap is no longer
 
 **Suggested first pick:** Scaling battery (pass-rate vs `n`).
 
+**2026-06-27 probe ([scaling-research.md](./scaling-research.md)):** chain factorization holds n=4–8; AA-blind chain holds n=4–8; **AA-blind 2D (grid/torus) fails**; multi-clock **G** fails at n=11 (passes n=9); Lorentz L′ CoV=0. Recommend falsification **AL** for 2D blind negative.
+
 ### Priority 1 — Scaling and uniqueness
 
 | Item | Question | Notes | Doc |

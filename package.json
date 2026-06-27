@@ -19,6 +19,7 @@
     "bench:matter": "npm run build:wasm && node scripts/matter-bench.ts",
     "bench:factor": "npm run build:wasm && node scripts/factor-dynamics-bench.ts",
     "bench:observational": "npm run build:wasm && node scripts/observational-bridge.ts",
+    "bench:scaling": "npm run build:wasm && node scripts/scaling-probe.ts",
     "sweep:mass": "npm run build:wasm && node scripts/mass-sweep.ts",
     "check:falsification": "npm run ensure:wasm && node scripts/falsification-check.ts",
     "sweep:scattering": "npm run build:wasm && node scripts/scattering-sweep.ts",

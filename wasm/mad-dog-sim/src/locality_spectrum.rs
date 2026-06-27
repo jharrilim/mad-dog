@@ -11,7 +11,7 @@ use crate::factorization::{
     line_equiv_match, search_factorization, shuffle_hamiltonian, spectrum_from_hamiltonian,
     GraphKind, InputMode, SearchMethod, SearchParams, SpectrumData,
 };
-use crate::models::{tfim_chain, xx_chain};
+use crate::models::{tfim_chain, tfim_grid, tfim_torus, xx_chain};
 use serde::Serialize;
 
 const EIGENSTATE_COUNT: usize = 3;
@@ -50,15 +50,15 @@ fn inverse_perm(perm: &[usize]) -> Vec<usize> {
     inv
 }
 
-fn spectrum_only_params(n: usize) -> SearchParams {
+fn spectrum_only_params(graph_kind: GraphKind, rows: usize, cols: usize, n: usize) -> SearchParams {
     SearchParams {
         input_mode: InputMode::Spectrum,
         spectrum_scrambled: true, // h_ref=None; use 50%MI+35%BW+15%dim
         search_method: SearchMethod::Exact,
-        graph_kind: GraphKind::Line,
-        rows: 1,
-        cols: n,
-        eigenstate_count: EIGENSTATE_COUNT,
+        graph_kind,
+        rows,
+        cols,
+        eigenstate_count: EIGENSTATE_COUNT.min(n).max(2),
         ..Default::default()
     }
 }
@@ -76,7 +76,7 @@ fn blind_case(model_kind: &str, n: usize, field: f64, seed: u32) -> LocalitySpec
     let spectrum: SpectrumData = spectrum_from_hamiltonian(&shuffled_h, EIGENSTATE_COUNT);
 
     // Search using MI + bandwidth only (spectrum_scrambled=true disables Ĥ term)
-    let params = spectrum_only_params(n);
+    let params = spectrum_only_params(GraphKind::Line, 1, n, n);
     let outcome = search_factorization(&shuffled_h, &[], 1, &params, Some(&spectrum));
 
     // Recovery: does the best permutation match the inverse of the applied shuffle?
@@ -85,6 +85,43 @@ fn blind_case(model_kind: &str, n: usize, field: f64, seed: u32) -> LocalitySpec
 
     LocalitySpectrumCase {
         model: format!("{model_kind} n={n} h={field:.2}"),
+        n,
+        field,
+        seed,
+        recovered,
+        score: outcome.best.score,
+        mi_nn_ratio: outcome.best.mi_nn_ratio,
+    }
+}
+
+/// Blind MI+bandwidth case on a 2D lattice (for Phase 12 scaling research).
+pub fn blind_lattice_case(
+    lattice: &str,
+    rows: usize,
+    cols: usize,
+    field: f64,
+    seed: u32,
+) -> LocalitySpectrumCase {
+    let n = rows * cols;
+    let base_h = match lattice {
+        "grid" => tfim_grid(rows, cols, 1.0, field).hamiltonian,
+        "torus" => tfim_torus(rows, cols, 1.0, field).hamiltonian,
+        other => panic!("unknown lattice: {other}"),
+    };
+    let (shuffled_h, true_shuffle) = shuffle_hamiltonian(&base_h, seed);
+    let k = EIGENSTATE_COUNT.min(n).max(2);
+    let spectrum = spectrum_from_hamiltonian(&shuffled_h, k);
+    let graph_kind = if lattice == "torus" {
+        GraphKind::Torus
+    } else {
+        GraphKind::Grid
+    };
+    let params = spectrum_only_params(graph_kind, rows, cols, n);
+    let outcome = search_factorization(&shuffled_h, &[], 1, &params, Some(&spectrum));
+    let inv = inverse_perm(&true_shuffle);
+    let recovered = crate::factorization::perm_distance(&outcome.best.permutation, &inv) == 0;
+    LocalitySpectrumCase {
+        model: format!("{lattice} {rows}x{cols} h={field:.2}"),
         n,
         field,
         seed,
@@ -180,5 +217,31 @@ mod tests {
              score={:.3} mi_nn={:.3}",
             case.score, case.mi_nn_ratio
         );
+    }
+
+    /// Phase 12 research: AA-blind scaling on chains and 2D lattices.
+    #[test]
+    fn scaling_probe_blind_spectrum() {
+        let mut report = Vec::new();
+        for n in [4usize, 5, 6, 7, 8] {
+            let c = blind_case("tfim", n, 1.5, 4242);
+            report.push(format!(
+                "chain n={n} recovered={} score={:.3} mi_nn={:.3}",
+                c.recovered, c.score, c.mi_nn_ratio
+            ));
+        }
+        let grid = blind_lattice_case("grid", 3, 3, 1.5, 4242);
+        report.push(format!(
+            "grid 3x3 recovered={} score={:.3} mi_nn={:.3}",
+            grid.recovered, grid.score, grid.mi_nn_ratio
+        ));
+        let torus = blind_lattice_case("torus", 2, 2, 1.5, 4242);
+        report.push(format!(
+            "torus 2x2 recovered={} score={:.3} mi_nn={:.3}",
+            torus.recovered, torus.score, torus.mi_nn_ratio
+        ));
+        eprintln!("scaling_probe_blind_spectrum:\n{}", report.join("\n"));
+        // Document-only probe: assert chain n=6 (known AA case), not full battery
+        assert!(blind_case("tfim", 6, 1.5, 42).recovered);
     }
 }

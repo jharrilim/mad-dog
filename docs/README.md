@@ -25,6 +25,7 @@ These are **working learnings**, not claims of new physics. They record what the
 | [observational-bridge.md](./observational-bridge.md) | Phase 8: sim metrics vs literature caps (export) |
 | [circularity-audit.md](./circularity-audit.md) | Phase 9: independence level per falsification test |
 | [roadmap.md](./roadmap.md) | Signature program S1–S10 + phased backlog |
+| [scaling-research.md](./scaling-research.md) | Phase 12 scaling probe results (2026-06-27) |
 | [falsification.md](./falsification.md) | Automated Mad-Dog claim tests (A–W′) |
 | [open-questions.md](./open-questions.md) | Honest limits and next experiments |
 
