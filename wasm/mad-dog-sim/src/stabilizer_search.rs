@@ -238,8 +238,10 @@ pub fn distance_scales_with_window(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::decoherence::{chain_conditional_state, decoherence_final_state, DecoherenceQuenchConfig};
-    use crate::excitation_subspace::{run_excitation_subspace_probe, ExcitationSubspaceConfig};
+    use crate::decoherence::{chain_conditional_state, decoherence_final_state};
+    use crate::excitation_subspace::{
+        deco_config_from_excitation, run_excitation_subspace_probe, ExcitationSubspaceConfig,
+    };
 
     fn branch_states() -> (QuantumState, usize, usize, QuantumState, QuantumState, Vec<usize>) {
         let excitation = ExcitationSubspaceConfig {
@@ -251,17 +253,10 @@ mod tests {
             coupling: 0.9,
             seed: 4242,
             window_radius: 2,
+            model: None,
         };
         let probe = run_excitation_subspace_probe(&excitation);
-        let deco_config = DecoherenceQuenchConfig {
-            n: excitation.n,
-            field: excitation.field,
-            dt: excitation.dt,
-            steps: excitation.steps,
-            couple_step: excitation.couple_step,
-            coupling: excitation.coupling,
-            seed: excitation.seed,
-        };
+        let deco_config = deco_config_from_excitation(&excitation);
         let (psi, n_chain, env_q) = decoherence_final_state(&deco_config);
         let b0 = chain_conditional_state(&psi, n_chain, env_q, 0);
         let b1 = chain_conditional_state(&psi, n_chain, env_q, 1);

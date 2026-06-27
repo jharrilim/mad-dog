@@ -10,9 +10,46 @@ import {
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { runQeccProbeAsync } from '@/sim/runner-async'
-import type { QeccProbeResult } from '@/sim/types'
+import type { ExcitationSubspaceConfig, QeccProbeResult } from '@/sim/types'
 
 type Result = QeccProbeResult & { backend: string }
+type ModelPreset = 'tfim' | 'xx' | 'heisenberg'
+
+const PRESETS: Record<ModelPreset, ExcitationSubspaceConfig> = {
+  tfim: {
+    n: 8,
+    field: 1.2,
+    dt: 0.2,
+    steps: 22,
+    coupleStep: 7,
+    coupling: 0.9,
+    seed: 4242,
+    windowRadius: 2,
+    model: 'tfim',
+  },
+  xx: {
+    n: 8,
+    field: 1.2,
+    dt: 0.2,
+    steps: 22,
+    coupleStep: 7,
+    coupling: 0.9,
+    seed: 4242,
+    windowRadius: 2,
+    model: 'xx',
+  },
+  heisenberg: {
+    n: 6,
+    field: 2.0,
+    dt: 0.2,
+    steps: 22,
+    coupleStep: 5,
+    coupling: 0.85,
+    seed: 4242,
+    windowRadius: 3,
+    model: 'heisenberg',
+  },
+}
 
 function FidelityChart({ result }: { result: Result }) {
   const W = 320
@@ -84,24 +121,16 @@ function FidelityChart({ result }: { result: Result }) {
 }
 
 export function QeccViz() {
+  const [preset, setPreset] = useState<ModelPreset>('tfim')
   const [result, setResult] = useState<Result | null>(null)
   const [loading, setLoading] = useState(false)
 
   const run = useCallback(() => {
     setLoading(true)
-    void runQeccProbeAsync({
-      n: 8,
-      field: 1.2,
-      dt: 0.2,
-      steps: 22,
-      coupleStep: 7,
-      coupling: 0.9,
-      seed: 4242,
-      windowRadius: 2,
-    })
+    void runQeccProbeAsync(PRESETS[preset])
       .then(setResult)
       .finally(() => setLoading(false))
-  }, [])
+  }, [preset])
 
   return (
     <Card>
@@ -109,13 +138,23 @@ export function QeccViz() {
         <CardTitle>QECC code subspace probe</CardTitle>
         <CardDescription>
           After decoherence, do Everett branches reside in a distinguishable code
-          subspace? Identifies the stabilizer code [[n,k,d]] and computes the
-          fidelity of each branch state with that subspace vs the mixed (pre-branch)
-          state. High selectivity means the code is branch-selective — the IR matter
-          subspace carves out the branches.
+          subspace? Works on TFIM, XX, and Heisenberg chains — same env coupling,
+          different bulk Hamiltonians.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        <div className="flex flex-wrap gap-2">
+          {(['tfim', 'xx', 'heisenberg'] as const).map((m) => (
+            <Button
+              key={m}
+              size="sm"
+              variant={preset === m ? 'default' : 'outline'}
+              onClick={() => setPreset(m)}
+            >
+              {m === 'tfim' ? 'TFIM' : m === 'xx' ? 'XX' : 'Heisenberg'}
+            </Button>
+          ))}
+        </div>
         <Button onClick={run} disabled={loading} size="sm">
           {loading ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -127,6 +166,7 @@ export function QeccViz() {
         {result && (
           <>
             <div className="flex flex-wrap gap-2">
+              <Badge variant="outline">{result.excitation.model}</Badge>
               <Badge variant={result.qecc.codeSubspaceFound ? 'default' : 'secondary'}>
                 {result.qecc.codeSubspaceFound ? 'Code subspace found' : 'Not found'}
               </Badge>

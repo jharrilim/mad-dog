@@ -419,6 +419,7 @@ pub fn run_falsification_battery() -> FalsificationBatteryResult {
             coupling: 0.9,
             seed: 4242,
             window_radius: 2,
+            model: None,
         });
         tests.push(FalsificationTest {
             id: "I".to_string(),
@@ -825,6 +826,52 @@ pub fn run_falsification_battery() -> FalsificationBatteryResult {
         });
     }
 
+    // AI — QECC code subspace on non-TFIM chains (XX + Heisenberg)
+    {
+        let xx = run_qecc_probe(&StabilizerSearchConfig {
+            excitation: ExcitationSubspaceConfig {
+                n: 8,
+                field: 1.2,
+                dt: 0.2,
+                steps: 22,
+                couple_step: 7,
+                coupling: 0.9,
+                seed: 4242,
+                window_radius: 2,
+                model: Some("xx".to_string()),
+            },
+        });
+        let heisenberg = run_qecc_probe(&StabilizerSearchConfig {
+            excitation: ExcitationSubspaceConfig {
+                n: 6,
+                field: 2.0,
+                dt: 0.2,
+                steps: 22,
+                couple_step: 5,
+                coupling: 0.85,
+                seed: 4242,
+                window_radius: 3,
+                model: Some("heisenberg".to_string()),
+            },
+        });
+        let passed = xx.qecc.code_subspace_found
+            && xx.qecc.fidelity_selectivity > 1.1
+            && heisenberg.qecc.code_subspace_found
+            && heisenberg.qecc.fidelity_selectivity > 1.1;
+        tests.push(FalsificationTest {
+            id: "AI".to_string(),
+            name: "QECC code subspace on non-TFIM chains (XX + Heisenberg)".to_string(),
+            passed,
+            detail: format!(
+                "xx sel={:.2}× {}; heisenberg sel={:.2}× {}",
+                xx.qecc.fidelity_selectivity,
+                xx.excitation.model,
+                heisenberg.qecc.fidelity_selectivity,
+                heisenberg.excitation.model
+            ),
+        });
+    }
+
     // R′ — RT deviation tracks excitation density (hold-out grid; tuning default is calibration only)
     {
         let cal = REFINEMENT_TUNING_DEFAULT;
@@ -914,6 +961,7 @@ pub fn run_falsification_battery() -> FalsificationBatteryResult {
                 coupling: STAB_TUNING_DEFAULT.coupling,
                 seed: StabHoldoutCase::SEED,
                 window_radius: STAB_TUNING_DEFAULT.window_radius,
+                model: None,
             },
         });
         let holdout = eval_i_prime_holdout();
@@ -984,6 +1032,7 @@ pub fn run_falsification_battery() -> FalsificationBatteryResult {
                 coupling: 0.9,
                 seed: 4242,
                 window_radius: 2,
+                model: None,
             },
         });
         tests.push(FalsificationTest {
@@ -1074,6 +1123,7 @@ pub fn run_falsification_battery() -> FalsificationBatteryResult {
                 coupling: 0.9,
                 seed: 4242,
                 window_radius: 2,
+                model: None,
             },
         });
         let passed = q.qecc.code_subspace_found && q.qecc.fidelity_selectivity > 1.1;

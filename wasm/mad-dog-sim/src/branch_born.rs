@@ -40,6 +40,7 @@ pub fn run_branch_born_study(n: usize, field: f64, dt: f64, steps: usize, couple
             couple_step,
             coupling,
             seed: 4242,
+            model: None,
         };
         let (psi, n_chain, env_q) = decoherence_final_state(&config);
         let (p0, p1) = env_branch_weights(&psi, env_q);

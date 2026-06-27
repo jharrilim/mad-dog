@@ -91,36 +91,46 @@ pub fn identify_qecc(report: &StabilizerSearchReport, n_physical: usize) -> Qecc
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::decoherence::{chain_conditional_state, decoherence_final_state, DecoherenceQuenchConfig};
-    use crate::excitation_subspace::{run_excitation_subspace_probe, ExcitationSubspaceConfig};
+    use crate::decoherence::{chain_conditional_state, decoherence_final_state};
+    use crate::excitation_subspace::{
+        deco_config_from_excitation, run_excitation_subspace_probe, ExcitationSubspaceConfig,
+    };
     use crate::stabilizer_search::search_stabilizers;
 
-    fn demo_qecc() -> QeccIdentification {
+    fn demo_qecc_full(
+        model: Option<&str>,
+        n: usize,
+        field: f64,
+        coupling: f64,
+        couple_step: usize,
+        window_radius: usize,
+    ) -> QeccIdentification {
         let config = ExcitationSubspaceConfig {
-            n: 8,
-            field: 1.2,
+            n,
+            field,
             dt: 0.2,
             steps: 22,
-            couple_step: 7,
-            coupling: 0.9,
+            couple_step,
+            coupling,
             seed: 4242,
-            window_radius: 2,
+            window_radius,
+            model: model.map(|s| s.to_string()),
         };
         let probe = run_excitation_subspace_probe(&config);
-        let deco = DecoherenceQuenchConfig {
-            n: config.n,
-            field: config.field,
-            dt: config.dt,
-            steps: config.steps,
-            couple_step: config.couple_step,
-            coupling: config.coupling,
-            seed: config.seed,
-        };
+        let deco = deco_config_from_excitation(&config);
         let (psi, n_chain, env_q) = decoherence_final_state(&deco);
         let b0 = chain_conditional_state(&psi, n_chain, env_q, 0);
         let b1 = chain_conditional_state(&psi, n_chain, env_q, 1);
         let report = search_stabilizers(&psi, n_chain, env_q, &b0, &b1, &probe.window_sites);
         identify_qecc(&report, probe.window_sites.len())
+    }
+
+    fn demo_qecc_for(model: Option<&str>, field: f64, coupling: f64) -> QeccIdentification {
+        demo_qecc_full(model, 8, field, coupling, 7, 2)
+    }
+
+    fn demo_qecc() -> QeccIdentification {
+        demo_qecc_for(None, 1.2, 0.9)
     }
 
     #[test]
@@ -147,5 +157,27 @@ mod tests {
     fn code_label_format() {
         let q = demo_qecc();
         assert!(q.code_label.starts_with("[["), "label: {}", q.code_label);
+    }
+
+    #[test]
+    fn qecc_xx_chain_selective() {
+        let q = demo_qecc_for(Some("xx"), 1.2, 0.9);
+        assert!(
+            q.code_subspace_found && q.fidelity_selectivity > 1.1,
+            "xx sel={:.2}",
+            q.fidelity_selectivity
+        );
+    }
+
+    #[test]
+    fn qecc_heisenberg_selective() {
+        let q = demo_qecc_full(Some("heisenberg"), 6, 2.0, 0.85, 5, 3);
+        assert!(
+            q.code_subspace_found && q.fidelity_selectivity > 1.1,
+            "heisenberg found={} k sel={:.2} avg={:.3}",
+            q.code_subspace_found,
+            q.fidelity_selectivity,
+            q.branch_avg_fidelity
+        );
     }
 }

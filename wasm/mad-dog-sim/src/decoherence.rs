@@ -1,6 +1,6 @@
 //! Minimal environment coupling — branch-resolved worldlines after decoherence.
 
-use crate::models::tfim_chain;
+use crate::models::{heisenberg_chain, tfim_chain, xx_chain};
 use crate::quantum::{
     evolve_interval_inplace, expectation_z_all, signal_from_z, EvolveScratch, Hamiltonian,
     PauliLetter, PauliOp, PauliTerm, QuantumState,
@@ -22,6 +22,9 @@ pub struct DecoherenceQuenchConfig {
     pub coupling: f64,
     #[serde(default = "default_seed")]
     pub seed: u32,
+    /// Chain model: `tfim` (default), `xx`, or `heisenberg`.
+    #[serde(default)]
+    pub model: Option<String>,
 }
 
 fn default_couple_step() -> usize {
@@ -64,6 +67,7 @@ pub struct BranchTrack {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DecoherenceQuenchResult {
+    pub model: String,
     pub chain_sites: usize,
     pub env_qubit: usize,
     pub couple_step: usize,
@@ -287,19 +291,29 @@ fn entropy2(p0: f64, p1: f64) -> f64 {
     s
 }
 
+/// Open-chain Hamiltonian for decoherence / QECC probes (TFIM default).
+pub fn resolve_chain_model(model: Option<&str>, n: usize, field: f64) -> (Hamiltonian, String) {
+    let built = match model.unwrap_or("tfim") {
+        "xx" => xx_chain(n, 1.0, field),
+        "heisenberg" => heisenberg_chain(n, 1.0, field),
+        _ => tfim_chain(n, 1.0, field),
+    };
+    (built.hamiltonian, built.label)
+}
+
 /// Evolve the decoherence quench to the final full (chain + env) state.
 pub fn decoherence_final_state(config: &DecoherenceQuenchConfig) -> (QuantumState, usize, usize) {
     let n_chain = config.n.max(4);
     let env_q = n_chain;
     let couple_step = config.couple_step.min(config.steps.saturating_sub(1));
     let center = n_chain / 2;
-    let model = tfim_chain(n_chain, 1.0, config.field);
+    let (chain_h, _) = resolve_chain_model(config.model.as_deref(), n_chain, config.field);
     let g = config.coupling;
 
     let mut psi = defect_initial(n_chain, env_q, center);
     let mut rng = Rng::new(config.seed);
-    let h_free = chain_plus_env_hamiltonian(n_chain, env_q, &model.hamiltonian, 0.0);
-    let h_coupled = chain_plus_env_hamiltonian(n_chain, env_q, &model.hamiltonian, g);
+    let h_free = chain_plus_env_hamiltonian(n_chain, env_q, &chain_h, 0.0);
+    let h_coupled = chain_plus_env_hamiltonian(n_chain, env_q, &chain_h, g);
     let radius = h_coupled.spectral_radius(&mut rng);
     let mut scratch = EvolveScratch::new(psi.dim);
 
@@ -318,7 +332,7 @@ pub fn run_decoherence_quench(config: &DecoherenceQuenchConfig) -> DecoherenceQu
     let env_q = n_chain;
     let couple_step = config.couple_step.min(config.steps.saturating_sub(1));
     let center = n_chain / 2;
-    let model = tfim_chain(n_chain, 1.0, config.field);
+    let (chain_h, model_label) = resolve_chain_model(config.model.as_deref(), n_chain, config.field);
     let g = config.coupling;
 
     let mut psi = defect_initial(n_chain, env_q, center);
@@ -327,8 +341,8 @@ pub fn run_decoherence_quench(config: &DecoherenceQuenchConfig) -> DecoherenceQu
     let base_z = expectation_z_all(&psi);
 
     let mut rng = Rng::new(config.seed);
-    let h_free = chain_plus_env_hamiltonian(n_chain, env_q, &model.hamiltonian, 0.0);
-    let h_coupled = chain_plus_env_hamiltonian(n_chain, env_q, &model.hamiltonian, g);
+    let h_free = chain_plus_env_hamiltonian(n_chain, env_q, &chain_h, 0.0);
+    let h_coupled = chain_plus_env_hamiltonian(n_chain, env_q, &chain_h, g);
     let radius = h_coupled.spectral_radius(&mut rng);
     let mut scratch = EvolveScratch::new(psi.dim);
 
@@ -429,6 +443,7 @@ pub fn run_decoherence_quench(config: &DecoherenceQuenchConfig) -> DecoherenceQu
         && (sharpen_ratio > 1.02 || late_coherence < 0.85);
 
     DecoherenceQuenchResult {
+        model: model_label,
         chain_sites: n_chain,
         env_qubit: env_q,
         couple_step,
@@ -469,6 +484,7 @@ mod tests {
             couple_step: 7,
             coupling: 0.9,
             seed: 4242,
+            model: None,
         };
         let result = run_decoherence_quench(&config);
         assert!(

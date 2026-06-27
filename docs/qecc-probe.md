@@ -10,7 +10,7 @@ Carroll–Singh open question: are infrared matter degrees of freedom a **code s
 
 ## Model
 
-Same as decoherence quench: TFIM chain + 1 env qubit, central defect, CNOT + ZX coupling at `coupleStep`. At the final slice we:
+Same as decoherence quench: open chain + 1 env qubit, central defect, CNOT + ZX coupling at `coupleStep`. Set `model` to `tfim` (default), `xx`, or `heisenberg` for the bulk Hamiltonian.
 
 1. Partial-trace the environment → chain marginal (mixed) and conditional branches |ψ₀⟩, |ψ₁⟩.
 2. Pick an excitation window around the peak of |⟨Z⟩| on the mixed marginal.
@@ -73,7 +73,9 @@ computed directly from the per-generator expectations already stored in the stab
 **Measured (n=8, h=1.2, coupling=0.9, window_radius=2):** code subspace found, selectivity > 1.1,
 meaning branches are more strongly inside the code than the pre-decoherence mixed state.
 
-Falsification test **X**: `codeSubspaceFound && fidelitySelectivity > 1.1`.
+Falsification test **X**: `codeSubspaceFound && fidelitySelectivity > 1.1` (TFIM default).
+
+**Non-TFIM (2026-06-27):** `model: 'xx' | 'heisenberg'` on the same decoherence pipeline. Falsification **AI** — XX n=8 and Heisenberg n=6 (tuned couple step / window) both pass X criteria.
 
 ## API
 
@@ -88,6 +90,7 @@ const result = await runQeccProbeAsync({
   coupleStep: 7,
   coupling: 0.9,
   windowRadius: 2,
+  model: 'xx', // or 'heisenberg' with n=6, field=2, coupleStep=5, coupling=0.85, windowRadius=3
 })
 // result.qecc.codeLabel, .fidelitySelectivity, .codeSubspaceFound, ...
 ```

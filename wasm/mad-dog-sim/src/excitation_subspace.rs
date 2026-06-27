@@ -1,7 +1,8 @@
 //! Branch-resolved excitation subspace probe — QECC / EFT diagnostic.
 
 use crate::decoherence::{
-    chain_conditional_state, decoherence_final_state, env_branch_weights, DecoherenceQuenchConfig,
+    chain_conditional_state, decoherence_final_state, env_branch_weights,
+    resolve_chain_model, DecoherenceQuenchConfig,
 };
 use crate::geometry::region_eigenvalues;
 use crate::linalg::hermitian_eigenvalues;
@@ -23,6 +24,9 @@ pub struct ExcitationSubspaceConfig {
     pub seed: u32,
     #[serde(default = "default_window_radius")]
     pub window_radius: usize,
+    /// Chain model: `tfim` (default), `xx`, or `heisenberg`.
+    #[serde(default)]
+    pub model: Option<String>,
 }
 
 fn default_couple_step() -> usize {
@@ -56,6 +60,7 @@ pub struct PauliSiteDiagnostic {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ExcitationSubspaceResult {
+    pub model: String,
     pub chain_sites: usize,
     pub excitation_peak: usize,
     pub window_sites: Vec<usize>,
@@ -236,16 +241,23 @@ fn window_sites(peak: usize, radius: usize, n_chain: usize) -> Vec<usize> {
     (lo..=hi).collect()
 }
 
+pub(crate) fn deco_config_from_excitation(e: &ExcitationSubspaceConfig) -> DecoherenceQuenchConfig {
+    DecoherenceQuenchConfig {
+        n: e.n,
+        field: e.field,
+        dt: e.dt,
+        steps: e.steps,
+        couple_step: e.couple_step,
+        coupling: e.coupling,
+        seed: e.seed,
+        model: e.model.clone(),
+    }
+}
+
 pub fn run_excitation_subspace_probe(config: &ExcitationSubspaceConfig) -> ExcitationSubspaceResult {
-    let deco_config = DecoherenceQuenchConfig {
-        n: config.n,
-        field: config.field,
-        dt: config.dt,
-        steps: config.steps,
-        couple_step: config.couple_step,
-        coupling: config.coupling,
-        seed: config.seed,
-    };
+    let (_, model_label) =
+        resolve_chain_model(config.model.as_deref(), config.n, config.field);
+    let deco_config = deco_config_from_excitation(config);
     let (psi, n_chain, env_q) = decoherence_final_state(&deco_config);
     let (p0, p1) = env_branch_weights(&psi, env_q);
 
@@ -306,6 +318,7 @@ pub fn run_excitation_subspace_probe(config: &ExcitationSubspaceConfig) -> Excit
         && overlap < 0.95;
 
     ExcitationSubspaceResult {
+        model: model_label,
         chain_sites: n_chain,
         excitation_peak: peak,
         window_sites: window,
@@ -341,6 +354,7 @@ mod tests {
             coupling: 0.9,
             seed: 4242,
             window_radius: 2,
+            model: None,
         };
         let r = run_excitation_subspace_probe(&config);
         assert!(

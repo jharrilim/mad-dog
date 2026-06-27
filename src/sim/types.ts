@@ -668,6 +668,8 @@ export interface DecoherenceQuenchConfig {
   coupleStep?: number
   coupling?: number
   seed?: number
+  /** `tfim` (default), `xx`, or `heisenberg` */
+  model?: 'tfim' | 'xx' | 'heisenberg'
 }
 
 export interface DecoherenceSlice {
@@ -692,6 +694,7 @@ export interface BranchTrack {
 }
 
 export interface DecoherenceQuenchResult {
+  model: string
   chainSites: number
   envQubit: number
   coupleStep: number
@@ -895,6 +898,8 @@ export interface ExcitationSubspaceConfig {
   coupling?: number
   seed?: number
   windowRadius?: number
+  /** `tfim` (default), `xx`, or `heisenberg` */
+  model?: 'tfim' | 'xx' | 'heisenberg'
 }
 
 export interface PauliSiteDiagnostic {
@@ -908,6 +913,7 @@ export interface PauliSiteDiagnostic {
 }
 
 export interface ExcitationSubspaceResult {
+  model: string
   chainSites: number
   excitationPeak: number
   windowSites: number[]

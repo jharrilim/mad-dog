@@ -1,10 +1,11 @@
 //! Phase 6 matter/classicality runners.
 
 use crate::branch_born::{run_branch_born_study, BranchBornResult};
-use crate::decoherence::{chain_conditional_state, decoherence_final_state, DecoherenceQuenchConfig};
+use crate::decoherence::{chain_conditional_state, decoherence_final_state};
 use crate::eft_dof::{independent_dof_per_site, two_of_three_dof_agreement};
 use crate::excitation_subspace::{
-    run_excitation_subspace_probe, ExcitationSubspaceConfig, ExcitationSubspaceResult,
+    deco_config_from_excitation, run_excitation_subspace_probe, ExcitationSubspaceConfig,
+    ExcitationSubspaceResult,
 };
 use crate::particle_stability::{run_particle_stability, ParticleStabilityResult};
 use crate::qecc::{identify_qecc, QeccIdentification};
@@ -32,15 +33,7 @@ pub struct StabilizerSearchResult {
 
 pub fn run_stabilizer_search(config: &StabilizerSearchConfig) -> StabilizerSearchResult {
     let excitation = run_excitation_subspace_probe(&config.excitation);
-    let deco_config = DecoherenceQuenchConfig {
-        n: config.excitation.n,
-        field: config.excitation.field,
-        dt: config.excitation.dt,
-        steps: config.excitation.steps,
-        couple_step: config.excitation.couple_step,
-        coupling: config.excitation.coupling,
-        seed: config.excitation.seed,
-    };
+    let deco_config = deco_config_from_excitation(&config.excitation);
     let (psi, n_chain, env_q) = decoherence_final_state(&deco_config);
     let branch0 = chain_conditional_state(&psi, n_chain, env_q, 0);
     let branch1 = chain_conditional_state(&psi, n_chain, env_q, 1);
@@ -162,15 +155,7 @@ const U_PRIME_ABS_TOL: f64 = 0.35;
 
 pub fn run_eft_dimension_probe(config: &EftDimensionConfig) -> EftDimensionResult {
     let excitation = run_excitation_subspace_probe(&config.excitation);
-    let deco_config = DecoherenceQuenchConfig {
-        n: config.excitation.n,
-        field: config.excitation.field,
-        dt: config.excitation.dt,
-        steps: config.excitation.steps,
-        couple_step: config.excitation.couple_step,
-        coupling: config.excitation.coupling,
-        seed: config.excitation.seed,
-    };
+    let deco_config = deco_config_from_excitation(&config.excitation);
     let (psi, n_chain, env_q) = decoherence_final_state(&deco_config);
     let branch0 = chain_conditional_state(&psi, n_chain, env_q, 0);
     let branch1 = chain_conditional_state(&psi, n_chain, env_q, 1);
@@ -235,15 +220,7 @@ pub struct QeccProbeResult {
 
 pub fn run_qecc_probe(config: &QeccProbeConfig) -> QeccProbeResult {
     let excitation = run_excitation_subspace_probe(&config.excitation);
-    let deco_config = DecoherenceQuenchConfig {
-        n: config.excitation.n,
-        field: config.excitation.field,
-        dt: config.excitation.dt,
-        steps: config.excitation.steps,
-        couple_step: config.excitation.couple_step,
-        coupling: config.excitation.coupling,
-        seed: config.excitation.seed,
-    };
+    let deco_config = deco_config_from_excitation(&config.excitation);
     let (psi, n_chain, env_q) = decoherence_final_state(&deco_config);
     let branch0 = chain_conditional_state(&psi, n_chain, env_q, 0);
     let branch1 = chain_conditional_state(&psi, n_chain, env_q, 1);
@@ -275,6 +252,7 @@ mod tests {
                 coupling: 0.9,
                 seed: 4242,
                 window_radius: 2,
+                model: None,
             },
         };
         let r = run_eft_dimension_probe(&config);

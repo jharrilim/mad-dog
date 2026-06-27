@@ -115,6 +115,7 @@ pub fn i_prime_passes(case: StabHoldoutCase) -> bool {
             coupling: case.coupling,
             seed: StabHoldoutCase::SEED,
             window_radius: case.window_radius,
+            model: None,
         },
     });
     s.stabilizer.stabilizer_found && s.distance_scales

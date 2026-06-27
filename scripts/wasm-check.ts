@@ -33,6 +33,7 @@ import {
   run_decoherence_quench_json,
   run_excitation_subspace_json,
   run_stabilizer_search_json,
+  run_qecc_json,
   run_particle_stability_json,
   run_branch_born_json,
   run_eft_dimension_json,
@@ -580,6 +581,42 @@ const excitationCfg = {
   console.log('\nstabilizer search:')
   if (!r.stabilizer.stabilizerFound) fail('no stabilizer generators')
   else ok(`generators=${r.stabilizer.generatorCount} distance=${r.stabilizer.codeDistance}`)
+}
+
+{
+  const xx = JSON.parse(
+    run_qecc_json(JSON.stringify({ ...excitationCfg, model: 'xx' })),
+  )
+  const heisenberg = JSON.parse(
+    run_qecc_json(
+      JSON.stringify({
+        n: 6,
+        field: 2.0,
+        dt: 0.2,
+        steps: 22,
+        coupleStep: 5,
+        coupling: 0.85,
+        seed: 4242,
+        windowRadius: 3,
+        model: 'heisenberg',
+      }),
+    ),
+  )
+  console.log('\nQECC non-TFIM:')
+  if (
+    !xx.qecc.codeSubspaceFound ||
+    xx.qecc.fidelitySelectivity < 1.1 ||
+    !heisenberg.qecc.codeSubspaceFound ||
+    heisenberg.qecc.fidelitySelectivity < 1.1
+  ) {
+    fail(
+      `xx sel=${xx.qecc.fidelitySelectivity} heisenberg sel=${heisenberg.qecc.fidelitySelectivity}`,
+    )
+  } else {
+    ok(
+      `xx sel=${xx.qecc.fidelitySelectivity.toFixed(2)}× heisenberg sel=${heisenberg.qecc.fidelitySelectivity.toFixed(2)}×`,
+    )
+  }
 }
 
 {
