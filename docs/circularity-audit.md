@@ -2,9 +2,9 @@
 
 Short index of **independence level** per falsification test — generic QI fact, Mad-Dog-specific claim, or circular / self-consistency check.
 
-**Last updated:** 2026-06-22
+**Last updated:** 2026-06-27
 
-See [falsification.md](./falsification.md) for pass criteria and [roadmap.md](./roadmap.md) Phase 9 for the hardening backlog.
+See [falsification.md](./falsification.md) for pass criteria. Phase 9 hardening is **complete**; next work is [roadmap.md](./roadmap.md) Phase 11.
 
 ---
 
@@ -42,10 +42,7 @@ All four tests share `measure_refinement_diagnostics` + `RefinementThresholds` e
 
 Battery **pass/fail** is on hold-out 3/3 only; calibration run is reported in test detail for regression visibility.
 
-**Follow-ups (Phase 9 items 4–5):**
-
-- **T′**, **I′** — hold-out coupling / window bands
-- Complete rows for all **′** tests in this doc
+Phase 9 complete: **T′** and **I′** hold-out grids shipped 2026-06-26; all **′** tests indexed below.
 
 ---
 

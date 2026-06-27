@@ -527,6 +527,10 @@ export interface ScatteringResult {
   phaseSeries: number[]
   postInteractionPhaseStd: number
   phaseStable: boolean
+  overlapStep: number
+  overlapDetected: boolean
+  interactionPhaseShift: number
+  separationTimeDelay: number
   elapsedMs: number
   backend?: SimBackend
 }

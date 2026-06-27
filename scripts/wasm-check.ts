@@ -415,6 +415,13 @@ for (const config of [
   else ok(`crossed=${r.crossed} minSep=${r.minSeparation.toFixed(3)} bothMoved=${r.bothMoved}`)
   if (!r.phaseStable) fail(`phase should stabilize post-interaction (residual=${r.postInteractionPhaseStd})`)
   else ok(`phaseResidual=${r.postInteractionPhaseStd.toFixed(3)}`)
+  if (!r.overlapDetected) fail('overlap should be detected on default scattering demo')
+  else ok(`overlapStep=${r.overlapStep}`)
+  if (!(r.interactionPhaseShift > 0.05 || r.interactionPhaseShift < -0.05))
+    fail(`interaction phase shift too small (${r.interactionPhaseShift})`)
+  else ok(`phaseShift=${r.interactionPhaseShift.toFixed(3)}`)
+  if (!Number.isFinite(r.separationTimeDelay)) fail('separation time delay should be finite')
+  else ok(`timeDelay=${r.separationTimeDelay.toFixed(3)}`)
   if (r.separationSeries?.length !== 40) fail('separation series length')
   else ok(`separationSeries=${r.separationSeries.length}`)
 }

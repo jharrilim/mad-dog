@@ -9,6 +9,6 @@
 
 ## Near-term directions
 
-See phased signature program in [roadmap.md](../docs/roadmap.md) (S1–S10). **Phases 1–9 complete.**
+See phased signature program in [roadmap.md](../docs/roadmap.md) (S1–S10). **Phases 1–10 complete.**
 
-Next: locality-from-spectrum blind inference, 2×2×2 dim=3 resolution, weight-3 stabilizer extension.
+Next (Phase 11): two-defect scattering on 2D/3D, effective mass from dispersion — see roadmap for full backlog.

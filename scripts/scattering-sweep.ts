@@ -22,6 +22,9 @@ interface SweepRow {
   field: number
   crossed: boolean
   minSep: number
+  overlapStep: number
+  phaseShift: number
+  timeDelay: number
   elapsedMs: number
 }
 
@@ -99,11 +102,14 @@ const t0 = performance.now()
 const rows = await pool(cases, workers, runCase)
 const totalMs = performance.now() - t0
 
-console.log('\n  n    h   crossed  minSep   ms')
-console.log('  ---  --- -------- ------ -----')
+const fmt = (v: number | null | undefined, digits: number) =>
+  v != null && Number.isFinite(v) ? v.toFixed(digits) : 'n/a'
+
+console.log('\n  n    h   crossed  minSep  oStep  phaseΔ  delay   ms')
+console.log('  ---  --- -------- ------ ------ ------- ------ -----')
 for (const r of rows) {
   console.log(
-    `  ${String(r.n).padStart(3)}  ${r.field.toFixed(1)}  ${r.crossed ? 'yes     ' : 'no      '} ${r.minSep.toFixed(3).padStart(6)} ${r.elapsedMs.toFixed(0).padStart(5)}`,
+    `  ${String(r.n).padStart(3)}  ${r.field.toFixed(1)}  ${r.crossed ? 'yes     ' : 'no      '} ${fmt(r.minSep, 3).padStart(6)} ${String(r.overlapStep ?? 'n/a').padStart(6)} ${fmt(r.phaseShift, 3).padStart(7)} ${fmt(r.timeDelay, 3).padStart(6)} ${r.elapsedMs.toFixed(0).padStart(5)}`,
   )
 }
 console.log(`\nTotal wall time: ${totalMs.toFixed(0)} ms`)

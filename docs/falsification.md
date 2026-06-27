@@ -38,6 +38,7 @@ Run: `npm run check:falsification` or **Experiments → Falsification Tests**.
 | **O** | Dispersion ω(k) linear at small k | Wavepacket v_g CoV < 0.35 and ω∝k fit R² > 0.85 |
 | **P** | Weak boost invariance | Uniform vs edge-clock light-cone speed relΔ < 0.20 |
 | **Q** | Scattering exchange phase stable | Detrended post-interaction phase residual std < 0.55 |
+| **AD** | Exchange phase shifts at cone overlap | `overlapDetected` and \|interactionPhaseShift\| > 0.05 and finite `separationTimeDelay` on default chain demo |
 | **R′** | RT slope deficit structured vs density under quench *(prototype diagnostic)* | `structuredDeviation` on hold-out `(n, field, seed)` grid (3/3); calibration `n=10, h=1.5, seed=7711` informational |
 | **F′** | Predictive RT warning precedes failure; late split recovers *(prototype diagnostic)* | hold-out grid: `leadTime > 0` and late split accepted (3/3) |
 | **C′** | Curvature proxy suite internally consistent *(prototype diagnostic)* | hold-out grid: geodesic deviation tracks density or cross-proxy (3/3) |
@@ -55,24 +56,24 @@ Run: `npm run check:falsification` or **Experiments → Falsification Tests**.
 | **AC** | Holographic structure absent in ordered phase, emerges at critical point | `emergenceNearCritical` and `orderedPhaseNonholographic` on field sweep h=0.3..1.5; profile: None/None/None→6/6/6 at h_c≈1.0 |
 | **M** | Negative controls reject fake locality | `random` n=6 and scrambled-spectrum shuffled chain do not recover |
 
-**K**, **L**, **L′**, **O**, **P**, **Q**, **R′**, **F′**, **C′**, **I′**, **S′**, **T′**, **U′**, **V′**, **W′**, **X**, **Y**, **Z**, **AA**, **AB**, **AC**, and **M** target [roadmap.md](./roadmap.md) signatures **S1**, **S4**, **S5**, **S6–S8**, **S9**, and **S10**.
+**K**, **L**, **L′**, **O**, **P**, **Q**, **AD**, **R′**, **F′**, **C′**, **I′**, **S′**, **T′**, **U′**, **V′**, **W′**, **X**, **Y**, **Z**, **AA**, **AB**, **AC**, and **M** target [roadmap.md](./roadmap.md) signatures **S1**, **S4**, **S5**, **S6–S8**, **S9**, and **S10**.
 
-## Known circularity (Phase 9 backlog)
+## Known circularity (Phase 9 — complete)
 
-Several **′** tests are **diagnostic self-consistency** checks, not independent physics verification. See [roadmap.md](./roadmap.md) Phase 9.
+Several **′** tests are **diagnostic self-consistency** checks, not independent physics verification. Phase 9 hardening is complete — see [circularity-audit.md](./circularity-audit.md).
 
-| ID | Issue | Planned fix |
-|----|-------|-------------|
+| ID | Issue | Resolution |
+|----|-------|------------|
 | ~~**W′**~~ | ~~`locality_ok` uses native chain Ĥ — tautological~~ | **Done (2026-06-22)** — blind factorization on \|ψ⟩ |
 | ~~**F′**, **V′**, **R′**, **C′**~~ | ~~Same refinement pressure / MI stack end-to-end~~ | **Done (2026-06-22)** — hold-out quench grid; relabeled prototype diagnostic in docs |
 | ~~**U′**~~ | ~~Measured and predicted DOF from same branch window~~ | **Done (2026-06-22)** — third estimator: participation ratio on window spectrum; two-of-three pass |
-| **T′**, **I′** | Thresholds tuned on demo quench | Hold-out coupling / window sweep |
+| ~~**T′**, **I′**~~ | ~~Thresholds tuned on demo quench~~ | **Done (2026-06-26)** — hold-out grids in `matter_holdout.rs`; 3/3 pass each |
+
+**AB** and **AC** run via `npm run bench:factor` (not yet in the main 35-test battery).
 
 ## Planned extensions
 
-| ID | Signature | Target criterion (not yet in battery) |
-|----|-----------|----------------------------------------|
-| _(Phase 9 — circularity hardening)_ | | See roadmap Phase 9 |
+See [roadmap.md](./roadmap.md) Phase 11 — scattering phase shift, 2D/3D scattering, effective mass, factorization embedding comparison, and related items.
 
 ## Implementation
 

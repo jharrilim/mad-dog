@@ -19,7 +19,7 @@ The **central defect quench** in spacetime demos:
 
 **Worldline tracking (2026-06):** Rust tracks peak signal per slice (half-chain on 1D, global on cube); UI overlays on spacetime heatmaps, Universe Lab heatmap, and a 3D path through emergent MDS coordinates. See [scattering.md](./scattering.md).
 
-**Two-defect scattering:** dual worldlines, separation-vs-time chart, velocity fits, falsification test E (propagate without binding). Experiments page → *Two-defect scattering*.
+**Two-defect scattering:** dual worldlines, separation-vs-time chart, exchange-phase series with overlap-localized phase shift and time delay (falsification **AD**), velocity fits, falsification test E (propagate without binding). Experiments page → *Two-defect scattering*.
 
 ## What it looks like in each view
 
@@ -48,8 +48,8 @@ Scrubbing `k`: a **bright cluster** of nodes moves through emergent MDS position
 
 ## Next experiments
 
-See [roadmap.md](./roadmap.md). Near term:
+See [roadmap.md](./roadmap.md) Phase 11. Near term:
 
-1. Phase shift when two cones overlap (chain scattering, h sweep).
-2. ~~Minimal **decoherence** → branch-resolved tracks.~~ **Done (2026-06)** — see [decoherence.md](./decoherence.md).
-3. Measure **effective mass** from dispersion relation of lattice excitations.
+1. ~~**Scattering phase shift** when two cones overlap (chain, h sweep).~~ **Done (2026-06-27)** — see [scattering.md](./scattering.md), falsification **AD**.
+2. **Two-defect scattering on 2D / 3D** lattices.
+3. **Effective mass** from dispersion relation of lattice excitations.

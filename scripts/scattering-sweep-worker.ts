@@ -18,5 +18,8 @@ parentPort!.postMessage({
   field: workerData.field,
   crossed: result.crossed,
   minSep: result.minSeparation,
+  overlapStep: result.overlapStep,
+  phaseShift: result.interactionPhaseShift,
+  timeDelay: result.separationTimeDelay,
   elapsedMs: performance.now() - t0,
 })

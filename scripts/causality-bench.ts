@@ -68,6 +68,15 @@ if (!scatter.phaseStable) failures++
 console.log(
   `  residualStd=${scatter.postInteractionPhaseStd.toFixed(3)} ${scatter.phaseStable ? 'OK' : 'FAIL'}`,
 )
+if (!scatter.overlapDetected) failures++
+console.log(
+  `  overlapStep=${scatter.overlapStep} phaseShift=${scatter.interactionPhaseShift.toFixed(3)} ${scatter.overlapDetected ? 'OK' : 'FAIL'}`,
+)
+if (!(scatter.interactionPhaseShift > 0.05 || scatter.interactionPhaseShift < -0.05)) failures++
+if (!Number.isFinite(scatter.separationTimeDelay)) failures++
+console.log(
+  `  timeDelay=${scatter.separationTimeDelay.toFixed(3)} ${Number.isFinite(scatter.separationTimeDelay) ? 'OK' : 'FAIL'}`,
+)
 
 if (failures > 0) {
   console.error(`\n${failures} check(s) failed.`)

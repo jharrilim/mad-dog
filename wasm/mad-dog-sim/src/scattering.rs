@@ -60,6 +60,10 @@ pub struct ScatteringResult {
     pub phase_series: Vec<f64>,
     pub post_interaction_phase_std: f64,
     pub phase_stable: bool,
+    pub overlap_step: usize,
+    pub overlap_detected: bool,
+    pub interaction_phase_shift: f64,
+    pub separation_time_delay: f64,
     pub elapsed_ms: f64,
     pub backend: &'static str,
 }
@@ -206,6 +210,73 @@ fn track_exchange_phases(
     (phase_series, residual_std, fit_r2 > 0.85 && residual_std < 0.55)
 }
 
+/// Overlap-localized phase shift and separation time delay (Phase 11).
+fn analyze_interaction(
+    separation_series: &[f64],
+    phase_series: &[f64],
+    min_separation: f64,
+    dt: f64,
+) -> (usize, bool, f64, f64) {
+    let n = separation_series.len();
+    if n == 0 {
+        return (0, false, f64::NAN, f64::NAN);
+    }
+
+    let burn_in = n * 15 / 100;
+    let overlap_step = (burn_in..n)
+        .min_by(|&a, &b| {
+            separation_series[a]
+                .partial_cmp(&separation_series[b])
+                .unwrap_or(std::cmp::Ordering::Equal)
+        })
+        .unwrap_or(burn_in);
+
+    let overlap_detected = min_separation < separation_series[0] - 1.0;
+
+    const PRE_MARGIN: usize = 3;
+    let pre_end = overlap_step.saturating_sub(PRE_MARGIN);
+    let interaction_phase_shift = if pre_end >= 2 && overlap_step < phase_series.len() {
+        let unwrapped_pre = unwrap_phases(&phase_series[..pre_end]);
+        if unwrapped_pre.len() >= 2 {
+            let times: Vec<f64> = (0..unwrapped_pre.len()).map(|i| i as f64).collect();
+            let (slope, intercept, _) = fit_affine(&times, &unwrapped_pre);
+            let unwrapped_to_overlap = unwrap_phases(&phase_series[..=overlap_step]);
+            let actual = *unwrapped_to_overlap.last().unwrap_or(&f64::NAN);
+            actual - (slope * overlap_step as f64 + intercept)
+        } else {
+            f64::NAN
+        }
+    } else {
+        f64::NAN
+    };
+
+    let early_end = (n * 20 / 100).max(2).min(n);
+    let early_sep = &separation_series[..early_end];
+    let early_times: Vec<f64> = (0..early_sep.len()).map(|i| i as f64).collect();
+    let separation_time_delay = if early_sep.len() >= 2 {
+        let (slope, intercept, _) = fit_affine(&early_times, early_sep);
+        if slope.abs() < 1e-12 {
+            f64::NAN
+        } else {
+            let k_pred = (min_separation - intercept) / slope;
+            if k_pred.is_finite() {
+                (overlap_step as f64 - k_pred) * dt
+            } else {
+                f64::NAN
+            }
+        }
+    } else {
+        f64::NAN
+    };
+
+    (
+        overlap_step,
+        overlap_detected,
+        interaction_phase_shift,
+        separation_time_delay,
+    )
+}
+
 pub fn run_two_defect_scattering(config: &ScatteringConfig) -> ScatteringResult {
     let d1 = config.defect_sites.map(|s| s[0]).unwrap_or(3);
     let d2 = config.defect_sites.map(|s| s[1]).unwrap_or(config.n - 4);
@@ -269,6 +340,13 @@ pub fn run_two_defect_scattering(config: &ScatteringConfig) -> ScatteringResult 
         d1,
         d2,
     );
+    let (overlap_step, overlap_detected, interaction_phase_shift, separation_time_delay) =
+        analyze_interaction(
+            &separation_series,
+            &phase_series,
+            min_separation,
+            config.dt,
+        );
 
     ScatteringResult {
         n: config.n,
@@ -288,7 +366,66 @@ pub fn run_two_defect_scattering(config: &ScatteringConfig) -> ScatteringResult 
         phase_series,
         post_interaction_phase_std,
         phase_stable,
+        overlap_step,
+        overlap_detected,
+        interaction_phase_shift,
+        separation_time_delay,
         elapsed_ms: 0.0,
         backend: "wasm",
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn default_config() -> ScatteringConfig {
+        ScatteringConfig {
+            n: 12,
+            field: 0.7,
+            dt: 0.12,
+            steps: 40,
+            defect_sites: Some([3, 8]),
+            lite: true,
+            taylor_order: 4,
+        }
+    }
+
+    #[test]
+    fn interaction_metrics_on_default_config() {
+        let r = run_two_defect_scattering(&default_config());
+        assert!(r.overlap_detected, "cones should close on default demo");
+        assert!(
+            r.overlap_step > 0 && r.overlap_step < r.separation_series.len(),
+            "overlap_step={} out of range",
+            r.overlap_step
+        );
+        assert!(
+            r.interaction_phase_shift.is_finite(),
+            "interaction_phase_shift should be finite"
+        );
+        assert!(
+            r.separation_time_delay.is_finite(),
+            "separation_time_delay should be finite"
+        );
+    }
+
+    #[test]
+    fn interaction_phase_shift_exceeds_ad_threshold() {
+        let r = run_two_defect_scattering(&default_config());
+        assert!(
+            r.interaction_phase_shift.abs() > 0.05,
+            "AD threshold: |phase_shift|={:.4}",
+            r.interaction_phase_shift
+        );
+    }
+
+    #[test]
+    fn analyze_interaction_handles_empty_series() {
+        let (step, detected, shift, delay) = analyze_interaction(&[], &[], 0.0, 0.1);
+        assert_eq!(step, 0);
+        assert!(!detected);
+        assert!(shift.is_nan());
+        assert!(delay.is_nan());
     }
 }

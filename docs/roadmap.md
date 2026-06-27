@@ -2,7 +2,7 @@
 
 Dated backlog for testing whether systems **behave Mad-Dog-ly** — recoverable locality, relational time, holographic entanglement, excitations, branches, and (eventually) Lorentz-ish causality — without claiming to derive our universe from axioms.
 
-**Last updated:** 2026-06-26 (AB)
+**Last updated:** 2026-06-27 (Phase 11 AD)
 
 See also: [falsification.md](./falsification.md) (automated battery), [open-questions.md](./open-questions.md) (honest limits).
 
@@ -109,36 +109,55 @@ Operational checklist — each maps to falsification tests and roadmap phases.
 
 ---
 
-## Next up
-
-Phase 9 is complete. The next meaningful physics-advance items are:
-
-| Priority | Item | Notes |
-|----------|------|-------|
-| ~~1~~ | ~~**Locality from spectrum**~~ | **Shipped 2026-06-26** — `locality_spectrum.rs`; falsification **AA**; 9/9 TFIM cases recover; XX gapless fails (expected — MI non-local) |
-| ~~2~~ | ~~**3D space emergence (2×2×2)**~~ | **Shipped 2026-06-26** — `estimate_emergent_dimension` requires ≥5% scree gap; T₁u degeneracy in 2×2×2 now gives gap_dim=cap=3; dim sweep expected=3 for all cubes |
-| ~~3~~ | ~~**Weight-3 stabilizers**~~ | **Shipped 2026-06-26** — `candidate_strings` includes ZZZ/XXX triples; `mixed_pauli_expectation` handles weight-3 same-letter |
-
-**Not in scope:** Phase 8 observational bridge (external literature caps — category-error risk only).
-
-### Phase 10 (partial) — Factor count dynamics — **shipped 2026-06-26**
+### Phase 10 — Factor count dynamics — **shipped 2026-06-26**
 
 | Item | Notes |
 |------|-------|
+| Locality from spectrum (blind) | `locality_spectrum.rs`; falsification **AA**; 9/9 TFIM cases recover |
+| 3D space emergence (2×2×2) | `estimate_emergent_dimension` requires ≥5% scree gap; dim=3 on all cubes |
+| Weight-3 stabilizers | `candidate_strings` includes ZZZ/XXX triples; `mixed_pauli_expectation` weight-3 |
 | n_opt_pressure(t) time series | `factor_count_dynamics.rs` — TFIM defect quench, n=4..14, dt=0.1 |
 | Falsification AB | `nOptPressurePeak ≥ nStart + deltaN`; staircase 4→8→10→14 confirmed |
-| `run_factor_count_dynamics_json` WASM | `bench:factor` extended; `runFactorCountDynamicsAsync` in runner |
-| Field-sweep holographic emergence | `run_field_sweep` in `holographic_bound.rs`; `run_field_sweep_json` WASM |
+| Field-sweep holographic emergence | `run_field_sweep` in `holographic_bound.rs`; falsification **AC** |
 | Falsification AC | `emergenceNearCritical` + `orderedPhaseNonholographic`; h=0.3..0.7→None, h=1.0..1.5→6 |
+
+---
+
+### Phase 11 (partial) — Scattering interaction — **shipped 2026-06-27**
+
+| Item | Notes |
+|------|-------|
+| Overlap-localized phase shift + time delay | `analyze_interaction` in `scattering.rs` |
+| Falsification AD | `overlapDetected`, \|phaseShift\| > 0.05, finite `separationTimeDelay` |
+| UI phase chart + overlap marker | `ScatteringViz.tsx` |
+| h sweep columns | `sweep:scattering` reports phaseShift, timeDelay |
+
+---
+
+## Next up — Phase 11 (physics extensions)
+
+Signatures **S1–S10** and Phase 10 are complete. Remaining Phase 11 items:
+
+| Priority | Item | Notes | Doc |
+|----------|------|-------|-----|
+| ~~**High**~~ | ~~**Scattering phase shift / time delay**~~ | **Shipped 2026-06-27** — falsification **AD**; see [scattering.md](./scattering.md) | |
+| **High** | **Two-defect scattering on 2D / 3D** | Extend scattering runner beyond 1D chain (grid, cube) | [scattering.md](./scattering.md) |
+| **Medium** | **Effective mass from dispersion** | Tie lattice excitation ω(k) to emergent particle mass (extends falsification **O**) | [scattering.md](./scattering.md), [emergent-particles.md](./emergent-particles.md) |
+| **Medium** | **Same \|ψ⟩, different `n`** | Compare factorizations via explicit embedding / truncation across factor counts | [open-questions.md](./open-questions.md) |
+| **Medium** | **3D / torus factorization search** | Builders exist; permutation search is line/grid only today | [factorization.md](./factorization.md) |
+| **Lower** | **QECC on non-TFIM models** | Extend code-subspace probe beyond TFIM decoherence quench | [qecc-probe.md](./qecc-probe.md), [open-questions.md](./open-questions.md) |
+| **Lower** | **Modular / QFT-style clock graphs** | Z-threshold clocks on lattices shipped; modular-flow networks on grids/cubes not wired | [multi-clock.md](./multi-clock.md), [emergent-time.md](./emergent-time.md) |
+| **Research** | **True eigenvalue-only blind inference** | Spectrum mode still uses eigenvector amplitudes; no {Eₙ}-only recovery | [factorization.md](./factorization.md), Phase 1 deferred |
+
+**Suggested first pick:** two-defect scattering on 2D / 3D grid or cube.
 
 ## Deferred (not rejected)
 
 | Item | Why deferred |
 |------|--------------|
 | WebGPU backend | WASM sufficient for current lattice sizes |
-| Full Lorentz / Poincaré test | Beyond **L** v0; needs dispersion + scaling |
-| In-place tensor factor split | Shipped Phase 7 — `embed_state_at_split` + evolve remainder |
 | Code-split `/lab` bundle | Engineering; not physics-blocking |
+| 3×3×3 cube in browser | Hilbert space too large — see [non-goals](../.cursor/memory/non-goals.md) |
 
 ---
 
@@ -147,4 +166,4 @@ Phase 9 is complete. The next meaningful physics-advance items are:
 - Move rows to **Shipped** with a date when done.
 - Add falsification letters when a claim becomes automated (**K**, **L** added 2026-06-21).
 - Cross-link detailed notes in `docs/`; keep `sim-check.ts` / falsification battery aligned with any **OK** claims.
-- **Winning** looks like: more signatures on non-TFIM models, pass rates improving with n, negative controls failing, observational thresholds documented, **circularity audit complete** (Phase 9 items 4–5).
+- **Winning** looks like: Phase 11 items shipped with falsification tests where claims sharpen, pass rates improving with n, negative controls failing.

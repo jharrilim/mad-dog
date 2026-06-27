@@ -95,3 +95,39 @@ export function separationChartPath(
     .join(' ')
   return { line, minY, maxY }
 }
+
+/** Generic time-series SVG polyline with optional vertical marker at step index. */
+export function timeSeriesChartPath(
+  series: number[],
+  width: number,
+  height: number,
+  options?: { pad?: number; markerStep?: number },
+): {
+  line: string
+  minY: number
+  maxY: number
+  markerX?: number
+} {
+  const pad = options?.pad ?? 8
+  if (series.length === 0) {
+    return { line: '', minY: 0, maxY: 1 }
+  }
+  const minY = Math.min(...series)
+  const maxY = Math.max(...series)
+  const span = maxY - minY || 1
+  const innerW = width - 2 * pad
+  const innerH = height - 2 * pad
+  const line = series
+    .map((v, k) => {
+      const x = pad + (k / Math.max(series.length - 1, 1)) * innerW
+      const y = pad + innerH - ((v - minY) / span) * innerH
+      return `${x},${y}`
+    })
+    .join(' ')
+  const markerStep = options?.markerStep
+  const markerX =
+    markerStep !== undefined && series.length > 1
+      ? pad + (markerStep / Math.max(series.length - 1, 1)) * innerW
+      : undefined
+  return { line, minY, maxY, markerX }
+}

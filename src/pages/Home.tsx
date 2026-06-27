@@ -278,23 +278,30 @@ function Home() {
             <CardContent>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li>
-                  WebGPU acceleration backend (validated against this reference
-                  engine) for larger systems
+                  Scattering phase shift and time delay when two light cones
+                  overlap (chain, h sweep)
                 </li>
                 <li>
-                  Search for the factorization that makes a given spectrum look
-                  local (locality from the spectrum)
+                  Two-defect scattering on 2D grids and 3D cubes (currently
+                  chain-only)
                 </li>
                 <li>
-                  Universe Lab: holistic 3+1 dashboard (see{' '}
+                  Effective particle mass from lattice excitation dispersion
+                </li>
+                <li>
+                  Compare factorizations of the same state at different factor
+                  counts (embedding / truncation)
+                </li>
+                <li>
+                  3D and torus factorization search targets; QECC probes on
+                  non-TFIM models
+                </li>
+                <li>
+                  Explore the 3+1 dashboard at{' '}
                   <Link to="/lab" className="underline hover:text-foreground">
                     /lab
-                  </Link>
-                  )
-                </li>
-                <li>
-                  Three-or-more-clock networks: build a graph of relational time
-                  coordinates and look for consistency conditions
+                  </Link>{' '}
+                  — signatures S1–S10 and Phase 10 are shipped
                 </li>
               </ul>
             </CardContent>

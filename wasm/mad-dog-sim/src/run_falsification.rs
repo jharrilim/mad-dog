@@ -648,6 +648,34 @@ pub fn run_falsification_battery() -> FalsificationBatteryResult {
         });
     }
 
+    // AD — exchange phase shifts measurably at cone overlap
+    {
+        let s = run_two_defect_scattering(&ScatteringConfig {
+            n: 12,
+            field: 0.7,
+            dt: 0.12,
+            steps: 40,
+            defect_sites: Some([3, 8]),
+            lite: true,
+            taylor_order: 4,
+        });
+        let passed = s.overlap_detected
+            && s.interaction_phase_shift.abs() > 0.05
+            && s.separation_time_delay.is_finite();
+        tests.push(FalsificationTest {
+            id: "AD".to_string(),
+            name: "Exchange phase shifts measurably at cone overlap".to_string(),
+            passed,
+            detail: format!(
+                "overlapStep={}, phaseShift={:.3}, timeDelay={:.3}, minSep={:.1}",
+                s.overlap_step,
+                s.interaction_phase_shift,
+                s.separation_time_delay,
+                s.min_separation
+            ),
+        });
+    }
+
     // R′ — RT deviation tracks excitation density (hold-out grid; tuning default is calibration only)
     {
         let cal = REFINEMENT_TUNING_DEFAULT;

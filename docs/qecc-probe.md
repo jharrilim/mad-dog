@@ -96,7 +96,7 @@ WASM: `run_qecc_json` in `lib.rs` → `run_matter.rs::run_qecc_probe`.
 
 ## Honest limits
 
-- Weight-1 and weight-2 Pauli generators only; weight-3 might find more generators.
+- Stabilizer search includes weight-1, weight-2, and weight-3 (ZZZ/XXX) same-letter Pauli generators (shipped 2026-06-26).
 - “Code-like” and fidelity selectivity are consistent signatures, not a derivation that TFIM branches
   are a literal quantum error-correcting code.
 - Mixed-state fidelity for weight-2 operators uses a product approximation (see `stabilizer_search.rs`).

@@ -14,7 +14,7 @@ import {
   type ScatteringResultWithBackend,
 } from '@/sim/runner-async'
 import {
-  separationChartPath,
+  timeSeriesChartPath,
   worldlinePolylinePoints,
   WORLDLINE_COLORS,
 } from '@/components/worldline-viz'
@@ -66,10 +66,18 @@ function ScatteringDiagram({ result }: { result: ScatteringResultWithBackend }) 
   )
 }
 
-function SeparationChart({ series }: { series: number[] }) {
+function SeparationChart({
+  series,
+  overlapStep,
+}: {
+  series: number[]
+  overlapStep?: number
+}) {
   const W = 280
   const H = 72
-  const { line, maxY } = separationChartPath(series, W, H)
+  const { line, maxY, markerX } = timeSeriesChartPath(series, W, H, {
+    markerStep: overlapStep,
+  })
   if (!line) return null
 
   return (
@@ -78,6 +86,17 @@ function SeparationChart({ series }: { series: number[] }) {
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full max-w-sm h-auto" role="img">
         <line x1={8} y1={H - 8} x2={W - 8} y2={H - 8} className="stroke-border" />
         <line x1={8} y1={8} x2={8} y2={H - 8} className="stroke-border" />
+        {markerX !== undefined && (
+          <line
+            x1={markerX}
+            y1={8}
+            x2={markerX}
+            y2={H - 8}
+            className="stroke-muted-foreground"
+            strokeDasharray="3 2"
+            strokeWidth={1}
+          />
+        )}
         <polyline fill="none" stroke={WORLDLINE_COLORS[0]} strokeWidth={2} points={line} />
         <text x={12} y={14} className="fill-muted-foreground text-[9px]">
           {maxY.toFixed(0)} sites
@@ -88,7 +107,57 @@ function SeparationChart({ series }: { series: number[] }) {
       </svg>
       <p className="text-xs text-muted-foreground">
         Lattice separation between tracked excitation centroids. A dip toward zero
-        marks cone overlap; binding would show sustained contact.
+        marks cone overlap; dashed line = overlap step.
+      </p>
+    </div>
+  )
+}
+
+function PhaseChart({
+  series,
+  overlapStep,
+}: {
+  series: number[]
+  overlapStep?: number
+}) {
+  const W = 280
+  const H = 72
+  const { line, minY, maxY, markerX } = timeSeriesChartPath(series, W, H, {
+    markerStep: overlapStep,
+  })
+  if (!line) return null
+
+  return (
+    <div className="space-y-1">
+      <h4 className="text-sm font-medium">Exchange phase vs emergent time</h4>
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full max-w-sm h-auto" role="img">
+        <line x1={8} y1={H - 8} x2={W - 8} y2={H - 8} className="stroke-border" />
+        <line x1={8} y1={8} x2={8} y2={H - 8} className="stroke-border" />
+        {markerX !== undefined && (
+          <line
+            x1={markerX}
+            y1={8}
+            x2={markerX}
+            y2={H - 8}
+            className="stroke-muted-foreground"
+            strokeDasharray="3 2"
+            strokeWidth={1}
+          />
+        )}
+        <polyline fill="none" stroke={WORLDLINE_COLORS[1]} strokeWidth={2} points={line} />
+        <text x={12} y={14} className="fill-muted-foreground text-[9px]">
+          {maxY.toFixed(2)} rad
+        </text>
+        <text x={12} y={H - 12} className="fill-muted-foreground text-[9px]">
+          {minY.toFixed(2)}
+        </text>
+        <text x={W - 8} y={H - 2} textAnchor="end" className="fill-muted-foreground text-[9px]">
+          time →
+        </text>
+      </svg>
+      <p className="text-xs text-muted-foreground">
+        Two-defect exchange phase δ = arg(ψ₁₁) + arg(ψ₀₀) − arg(ψ₁₀) − arg(ψ₀₁). Kink at
+        overlap marks interaction phase shift.
       </p>
     </div>
   )
@@ -161,6 +230,18 @@ export function ScatteringViz() {
               <Badge variant="outline">
                 min separation = {result.minSeparation.toFixed(1)} sites
               </Badge>
+              <Badge variant={result.overlapDetected ? 'default' : 'outline'}>
+                overlap step = {result.overlapStep}
+              </Badge>
+              <Badge variant="outline">
+                phase shift = {result.interactionPhaseShift.toFixed(3)} rad
+              </Badge>
+              <Badge variant="outline">
+                time delay = {result.separationTimeDelay.toFixed(3)}
+              </Badge>
+              <Badge variant={result.phaseStable ? 'default' : 'secondary'}>
+                phase stable: {result.phaseStable ? 'yes' : 'no'}
+              </Badge>
               <Badge variant="outline">
                 v₀ ≈ {result.velocities[0].toFixed(2)} · v₁ ≈{' '}
                 {result.velocities[1].toFixed(2)} sites/time
@@ -174,7 +255,13 @@ export function ScatteringViz() {
             </div>
             <div className="grid lg:grid-cols-2 gap-6 items-start">
               <ScatteringDiagram result={result} />
-              <SeparationChart series={result.separationSeries} />
+              <div className="space-y-6">
+                <SeparationChart
+                  series={result.separationSeries}
+                  overlapStep={result.overlapStep}
+                />
+                <PhaseChart series={result.phaseSeries} overlapStep={result.overlapStep} />
+              </div>
             </div>
           </>
         )}
