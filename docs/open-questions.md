@@ -54,10 +54,15 @@ Sketch:
 
 In simulator terms: instead of hand-picking `tfimChain(n+1)`, detect failure of area-law / RT / emergent-dim diagnostics on the current state under a fixed `n`, then add a factor by a dynamical splitting rule. “Expansion” becomes growth of the minimal holographically consistent factor graph.
 
-**What we could test (not built):**
+**What we tested (shipped 2026-06-26 — falsification AB):**
 
-- In-place tensor factor split of the same |ψ⟩ (vs today's n vs n+Δ quench comparison).
+- n_opt_pressure(t): the chain size minimising holographic pressure tracks the entanglement light cone — staircase 4→6→8→10→14 during a TFIM defect quench. See `factor_count_dynamics.rs`, `bench:factor`.
+- Honest finding: binary n_min (RT/area-law pass/fail) is too strict for fast quench dynamics (all chains fail simultaneously when volume-law entanglement arrives). The pressure-based signal is more robust.
+
+**What we could still test (not built):**
+
 - Compare factorizations of the same |ψ⟩ with different `n` via explicit embedding / truncation.
+- Field-sweep n_min: how does the minimal holographic n change as h sweeps through the critical point?
 
 **Prototype:** see [factorization.md](./factorization.md) — permutation search (line/grid), multi-eigenstate + spectrum modes, annealing for n>8, joint quench study with [refinement.md](./refinement.md).
 
@@ -69,6 +74,7 @@ In simulator terms: instead of hand-picking `tfimChain(n+1)`, detect failure of 
 | Factorization from spectrum | Open | **Search prototype** (Pauli/spectrum, line/grid, annealing) |
 | Holographic bound on factor count | Thematic only | Baby RT / area law only |
 | Adaptive refinement | Extension | **Split heuristic** + n vs n+Δ accept rule |
+| Factor count dynamics (n_opt_pressure) | Extension | **Shipped (AB)** — pressure-optimal chain tracks entanglement light cone |
 
 ## From our experiments
 

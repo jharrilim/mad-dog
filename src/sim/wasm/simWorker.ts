@@ -39,6 +39,7 @@ import init, {
   run_eft_dimension_json,
   run_inplace_split_json,
   run_holographic_bound_json,
+  run_factor_count_dynamics_json,
   run_qecc_json,
   run_poincare_json,
   run_locality_spectrum_json,
@@ -82,6 +83,7 @@ export type WasmMethod =
   | 'eftDimension'
   | 'inplaceSplit'
   | 'holographicBound'
+  | 'factorCountDynamics'
   | 'qeccProbe'
   | 'poincareComposite'
   | 'localitySpectrum'
@@ -133,6 +135,7 @@ const runners: Record<WasmMethod, (json: string) => string> = {
   eftDimension: run_eft_dimension_json,
   inplaceSplit: run_inplace_split_json,
   holographicBound: run_holographic_bound_json,
+  factorCountDynamics: run_factor_count_dynamics_json,
   qeccProbe: run_qecc_json,
   poincareComposite: run_poincare_json,
   localitySpectrum: run_locality_spectrum_json,

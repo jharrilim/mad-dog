@@ -66,6 +66,8 @@ import type {
   InplaceSplitResult,
   HolographicBoundConfig,
   HolographicBoundResult,
+  FactorCountDynamicsConfig,
+  FactorCountDynamicsResult,
   GeometryStabilityConfig,
   GeometryStabilityResult,
   SimBackend,
@@ -314,6 +316,12 @@ export async function runHolographicBoundAsync(
   config: HolographicBoundConfig,
 ): Promise<HolographicBoundResult & { backend: SimBackend }> {
   return runWasm('holographicBound', config)
+}
+
+export async function runFactorCountDynamicsAsync(
+  config: FactorCountDynamicsConfig,
+): Promise<FactorCountDynamicsResult & { backend: SimBackend }> {
+  return runWasm('factorCountDynamics', config)
 }
 
 export async function runGeometryStabilityAsync(

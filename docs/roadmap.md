@@ -2,7 +2,7 @@
 
 Dated backlog for testing whether systems **behave Mad-Dog-ly** — recoverable locality, relational time, holographic entanglement, excitations, branches, and (eventually) Lorentz-ish causality — without claiming to derive our universe from axioms.
 
-**Last updated:** 2026-06-26
+**Last updated:** 2026-06-26 (AB)
 
 See also: [falsification.md](./falsification.md) (automated battery), [open-questions.md](./open-questions.md) (honest limits).
 
@@ -120,6 +120,14 @@ Phase 9 is complete. The next meaningful physics-advance items are:
 | ~~3~~ | ~~**Weight-3 stabilizers**~~ | **Shipped 2026-06-26** — `candidate_strings` includes ZZZ/XXX triples; `mixed_pauli_expectation` handles weight-3 same-letter |
 
 **Not in scope:** Phase 8 observational bridge (external literature caps — category-error risk only).
+
+### Phase 10 (partial) — Factor count dynamics — **shipped 2026-06-26**
+
+| Item | Notes |
+|------|-------|
+| n_opt_pressure(t) time series | `factor_count_dynamics.rs` — TFIM defect quench, n=4..14, dt=0.1 |
+| Falsification AB | `nOptPressurePeak ≥ nStart + deltaN`; staircase 4→8→10→14 confirmed |
+| `run_factor_count_dynamics_json` WASM | `bench:factor` extended; `runFactorCountDynamicsAsync` in runner |
 
 ## Deferred (not rejected)
 

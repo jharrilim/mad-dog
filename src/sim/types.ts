@@ -1074,6 +1074,54 @@ export interface HolographicBoundResult {
   backend?: SimBackend
 }
 
+export interface FactorCountDynamicsConfig {
+  nStart?: number
+  nMax?: number
+  deltaN?: number
+  field?: number
+  dt?: number
+  steps?: number
+  seed?: number
+}
+
+export interface FactorCountCandidateDiagnostics {
+  n: number
+  rtR2: number
+  rtSlope: number
+  emergentDim: number
+  areaLawOk: boolean
+  dimOk: boolean
+  rtOk: boolean
+  allOk: boolean
+  pressure: number
+}
+
+export interface FactorCountPoint {
+  step: number
+  t: number
+  candidates: FactorCountCandidateDiagnostics[]
+  nMin: number | null
+  nOptPressure: number
+  minPressure: number
+}
+
+export interface FactorCountDynamicsResult {
+  nStart: number
+  nMax: number
+  deltaN: number
+  field: number
+  dt: number
+  series: FactorCountPoint[]
+  nMinIncreases: boolean
+  nMinInitial: number | null
+  nMinFinal: number | null
+  nMinPeak: number | null
+  nOptPressureIncreases: boolean
+  nOptPressurePeak: number
+  elapsedMs: number
+  backend?: SimBackend
+}
+
 export type GeometryStabilityKind = 'chain' | 'grid' | 'cube'
 
 export interface GeometryStabilityConfig {

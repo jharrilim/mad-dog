@@ -50,6 +50,7 @@ mod stabilizer_search;
 mod holographic_bound;
 mod tensor_split;
 mod run_factor_dynamics;
+mod factor_count_dynamics;
 mod scattering;
 mod run_relational_time;
 mod run_simultaneity;
@@ -87,6 +88,7 @@ use run_refinement::{
     RefinementQuenchConfig,
 };
 use run_factor_dynamics::{run_holographic_bound_probe, run_inplace_split_probe};
+use factor_count_dynamics::{run_factor_count_dynamics, FactorCountDynamicsConfig};
 use locality_spectrum::run_locality_spectrum_battery;
 use crate::holographic_bound::HolographicBoundConfig;
 use crate::tensor_split::InplaceSplitConfig;
@@ -416,6 +418,16 @@ pub fn run_holographic_bound_json(config_json: &str) -> Result<String, JsValue> 
     let config: HolographicBoundConfig =
         serde_json::from_str(config_json).map_err(|e| JsValue::from_str(&e.to_string()))?;
     let mut result = run_holographic_bound_probe(&config);
+    result.elapsed_ms = js_sys::Date::now() - start;
+    serde_json::to_string(&result).map_err(|e| JsValue::from_str(&e.to_string()))
+}
+
+#[wasm_bindgen]
+pub fn run_factor_count_dynamics_json(config_json: &str) -> Result<String, JsValue> {
+    let start = js_sys::Date::now();
+    let config: FactorCountDynamicsConfig =
+        serde_json::from_str(config_json).map_err(|e| JsValue::from_str(&e.to_string()))?;
+    let mut result = run_factor_count_dynamics(&config);
     result.elapsed_ms = js_sys::Date::now() - start;
     serde_json::to_string(&result).map_err(|e| JsValue::from_str(&e.to_string()))
 }

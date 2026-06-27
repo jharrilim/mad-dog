@@ -10,15 +10,20 @@ import {
   initSync,
   run_inplace_split_json,
   run_holographic_bound_json,
+  run_factor_count_dynamics_json,
 } from '../src/sim/wasm/pkg/mad_dog_sim.js'
-import type { HolographicBoundResult, InplaceSplitResult } from '../src/sim/types.ts'
+import type {
+  HolographicBoundResult,
+  InplaceSplitResult,
+  FactorCountDynamicsResult,
+} from '../src/sim/types.ts'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 initSync({ module: readFileSync(join(__dirname, '../src/sim/wasm/pkg/mad_dog_sim_bg.wasm')) })
 
 let failures = 0
 
-console.warn('[mad-dog factor] Phase-7 in-place split + holographic n_min.')
+console.warn('[mad-dog factor] Phase-7 in-place split + holographic n_min + AB factor-count dynamics.')
 
 const split = JSON.parse(
   run_inplace_split_json(
@@ -44,6 +49,25 @@ const boundOk = bound.nMin != null && bound.boundScales
 console.log(`\nHolographic bound: ${boundOk ? 'OK' : 'FAIL'}`)
 console.log(`  nMin=${bound.nMin} saturation=${bound.nSaturation} scales=${bound.boundScales}`)
 if (!boundOk) failures++
+
+// Falsification AB: n_opt_pressure(t) increases with the entanglement light cone.
+const fcd = JSON.parse(
+  run_factor_count_dynamics_json(
+    JSON.stringify({ nStart: 4, nMax: 14, deltaN: 2, field: 1.5, dt: 0.1, steps: 40, seed: 7711 }),
+  ),
+) as FactorCountDynamicsResult
+const abOk = fcd.nOptPressureIncreases
+console.log(`\nFalsification AB — factor count dynamics: ${abOk ? 'OK' : 'FAIL'}`)
+console.log(
+  `  n_opt_pressure_peak=${fcd.nOptPressurePeak} n_start=${fcd.nStart} n_max=${fcd.nMax}`,
+)
+// Print the staircase profile
+const staircase = fcd.series
+  .filter((_, i) => i % 4 === 0)
+  .map((p) => `t=${p.t.toFixed(1)}→n=${p.nOptPressure}`)
+  .join('  ')
+console.log(`  staircase: ${staircase}`)
+if (!abOk) failures++
 
 if (failures > 0) {
   console.error(`\n${failures} failure(s)`)
