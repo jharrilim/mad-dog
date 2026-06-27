@@ -104,7 +104,9 @@ Automate pass-rate vs `n` for: factorization (exact to n=8, annealing beyond wit
 
 **Why first:** Surfaces *where* signatures degrade (G at n≈11) without committing to 2D scorer redesign; produces the Phase 12 “progress metric” from the roadmap.
 
-### 2. New falsification **AL** — justified
+**Status (2026-06-27):** `npm run check:scaling` runs the minimal battery; falsification **AL** encodes the 2D AA-blind negative.
+
+### 2. New falsification **AL** — implemented
 
 **AL:** *AA-blind MI+bandwidth fails on 2D TFIM (3×3 grid, 2×2 torus) while chain n≤8 passes.*
 

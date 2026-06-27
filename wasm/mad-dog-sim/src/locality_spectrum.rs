@@ -63,7 +63,7 @@ fn spectrum_only_params(graph_kind: GraphKind, rows: usize, cols: usize, n: usiz
     }
 }
 
-fn blind_case(model_kind: &str, n: usize, field: f64, seed: u32) -> LocalitySpectrumCase {
+pub(crate) fn blind_case(model_kind: &str, n: usize, field: f64, seed: u32) -> LocalitySpectrumCase {
     // Build base Hamiltonian, then shuffle qubit labels
     let base_h = match model_kind {
         "tfim" => tfim_chain(n, 1.0, field).hamiltonian,
@@ -128,6 +128,32 @@ pub fn blind_lattice_case(
         recovered,
         score: outcome.best.score,
         mi_nn_ratio: outcome.best.mi_nn_ratio,
+    }
+}
+
+
+/// Phase 12 falsification AL: AA-blind fails on 2D lattices while chain control recovers.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AaBlind2dBoundaryResult {
+    pub pass: bool,
+    pub chain_recovered: bool,
+    pub grid_recovered: bool,
+    pub torus_recovered: bool,
+    pub cases: Vec<LocalitySpectrumCase>,
+}
+
+pub fn run_aa_blind_2d_boundary() -> AaBlind2dBoundaryResult {
+    let chain = blind_case("tfim", 6, 1.5, 4242);
+    let grid = blind_lattice_case("grid", 3, 3, 1.5, 4242);
+    let torus = blind_lattice_case("torus", 2, 2, 1.5, 4242);
+    let pass = chain.recovered && !grid.recovered && !torus.recovered;
+    AaBlind2dBoundaryResult {
+        pass,
+        chain_recovered: chain.recovered,
+        grid_recovered: grid.recovered,
+        torus_recovered: torus.recovered,
+        cases: vec![chain, grid, torus],
     }
 }
 
@@ -243,5 +269,17 @@ mod tests {
         eprintln!("scaling_probe_blind_spectrum:\n{}", report.join("\n"));
         // Document-only probe: assert chain n=6 (known AA case), not full battery
         assert!(blind_case("tfim", 6, 1.5, 42).recovered);
+    }
+
+    #[test]
+    fn aa_blind_2d_boundary() {
+        let b = run_aa_blind_2d_boundary();
+        assert!(
+            b.pass,
+            "AL boundary: chain={} grid={} torus={}",
+            b.chain_recovered,
+            b.grid_recovered,
+            b.torus_recovered
+        );
     }
 }

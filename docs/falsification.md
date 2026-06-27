@@ -59,11 +59,12 @@ Run: `npm run check:falsification` or **Experiments → Falsification Tests**.
 | **Y** | Multi-frame boost: 4-observer velocity CV < 0.25 | Extends P from 2 to 4 spatially distinct observer clocks (uniform, corner TL, top-edge, corner BR); CV of light-cone velocities |
 | **Z** | Full Poincaré composite: rotation + 4-frame boost + dispersion all pass | `allPoincareOk` — rotation CV < 0.25 (J), boost CV < 0.25 (K), linear dispersion (H) simultaneously |
 | **AA** | Locality from spectrum: MI+bandwidth blind inference recovers chain factorization | ≥67% of 9 cases (TFIM ordered h=0.5 / critical h=1.0 / paramagnet h=1.5, 3 seeds each, n=6) — no Ĥ consulted |
+| **AL** | AA-blind MI+bandwidth fails on 2D TFIM (grid/torus) while chain control recovers | chain n=6 h=1.5 seed=4242 recovers; 3×3 grid and 2×2 torus do **not** recover (same blind scorer as AA) |
 | **AB** | Factor count dynamics: n_opt_pressure(t) increases with entanglement light cone | `nOptPressureIncreases` and `nOptPressurePeak ≥ nStart + deltaN` on TFIM defect quench (n=4..14, dt=0.1, 40 steps) |
 | **AC** | Holographic structure absent in ordered phase, emerges at critical point | `emergenceNearCritical` and `orderedPhaseNonholographic` on field sweep h=0.3..1.5; profile: None/None/None→6/6/6 at h_c≈1.0 |
 | **M** | Negative controls reject fake locality | `random` n=6 and scrambled-spectrum shuffled chain do not recover |
 
-**K**, **L**, **L′**, **O**, **P**, **Q**, **AD**, **AE**, **AF**, **AG**, **AH**, **AI**, **AJ**, **AK**, **R′**, **F′**, **C′**, **I′**, **S′**, **T′**, **U′**, **V′**, **W′**, **X**, **Y**, **Z**, **AA**, **AB**, **AC**, and **M** target [roadmap.md](./roadmap.md) signatures **S1**, **S4**, **S5**, **S6–S8**, **S9**, and **S10**.
+**K**, **L**, **L′**, **O**, **P**, **Q**, **AD**, **AE**, **AF**, **AG**, **AH**, **AI**, **AJ**, **AK**, **R′**, **F′**, **C′**, **I′**, **S′**, **T′**, **U′**, **V′**, **W′**, **X**, **Y**, **Z**, **AA**, **AL**, **AB**, **AC**, and **M** target [roadmap.md](./roadmap.md) signatures **S1**, **S4**, **S5**, **S6–S8**, **S9**, and **S10**.
 
 ## Known circularity (Phase 9 — complete)
 

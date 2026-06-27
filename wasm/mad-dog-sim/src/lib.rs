@@ -33,6 +33,7 @@ mod eigenvalue_only;
 mod poincare;
 mod qecc;
 mod run_falsification;
+mod run_scaling_battery;
 mod run_holography;
 mod multi_clock;
 mod modular_time;
@@ -75,6 +76,7 @@ use run_factorization_refinement::{
     run_factorization_refinement_study, FactorizationRefinementConfig,
 };
 use run_falsification::run_falsification_battery;
+use run_scaling_battery::run_scaling_battery;
 use run_holography::{
     run_holography, run_rt_mass, HolographyRunConfig, RtMassRunConfig,
 };
@@ -532,6 +534,15 @@ pub fn run_locality_spectrum_json(_config_json: &str) -> Result<String, JsValue>
 pub fn run_eigenvalue_only_json(_config_json: &str) -> Result<String, JsValue> {
     let start = js_sys::Date::now();
     let mut result = run_eigenvalue_only_battery();
+    result.elapsed_ms = js_sys::Date::now() - start;
+    serde_json::to_string(&result).map_err(|e| JsValue::from_str(&e.to_string()))
+}
+
+
+#[wasm_bindgen]
+pub fn run_scaling_battery_json(_config_json: &str) -> Result<String, JsValue> {
+    let start = js_sys::Date::now();
+    let mut result = run_scaling_battery();
     result.elapsed_ms = js_sys::Date::now() - start;
     serde_json::to_string(&result).map_err(|e| JsValue::from_str(&e.to_string()))
 }

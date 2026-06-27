@@ -25,7 +25,8 @@
     "sweep:scattering": "npm run build:wasm && node scripts/scattering-sweep.ts",
     "sweep:refinement": "npm run build:wasm && node scripts/refinement-adaptive.ts",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "check:scaling": "npm run ensure:wasm && node scripts/scaling-check.ts"
   },
   "dependencies": {
     "@radix-ui/react-separator": "^1.1.9",

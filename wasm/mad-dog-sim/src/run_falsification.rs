@@ -45,7 +45,7 @@ use crate::dispersion::{run_dispersion, DispersionConfig};
 use crate::lorentz::grid_cardinal_speed_cv;
 use crate::run_lorentz_scaling::run_lorentz_scaling;
 use crate::scattering::{run_two_defect_scattering, lattice_separation, ScatteringConfig};
-use crate::locality_spectrum::run_locality_spectrum_battery;
+use crate::locality_spectrum::{run_aa_blind_2d_boundary, run_locality_spectrum_battery};
 use serde::Serialize;
 
 fn rt_ratio_std(n: usize, field: f64, seed: u32) -> f64 {
@@ -1254,6 +1254,21 @@ pub fn run_falsification_battery() -> FalsificationBatteryResult {
                 ls.total,
                 ls.recovery_rate * 100.0,
                 detail_cases.join(" ")
+            ),
+        });
+    }
+
+
+    // AL — AA-blind MI+bandwidth fails on 2D TFIM; chain n=6 control still recovers
+    {
+        let b = run_aa_blind_2d_boundary();
+        tests.push(FalsificationTest {
+            id: "AL".to_string(),
+            name: "AA-blind locality fails on 2D grid/torus; chain control passes".to_string(),
+            passed: b.pass,
+            detail: format!(
+                "chain n=6 recovered={}; grid 3×3 recovered={}; torus 2×2 recovered={}",
+                b.chain_recovered, b.grid_recovered, b.torus_recovered
             ),
         });
     }
