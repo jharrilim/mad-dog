@@ -153,7 +153,7 @@ Phases 1–11 and signatures **S1–S10** are shipped. The main gap is no longer
 
 **Suggested first pick:** Extend scaling battery (G at n≥11, full falsification subset).
 
-**2026-06-27 probe ([scaling-research.md](./scaling-research.md)):** chain factorization holds n=4–8; AA-blind chain holds n=4–8; **AA-blind 2D (grid/torus) fails**; multi-clock **G** fails at n=11 (passes n=9); Lorentz L′ CoV=0. **Shipped:** falsification **AL** (2D blind negative), **AM** (G breaks n≥11); `npm run check:scaling` (G n=7/9/11, uniqueness gap).
+**2026-06-27 probe ([scaling-research.md](./scaling-research.md)):** chain factorization holds n=4–8; AA-blind chain holds n=4–8; **AA-blind 2D still fails (AL)** — graph-native far MI + lattice bandwidth shipped but 8-way score degeneracy on grid; multi-clock **G** fails at n=11 (**AM**); Lorentz L′ CoV=0. `npm run check:scaling` (12 checks).
 
 ### Priority 1 — Scaling and uniqueness
 
@@ -167,7 +167,7 @@ Phases 1–11 and signatures **S1–S10** are shipped. The main gap is no longer
 
 | Item | Question | Notes | Doc |
 |------|----------|-------|-----|
-| **Grid/torus blind spectrum** | Does MI+bandwidth recover 2D labelings? | **Negative (AL)** — 3×3 grid, 2×2 torus fail; chain passes. Scorer fix open | [factorization.md](./factorization.md) |
+| **Grid/torus blind spectrum** | Does MI+bandwidth recover 2D labelings? | **Negative (AL)** — graph-native scorer partial; truth in top score bucket but **8-way tie** on 3×3. Next: tiebreaker (edge MI pattern / MDS–grid fit) | [factorization.md](./factorization.md), [scaling-research.md](./scaling-research.md) |
 | **Gapless / frustrated limits** | Is XX failure fundamental for MI-only blind search? | Document or extend scorer; XX remains negative control | `locality_spectrum.rs` |
 | **Minimal extra data** | What beyond {Eₙ} is needed to recover labeling? | **AK** closed {Eₙ}-only; probe correlators / low-weight Pauli expectations | [factorization.md](./factorization.md) |
 
