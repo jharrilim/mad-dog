@@ -20,6 +20,8 @@ Spectrum scoring uses low-lying eigenstate weights (heavier weight on ground sta
 | `shuffled_heisenberg_chain` | XXX+YYY+ZZZ | yes |
 | `shuffled_sparse_chain` | Random NN Pauli subset | yes |
 | `shuffled_grid` | TFIM grid | yes |
+| `shuffled_torus` | TFIM torus (periodic) | yes |
+| `shuffled_cube` | TFIM cube (open 3D) | yes |
 | `random` | `random_nonlocal` | no ground truth |
 
 ## Recovery benchmarks
@@ -50,7 +52,7 @@ Set `spectrumScramble: true` to permute qubit labels in eigenvector amplitudes b
 
 1. Build a Hamiltonian — shuffled local model or random non-local.
 2. Find `k` low-energy states or diagonalize for spectrum mode.
-3. Search permutations maximizing locality on a **line** or **grid** graph.
+3. Search permutations maximizing locality on a **line**, **grid**, **torus**, or **cube** graph.
 4. Return baseline vs best MI heatmaps, coupling graph, top-k candidates, uniqueness.
 
 **Search methods:** `exact` (n≤8), `annealing` (default n>8), `greedy`.
@@ -87,9 +89,9 @@ WASM: `factorizationSearch`, `factorizationRefinement`, `factorizationEnsemble`.
 
 ## Limits
 
-- Line/grid permutations only — no dynamic factor splitting.
+- Line/grid/torus/cube permutations — no dynamic factor splitting.
 - Spectrum mode is a **toy**: eigenvectors in the hidden computational basis, not true “only {Eₙ}” inference.
-- Torus/cube builders exist but are not factorization targets yet.
+- ~~Torus/cube builders exist but are not factorization targets yet.~~ **Shipped (AH)** — `GraphKind::Torus` / `Cube`; `shuffled_torus` (2×2) and `shuffled_cube` (2×2×2) in factorization search.
 - `n > 8` uses simulated annealing (tune via `annealingSteps`).
 
 ## Checks

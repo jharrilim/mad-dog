@@ -12,6 +12,8 @@ use serde::{Deserialize, Serialize};
 pub enum GraphKind {
     Line,
     Grid,
+    Torus,
+    Cube,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -51,6 +53,9 @@ pub struct SearchParams {
     pub graph_kind: GraphKind,
     pub rows: usize,
     pub cols: usize,
+    pub lx: usize,
+    pub ly: usize,
+    pub lz: usize,
     pub input_mode: InputMode,
     pub search_method: SearchMethod,
     pub eigenstate_count: usize,
@@ -66,6 +71,9 @@ impl Default for SearchParams {
             graph_kind: GraphKind::Line,
             rows: 0,
             cols: 0,
+            lx: 0,
+            ly: 0,
+            lz: 0,
             input_mode: InputMode::Pauli,
             search_method: SearchMethod::Annealing,
             eigenstate_count: 1,
@@ -119,26 +127,47 @@ fn two_body_qubits(term: &PauliTerm) -> Option<(usize, usize)> {
     Some(if a < b { (a, b) } else { (b, a) })
 }
 
+fn torus_axis_dist(a: usize, b: usize, period: usize) -> usize {
+    let d = a.abs_diff(b);
+    d.min(period - d)
+}
+
 fn graph_distance(
     graph: GraphKind,
     perm: &[usize],
     i: usize,
     j: usize,
-    rows: usize,
-    cols: usize,
+    params: &SearchParams,
 ) -> usize {
     let pi = perm[i];
     let pj = perm[j];
     match graph {
-        GraphKind::Line => (pi as i32 - pj as i32).unsigned_abs() as usize,
+        GraphKind::Line => pi.abs_diff(pj),
         GraphKind::Grid => {
-            let ri = pi / cols;
-            let ci = pi % cols;
-            let rj = pj / cols;
-            let cj = pj % cols;
-            let _ = rows;
-            (ri as i32 - rj as i32).unsigned_abs() as usize
-                + (ci as i32 - cj as i32).unsigned_abs() as usize
+            let ri = pi / params.cols;
+            let ci = pi % params.cols;
+            let rj = pj / params.cols;
+            let cj = pj % params.cols;
+            let _ = params.rows;
+            ri.abs_diff(rj) + ci.abs_diff(cj)
+        }
+        GraphKind::Torus => {
+            let ri = pi / params.cols;
+            let ci = pi % params.cols;
+            let rj = pj / params.cols;
+            let cj = pj % params.cols;
+            torus_axis_dist(ri, rj, params.rows) + torus_axis_dist(ci, cj, params.cols)
+        }
+        GraphKind::Cube => {
+            let lx = params.lx;
+            let ly = params.ly;
+            let xi = pi % lx;
+            let yi = (pi / lx) % ly;
+            let zi = pi / (lx * ly);
+            let xj = pj % lx;
+            let yj = (pj / lx) % ly;
+            let zj = pj / (lx * ly);
+            xi.abs_diff(xj) + yi.abs_diff(yj) + zi.abs_diff(zj)
         }
     }
 }
@@ -168,8 +197,7 @@ fn coupling_edges_for(h: &Hamiltonian, perm: &[usize], params: &SearchParams) ->
                 perm,
                 i,
                 j,
-                params.rows,
-                params.cols,
+                params,
             );
             edges.push(CouplingEdge { i, j, dist });
         }
@@ -225,6 +253,66 @@ fn mean_mi_nn_ratio(mi_list: &[Vec<Vec<f64>>], perm: &[usize], params: &SearchPa
                             let j = inv[(r + 1) * cols + c];
                             nn_sum += mi[i][j];
                             nn_count += 1;
+                        }
+                    }
+                }
+                for k in 0..n {
+                    for d in 2..n {
+                        if k + d < n {
+                            far_sum += mi[inv[k]][inv[k + d]];
+                            far_count += 1;
+                        }
+                    }
+                }
+            }
+            GraphKind::Torus => {
+                let rows = params.rows;
+                let cols = params.cols;
+                for r in 0..rows {
+                    for c in 0..cols {
+                        let k = r * cols + c;
+                        let i = inv[k];
+                        let c2 = (c + 1) % cols;
+                        let j = inv[r * cols + c2];
+                        nn_sum += mi[i][j];
+                        nn_count += 1;
+                        let r2 = (r + 1) % rows;
+                        let j2 = inv[r2 * cols + c];
+                        nn_sum += mi[i][j2];
+                        nn_count += 1;
+                    }
+                }
+                for k in 0..n {
+                    for d in 2..n {
+                        if k + d < n {
+                            far_sum += mi[inv[k]][inv[k + d]];
+                            far_count += 1;
+                        }
+                    }
+                }
+            }
+            GraphKind::Cube => {
+                let lx = params.lx;
+                let ly = params.ly;
+                let lz = params.lz;
+                let idx = |x: usize, y: usize, z: usize| z * (lx * ly) + y * lx + x;
+                for z in 0..lz {
+                    for y in 0..ly {
+                        for x in 0..lx {
+                            let k = idx(x, y, z);
+                            let i = inv[k];
+                            if x + 1 < lx {
+                                nn_sum += mi[i][inv[idx(x + 1, y, z)]];
+                                nn_count += 1;
+                            }
+                            if y + 1 < ly {
+                                nn_sum += mi[i][inv[idx(x, y + 1, z)]];
+                                nn_count += 1;
+                            }
+                            if z + 1 < lz {
+                                nn_sum += mi[i][inv[idx(x, y, z + 1)]];
+                                nn_count += 1;
+                            }
                         }
                     }
                 }
@@ -346,7 +434,8 @@ pub fn score_permutation(
     let n = perm.len();
     let expected_dim = match params.graph_kind {
         GraphKind::Line => 1,
-        GraphKind::Grid => 2,
+        GraphKind::Grid | GraphKind::Torus => 2,
+        GraphKind::Cube => 3,
     };
 
     let mut weighted_local = 0.0;
@@ -363,8 +452,7 @@ pub fn score_permutation(
                         perm,
                         i,
                         j,
-                        params.rows,
-                        params.cols,
+                        params,
                     );
                     let w = dist_weight(dist, params.distance_decay);
                     weighted_local += w;

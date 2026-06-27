@@ -36,19 +36,24 @@ export function FactorizationViz() {
   const [loading, setLoading] = useState(false)
 
   const searchConfig = useMemo((): FactorizationSearchConfig => {
+    const lattice =
+      kind === 'shuffled_grid'
+        ? { n: 9, rows: 3, cols: 3, graphKind: 'grid' as const }
+        : kind === 'shuffled_torus'
+          ? { n: 4, rows: 2, cols: 2, graphKind: 'torus' as const }
+          : kind === 'shuffled_cube'
+            ? { n: 8, lx: 2, ly: 2, lz: 2, graphKind: 'cube' as const }
+            : { n: 6, graphKind: 'line' as const }
     return {
       kind,
-      n: kind === 'shuffled_grid' ? 9 : 6,
       field: 1.5,
       seed: 4242,
       topK: 5,
       inputMode,
-      rows: kind === 'shuffled_grid' ? 3 : undefined,
-      cols: kind === 'shuffled_grid' ? 3 : undefined,
-      graphKind: kind === 'shuffled_grid' ? 'grid' : 'line',
       eigenstateCount: inputMode === 'spectrum' ? 3 : 1,
       searchMethod:
-        kind !== 'random' && kind !== 'shuffled_grid' ? 'exact' : undefined,
+        kind === 'random' || kind === 'shuffled_grid' ? undefined : 'exact',
+      ...lattice,
     }
   }, [kind, inputMode])
 
@@ -69,8 +74,8 @@ export function FactorizationViz() {
       <CardHeader>
         <CardTitle>Locality from H and low-energy states</CardTitle>
         <CardDescription>
-          Search qubit label permutations that make coupling look local on a line
-          (or grid). <strong>Pauli mode</strong> uses Ĥ structure + MI;{' '}
+          Search qubit label permutations that make coupling look local on a line,
+          grid, torus, or cube. <strong>Pauli mode</strong> uses Ĥ structure + MI;{' '}
           <strong>spectrum mode</strong> scores from eigenvectors only (no Pauli
           terms in the search).
         </CardDescription>
@@ -111,6 +116,20 @@ export function FactorizationViz() {
             onClick={() => setKind('shuffled_grid')}
           >
             Shuffled grid
+          </Button>
+          <Button
+            size="sm"
+            variant={kind === 'shuffled_torus' ? 'default' : 'outline'}
+            onClick={() => setKind('shuffled_torus')}
+          >
+            Shuffled torus
+          </Button>
+          <Button
+            size="sm"
+            variant={kind === 'shuffled_cube' ? 'default' : 'outline'}
+            onClick={() => setKind('shuffled_cube')}
+          >
+            Shuffled cube
           </Button>
           <Button
             size="sm"

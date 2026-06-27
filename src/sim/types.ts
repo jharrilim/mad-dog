@@ -766,9 +766,11 @@ export type FactorizationKind =
   | 'shuffled_sparse_chain'
   | 'random'
   | 'shuffled_grid'
+  | 'shuffled_torus'
+  | 'shuffled_cube'
 export type FactorizationInputMode = 'pauli' | 'spectrum'
 export type FactorizationSearchMethod = 'exact' | 'annealing' | 'greedy'
-export type FactorizationGraphKind = 'line' | 'grid'
+export type FactorizationGraphKind = 'line' | 'grid' | 'torus' | 'cube'
 
 export interface FactorizationUniquenessReport {
   equivalenceClassCount: number
@@ -790,6 +792,9 @@ export interface FactorizationSearchConfig {
   graphKind?: FactorizationGraphKind
   rows?: number
   cols?: number
+  lx?: number
+  ly?: number
+  lz?: number
   distanceDecay?: number
   annealingSteps?: number
   spectrumScramble?: boolean

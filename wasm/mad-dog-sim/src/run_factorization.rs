@@ -8,7 +8,8 @@ use crate::factorization::{
 };
 use crate::geometry::mutual_information_matrix;
 use crate::models::{
-    heisenberg_chain, random_nonlocal, sparse_local_chain, tfim_chain, tfim_grid, xx_chain,
+    heisenberg_chain, random_nonlocal, sparse_local_chain, tfim_chain, tfim_cube, tfim_grid,
+    tfim_torus, xx_chain,
 };
 use crate::quantum::{Hamiltonian, low_energy_states};
 use crate::rng::Rng;
@@ -35,6 +36,12 @@ pub struct FactorizationSearchConfig {
     pub rows: Option<usize>,
     #[serde(default)]
     pub cols: Option<usize>,
+    #[serde(default)]
+    pub lx: Option<usize>,
+    #[serde(default)]
+    pub ly: Option<usize>,
+    #[serde(default)]
+    pub lz: Option<usize>,
     #[serde(default)]
     pub distance_decay: Option<f64>,
     #[serde(default)]
@@ -98,6 +105,8 @@ fn parse_search_method(s: Option<&String>, n: usize) -> SearchMethod {
 fn parse_graph_kind(s: Option<&String>) -> GraphKind {
     match s.map(|x| x.as_str()) {
         Some("grid") => GraphKind::Grid,
+        Some("torus") => GraphKind::Torus,
+        Some("cube") => GraphKind::Cube,
         _ => GraphKind::Line,
     }
 }
@@ -106,10 +115,16 @@ fn build_params(config: &FactorizationSearchConfig) -> SearchParams {
     let graph_kind = parse_graph_kind(config.graph_kind.as_ref());
     let rows = config.rows.unwrap_or(0);
     let cols = config.cols.unwrap_or(0);
+    let lx = config.lx.unwrap_or(0);
+    let ly = config.ly.unwrap_or(0);
+    let lz = config.lz.unwrap_or(0);
     SearchParams {
         graph_kind,
         rows,
         cols,
+        lx,
+        ly,
+        lz,
         input_mode: parse_input_mode(config.input_mode.as_ref()),
         search_method: parse_search_method(config.search_method.as_ref(), config.n),
         eigenstate_count: config.eigenstate_count.unwrap_or(1).clamp(1, 4),
@@ -190,6 +205,36 @@ pub fn run_factorization_search(config: &FactorizationSearchConfig) -> Factoriza
             let (shuffled, shuffle_perm) = shuffle_hamiltonian(&model.hamiltonian, config.seed);
             (
                 format!("Shuffled TFIM grid ({rows}x{cols})"),
+                shuffled,
+                Some(shuffle_perm),
+            )
+        }
+        "shuffled_torus" => {
+            let rows = config.rows.unwrap_or(2);
+            let cols = config.cols.unwrap_or(2);
+            params.graph_kind = GraphKind::Torus;
+            params.rows = rows;
+            params.cols = cols;
+            let model = tfim_torus(rows, cols, 1.0, config.field);
+            let (shuffled, shuffle_perm) = shuffle_hamiltonian(&model.hamiltonian, config.seed);
+            (
+                format!("Shuffled TFIM torus ({rows}x{cols})"),
+                shuffled,
+                Some(shuffle_perm),
+            )
+        }
+        "shuffled_cube" => {
+            let lx = config.lx.unwrap_or(2);
+            let ly = config.ly.unwrap_or(2);
+            let lz = config.lz.unwrap_or(2);
+            params.graph_kind = GraphKind::Cube;
+            params.lx = lx;
+            params.ly = ly;
+            params.lz = lz;
+            let model = tfim_cube(lx, ly, lz, 1.0, config.field);
+            let (shuffled, shuffle_perm) = shuffle_hamiltonian(&model.hamiltonian, config.seed);
+            (
+                format!("Shuffled TFIM cube ({lx}x{ly}x{lz})"),
                 shuffled,
                 Some(shuffle_perm),
             )
@@ -319,6 +364,9 @@ mod tests {
             graph_kind: None,
             rows: None,
             cols: None,
+            lx: None,
+            ly: None,
+            lz: None,
             distance_decay: None,
             annealing_steps: None,
             spectrum_scramble: None,
@@ -384,5 +432,63 @@ mod tests {
         let a = vec![0, 3, 4, 1, 2, 5];
         let b = vec![5, 2, 1, 4, 3, 0];
         assert_eq!(line_equiv_distance(&a, &b), 0);
+    }
+
+    #[test]
+    fn pauli_recovers_shuffled_cube_222() {
+        let result = run_factorization_search(&FactorizationSearchConfig {
+            kind: "shuffled_cube".to_string(),
+            n: 8,
+            field: 1.5,
+            seed: 4242,
+            top_k: 5,
+            input_mode: Some("pauli".to_string()),
+            search_method: Some("exact".to_string()),
+            eigenstate_count: Some(1),
+            graph_kind: Some("cube".to_string()),
+            rows: None,
+            cols: None,
+            lx: Some(2),
+            ly: Some(2),
+            lz: Some(2),
+            distance_decay: None,
+            annealing_steps: None,
+            spectrum_scramble: None,
+        });
+        assert!(
+            result.recovered_identity,
+            "cube failed: dist={:?} locality={:.3}",
+            result.perm_match_distance,
+            result.best.locality_fraction
+        );
+    }
+
+    #[test]
+    fn pauli_recovers_shuffled_torus_22() {
+        let result = run_factorization_search(&FactorizationSearchConfig {
+            kind: "shuffled_torus".to_string(),
+            n: 4,
+            field: 1.5,
+            seed: 4242,
+            top_k: 5,
+            input_mode: Some("pauli".to_string()),
+            search_method: Some("exact".to_string()),
+            eigenstate_count: Some(1),
+            graph_kind: Some("torus".to_string()),
+            rows: Some(2),
+            cols: Some(2),
+            lx: None,
+            ly: None,
+            lz: None,
+            distance_decay: None,
+            annealing_steps: None,
+            spectrum_scramble: None,
+        });
+        assert!(
+            result.recovered_identity,
+            "torus failed: dist={:?} locality={:.3}",
+            result.perm_match_distance,
+            result.best.locality_fraction
+        );
     }
 }

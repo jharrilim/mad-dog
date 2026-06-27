@@ -337,6 +337,48 @@ for (const config of [
 }
 
 {
+  const cube = JSON.parse(
+    run_factorization_search_json(
+      JSON.stringify({
+        kind: 'shuffled_cube',
+        n: 8,
+        field: 1.5,
+        seed: 4242,
+        topK: 3,
+        graphKind: 'cube',
+        lx: 2,
+        ly: 2,
+        lz: 2,
+        searchMethod: 'exact',
+      }),
+    ),
+  )
+  const torus = JSON.parse(
+    run_factorization_search_json(
+      JSON.stringify({
+        kind: 'shuffled_torus',
+        n: 4,
+        field: 1.5,
+        seed: 4242,
+        topK: 3,
+        graphKind: 'torus',
+        rows: 2,
+        cols: 2,
+        searchMethod: 'exact',
+      }),
+    ),
+  )
+  console.log('\nfactorization cube/torus:')
+  if (!cube.recoveredIdentity || !torus.recoveredIdentity) {
+    fail(`cube=${cube.recoveredIdentity} torus=${torus.recoveredIdentity}`)
+  } else {
+    ok(
+      `cube loc=${(cube.best.localityFraction * 100).toFixed(0)}% torus loc=${(torus.best.localityFraction * 100).toFixed(0)}%`,
+    )
+  }
+}
+
+{
   const r = JSON.parse(
     run_factorization_search_json(
       JSON.stringify({

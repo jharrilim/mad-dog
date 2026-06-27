@@ -113,6 +113,9 @@ pub fn run_falsification_battery() -> FalsificationBatteryResult {
             graph_kind: None,
             rows: None,
             cols: None,
+            lx: None,
+            ly: None,
+            lz: None,
             distance_decay: None,
             annealing_steps: None,
             spectrum_scramble: None,
@@ -142,6 +145,9 @@ pub fn run_falsification_battery() -> FalsificationBatteryResult {
             graph_kind: Some("grid".to_string()),
             rows: Some(3),
             cols: Some(3),
+            lx: None,
+            ly: None,
+            lz: None,
             distance_decay: None,
             annealing_steps: None,
             spectrum_scramble: None,
@@ -158,6 +164,9 @@ pub fn run_falsification_battery() -> FalsificationBatteryResult {
             graph_kind: Some("line".to_string()),
             rows: Some(3),
             cols: Some(3),
+            lx: None,
+            ly: None,
+            lz: None,
             distance_decay: None,
             annealing_steps: None,
             spectrum_scramble: None,
@@ -523,6 +532,9 @@ pub fn run_falsification_battery() -> FalsificationBatteryResult {
             graph_kind: None,
             rows: None,
             cols: None,
+            lx: None,
+            ly: None,
+            lz: None,
             distance_decay: None,
             annealing_steps: None,
             spectrum_scramble: None,
@@ -539,6 +551,9 @@ pub fn run_falsification_battery() -> FalsificationBatteryResult {
             graph_kind: None,
             rows: None,
             cols: None,
+            lx: None,
+            ly: None,
+            lz: None,
             distance_decay: None,
             annealing_steps: None,
             spectrum_scramble: Some(true),
@@ -748,6 +763,64 @@ pub fn run_falsification_battery() -> FalsificationBatteryResult {
                 r.locality_drift_embed,
                 r.dim_drift_roundtrip,
                 r.embedding_faithful
+            ),
+        });
+    }
+
+    // AH — 3D cube and periodic torus factorization search targets
+    {
+        let cube = run_factorization_search(&FactorizationSearchConfig {
+            kind: "shuffled_cube".to_string(),
+            n: 8,
+            field: 1.5,
+            seed: 4242,
+            top_k: 5,
+            input_mode: Some("pauli".to_string()),
+            search_method: Some("exact".to_string()),
+            eigenstate_count: Some(1),
+            graph_kind: Some("cube".to_string()),
+            rows: None,
+            cols: None,
+            lx: Some(2),
+            ly: Some(2),
+            lz: Some(2),
+            distance_decay: None,
+            annealing_steps: None,
+            spectrum_scramble: None,
+        });
+        let torus = run_factorization_search(&FactorizationSearchConfig {
+            kind: "shuffled_torus".to_string(),
+            n: 4,
+            field: 1.5,
+            seed: 4242,
+            top_k: 5,
+            input_mode: Some("pauli".to_string()),
+            search_method: Some("exact".to_string()),
+            eigenstate_count: Some(1),
+            graph_kind: Some("torus".to_string()),
+            rows: Some(2),
+            cols: Some(2),
+            lx: None,
+            ly: None,
+            lz: None,
+            distance_decay: None,
+            annealing_steps: None,
+            spectrum_scramble: None,
+        });
+        let passed = cube.recovered_identity
+            && torus.recovered_identity
+            && cube.best.locality_fraction > 0.9
+            && torus.best.locality_fraction > 0.9;
+        tests.push(FalsificationTest {
+            id: "AH".to_string(),
+            name: "Cube/torus factorization search recovers shuffled TFIM".to_string(),
+            passed,
+            detail: format!(
+                "cube loc={:.0}% recovered={}; torus loc={:.0}% recovered={}",
+                cube.best.locality_fraction * 100.0,
+                cube.recovered_identity,
+                torus.best.locality_fraction * 100.0,
+                torus.recovered_identity
             ),
         });
     }

@@ -59,9 +59,7 @@ fn spectrum_only_params(n: usize) -> SearchParams {
         rows: 1,
         cols: n,
         eigenstate_count: EIGENSTATE_COUNT,
-        distance_decay: 0.0,
-        annealing_steps: 3000,
-        emergent_dim_weight: 0.1,
+        ..Default::default()
     }
 }
 
