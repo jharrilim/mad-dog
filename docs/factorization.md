@@ -35,7 +35,7 @@ Spectrum scoring uses low-lying eigenstate weights (heavier weight on ground sta
 | scrambled spectrum (negative) | ✗ (by design) |
 | random n=6 | no ground truth |
 
-Run `npm run bench:factorization` for the full matrix plus Phase-1 ensemble (`run_factorization_ensemble_json`). Falsification **K** (≥80% ensemble) and **M** (negative controls) in [falsification.md](./falsification.md).
+Run `npm run bench:factorization` for the full matrix plus Phase-1 ensemble (`run_factorization_ensemble_json`). Falsification **K** (≥80% ensemble) and **M** (negative controls at n=6 and n=8) in [falsification.md](./falsification.md). `npm run check:scaling` asserts uniqueness metrics across the model zoo (TFIM n=4/6/8, XX n=6, sparse n=6).
 
 ## Uniqueness report
 
@@ -106,5 +106,6 @@ WASM battery: `run_eigenvalue_only_json`
 - `npm run check:wasm` — WASM smoke + structural invariants
 - `npm run bench:factorization` — recovery matrix + ensemble
 - `npm run check:falsification` — battery **K**, **M**
+- `npm run check:scaling` — Phase 12 scaling + uniqueness zoo
 
 All calculations run in Rust/WASM; there is no TypeScript fallback.

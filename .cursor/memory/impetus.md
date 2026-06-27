@@ -86,7 +86,7 @@ Dated bullets for decisions future agents should not relitigate without cause.
 - **Ensemble K:** `run_factorization_ensemble` — TFIM/XX/Heisenberg/sparse, ≥80% recovery.
 - **Uniqueness report** on top-k equivalence classes (`line_equiv_distance` clustering).
 - **Negative control M:** random nonlocal + `spectrumScramble` must not recover.
-- **2026-06-27 — Phase 12 backlog** — S1–S10 complete; next work is scaling/uniqueness, 2D spectrum blind, dynamic factor refinement, observational bridge depth — not new signature wiring.
+- **2026-06-27 — Phase 12 Priority 1** — Uniqueness tightening in `check:scaling` + `bench:factorization`; **M** extended to n=8; AA-blind 2D tiebreak partial (AL still negative).
 
 ## 2026-06-21 — Phase 3 S3 (relational time)
 

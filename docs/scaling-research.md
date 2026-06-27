@@ -118,27 +118,33 @@ Complements **G** (n=9 positive). Documents honest scaling boundary: long chains
 
 Complements **AA** (chain positive) and **AK** ({Eₙ}-only impossible). Documents an honest boundary: spectrum-first locality is not yet a 2D signature.
 
-### 4. 2D blind scorer (Priority 2) — partial (2026-06-27)
+### 4. 2D blind scorer (Priority 2) — tiebreak partial (2026-06-27)
 
 **Shipped in `factorization.rs`:**
 
 - **Graph-native far MI:** non-NN pairs use `site_graph_distance ≥ 2` (Manhattan / torus-wrap), not linear chain index `k+d`.
 - **Lattice support bandwidth:** `support_bandwidth` uses graph diameter on active sites (grid Manhattan, torus wrap); line mode unchanged.
+- **Exact-search tiebreak (2026-06-27):** when AA-blind on Grid/Torus, secondary sort uses `blind_lattice_tiebreak` = 10% MDS–grid Procrustes fit + 90% NN-edge MI heterogeneity (std-dev).
 
-**Result:** AA-blind chain regression passes. 2D **still fails** exact recovery (`recovered=false` on 3×3 grid, 2×2 torus, seed 4242) but scores improve (grid miNn 1.31→1.47; truth labeling reaches the top score bucket). Exact search finds **8 tied permutations** at the maximum score on 3×3 (8/362880); tie-break is lex order, so the true inverse shuffle is not selected. Same degeneracy on torus (8/24). Aggregate MI+bandwidth statistics are identical across the tie class — a sharper signal (per-edge pattern, MDS–grid fit, or semi-blind Ĥ) is needed for unique 2D recovery.
+**Result:** AA-blind chain regression passes. 2D **still fails** exact recovery (`recovered=false` on 3×3 grid, 2×2 torus, seed 4242). Probe shows **true labeling scores below the top bucket** (true ≈0.535 vs max ≈0.584 on 3×3): spurious permutations inflate MI-NN ratio with artificially uniform edge weights. Tiebreak alone cannot fix recovery without rebalancing the primary 2D blind scorer.
 
 **Still open:**
 
+- Primary 2D blind score that penalizes uniform edge-MI patterns without breaking chain AA.
 - Separate `blindSpectrum` JSON flag (decouple from eigenvector scrambling).
 - Recovery metric: consider lattice symmetry class vs raw `perm_distance`.
 
 Pauli-mode 2D search already passes (**AH**); the gap is specifically **blind** spectrum inference.
 
-### 5. Uniqueness tightening
+### 5. Uniqueness tightening — shipped (2026-06-27)
 
-At n=6 and n=8 the true class is in top-k with gap 0.11→0.07. `check:scaling` includes `uniqueness_gap_n6_vs_n8` (gap narrows but stays positive). Track gap vs n across model zoo; consider requiring `scoreGapToSecondClass > ε(n)` in bench only if gap stays above noise at n=10+ (annealing).
+`npm run check:scaling` now asserts per-model uniqueness on TFIM n=4/6/8, XX n=6, sparse n=6: `trueInTopK`, `bestClassSize ≤ 2`, `equivalenceClassCount ≤ 3`, and `scoreGapToSecondClass` above n-dependent floors (sparse gap ≈0.005 at seed 4242). `bench:factorization` logs gap/classes for spectrum n=6/8 and XX n=6.
 
-### 6. Blockers
+### 6. Negative controls at scale — shipped (2026-06-27)
+
+Falsification **M** now runs random nonlocal + scrambled spectrum at **n=6 and n=8** (exact search); all four must fail recovery.
+
+### 7. Blockers
 
 | Blocker | Impact |
 |---------|--------|

@@ -1,7 +1,7 @@
 //! Spectrum-driven factorization search — find qubit labelings that make H look local.
 
 use crate::geometry::{classical_mds, mi_to_distance, mutual_information_matrix};
-use crate::linalg::hermitian_eigen_decomposition;
+use crate::linalg::{hermitian_eigen_decomposition, procrustes_2d};
 use crate::quantum::{
     hamiltonian_dense, Hamiltonian, PauliOp, PauliTerm, QuantumState,
 };
@@ -462,6 +462,153 @@ fn spectrum_state_weights(k: usize) -> Vec<f64> {
         .collect()
 }
 
+/// Ideal 2D lattice coordinates (column, row) for Procrustes grid-fit tiebreak.
+fn ideal_lattice_coords(kind: GraphKind, params: &SearchParams) -> Vec<Vec<f64>> {
+    match kind {
+        GraphKind::Grid | GraphKind::Torus => {
+            let rows = params.rows;
+            let cols = params.cols;
+            (0..rows * cols)
+                .map(|k| {
+                    let r = k / cols;
+                    let c = k % cols;
+                    vec![c as f64, r as f64]
+                })
+                .collect()
+        }
+        _ => Vec::new(),
+    }
+}
+
+fn collect_nn_edge_mis(mi: &[Vec<f64>], inv: &[usize], params: &SearchParams) -> Vec<f64> {
+    let n = inv.len();
+    let mut edges = Vec::new();
+    match params.graph_kind {
+        GraphKind::Line => {
+            for k in 0..(n - 1) {
+                edges.push(mi[inv[k]][inv[k + 1]]);
+            }
+        }
+        GraphKind::Grid => {
+            let rows = params.rows;
+            let cols = params.cols;
+            for r in 0..rows {
+                for c in 0..cols {
+                    let k = r * cols + c;
+                    let i = inv[k];
+                    if c + 1 < cols {
+                        edges.push(mi[i][inv[r * cols + c + 1]]);
+                    }
+                    if r + 1 < rows {
+                        edges.push(mi[i][inv[(r + 1) * cols + c]]);
+                    }
+                }
+            }
+        }
+        GraphKind::Torus => {
+            let rows = params.rows;
+            let cols = params.cols;
+            for r in 0..rows {
+                for c in 0..cols {
+                    let k = r * cols + c;
+                    let i = inv[k];
+                    edges.push(mi[i][inv[r * cols + (c + 1) % cols]]);
+                    edges.push(mi[i][inv[((r + 1) % rows) * cols + c]]);
+                }
+            }
+        }
+        GraphKind::Cube => {}
+    }
+    edges
+}
+
+/// MDS embedding fit to an ideal grid/torus layout (higher = better).
+fn mds_lattice_fit_score(mi: &[Vec<f64>], perm: &[usize], params: &SearchParams) -> f64 {
+    let n = perm.len();
+    if !matches!(params.graph_kind, GraphKind::Grid | GraphKind::Torus) {
+        return 0.0;
+    }
+    let mi_p = permuted_mi(mi, perm);
+    let dist = mi_to_distance(&mi_p, 1.0);
+    let mds = classical_mds(&dist, 2);
+    if mds.coords.len() != n || mds.coords.iter().any(|c| c.len() < 2) {
+        return 0.0;
+    }
+    let ideal = ideal_lattice_coords(params.graph_kind, params);
+    let aligned = procrustes_2d(&mds.coords, &ideal);
+    let sse: f64 = aligned
+        .iter()
+        .zip(ideal.iter())
+        .map(|(a, b)| {
+            let dx = a[0] - b[0];
+            let dy = a[1] - b[1];
+            dx * dx + dy * dy
+        })
+        .sum();
+    let rms = (sse / n as f64).sqrt();
+    1.0 / (1.0 + rms)
+}
+
+/// Std-dev of NN-edge MI (true 2D labelings show heterogeneous edge weights).
+fn nn_edge_mi_heterogeneity(mi_list: &[Vec<Vec<f64>>], perm: &[usize], params: &SearchParams) -> f64 {
+    if mi_list.is_empty() {
+        return 0.0;
+    }
+    let n = perm.len();
+    let mut inv = vec![0usize; n];
+    for (q, &p) in perm.iter().enumerate() {
+        inv[p] = q;
+    }
+    let weights = spectrum_state_weights(mi_list.len());
+    let mut sum = 0.0;
+    let mut wsum = 0.0;
+    for (mi, &wt) in mi_list.iter().zip(weights.iter()) {
+        let edges = collect_nn_edge_mis(mi, &inv, params);
+        if edges.len() < 2 {
+            continue;
+        }
+        let mean = edges.iter().sum::<f64>() / edges.len() as f64;
+        let var = edges.iter().map(|e| (e - mean).powi(2)).sum::<f64>() / edges.len() as f64;
+        sum += wt * var.sqrt();
+        wsum += wt;
+    }
+    if wsum > 0.0 {
+        sum / wsum
+    } else {
+        0.0
+    }
+}
+
+/// Secondary score for AA-blind 2D exact search when primary scores tie.
+pub(crate) fn blind_lattice_tiebreak(
+    mi_list: &[Vec<Vec<f64>>],
+    perm: &[usize],
+    params: &SearchParams,
+) -> f64 {
+    let mds = mi_list
+        .first()
+        .map(|mi| mds_lattice_fit_score(mi, perm, params))
+        .unwrap_or(0.0);
+    let hetero = nn_edge_mi_heterogeneity(mi_list, perm, params);
+    // Heterogeneity breaks 8-way ties on 3×3; MDS fit is identical across tie class.
+    0.1 * mds + 0.9 * hetero
+}
+
+fn candidate_sort_key(
+    mi_list: &[Vec<Vec<f64>>],
+    cand: &FactorizationCandidate,
+    params: &SearchParams,
+) -> (f64, f64) {
+    let tiebreak = if params.spectrum_scrambled
+        && matches!(params.graph_kind, GraphKind::Grid | GraphKind::Torus)
+    {
+        blind_lattice_tiebreak(mi_list, &cand.permutation, params)
+    } else {
+        cand.mi_nn_ratio
+    };
+    (cand.score, tiebreak)
+}
+
 fn weighted_mi_nn_ratio(
     mi_list: &[Vec<Vec<f64>>],
     perm: &[usize],
@@ -835,10 +982,12 @@ pub fn search_factorization(
         let iters = cands.len();
         let mut candidates = cands;
         candidates.sort_by(|a, b| {
-            b.score
-                .partial_cmp(&a.score)
+            let ka = candidate_sort_key(&mi_list, a, params);
+            let kb = candidate_sort_key(&mi_list, b, params);
+            kb.0
+                .partial_cmp(&ka.0)
                 .unwrap_or(std::cmp::Ordering::Equal)
-                .then_with(|| b.mi_nn_ratio.partial_cmp(&a.mi_nn_ratio).unwrap_or(std::cmp::Ordering::Equal))
+                .then_with(|| kb.1.partial_cmp(&ka.1).unwrap_or(std::cmp::Ordering::Equal))
                 .then_with(|| a.permutation.cmp(&b.permutation))
         });
         for cand in candidates.iter_mut().take(top_k.max(1)) {

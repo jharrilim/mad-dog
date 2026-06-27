@@ -522,55 +522,45 @@ pub fn run_falsification_battery() -> FalsificationBatteryResult {
         });
     }
 
-    // M — negative controls (random nonlocal + scrambled spectrum)
+    // M — negative controls (random nonlocal + scrambled spectrum), n=6 and n=8
     {
-        let random = run_factorization_search(&FactorizationSearchConfig {
-            kind: "random".to_string(),
-            n: 6,
-            field: 1.5,
-            seed: 777,
-            top_k: 3,
-            input_mode: Some("spectrum".to_string()),
-            search_method: Some("exact".to_string()),
-            eigenstate_count: Some(3),
-            graph_kind: None,
-            rows: None,
-            cols: None,
-            lx: None,
-            ly: None,
-            lz: None,
-            distance_decay: None,
-            annealing_steps: None,
-            spectrum_scramble: None,
-        });
-        let scrambled = run_factorization_search(&FactorizationSearchConfig {
-            kind: "shuffled_chain".to_string(),
-            n: 6,
-            field: 1.5,
-            seed: 4242,
-            top_k: 3,
-            input_mode: Some("spectrum".to_string()),
-            search_method: Some("exact".to_string()),
-            eigenstate_count: Some(3),
-            graph_kind: None,
-            rows: None,
-            cols: None,
-            lx: None,
-            ly: None,
-            lz: None,
-            distance_decay: None,
-            annealing_steps: None,
-            spectrum_scramble: Some(true),
-        });
-        let m1 = !random.recovered_identity;
-        let m2 = !scrambled.recovered_identity;
+        let neg = |n: usize, seed: u32, kind: &str, scramble: bool| -> bool {
+            run_factorization_search(&FactorizationSearchConfig {
+                kind: kind.to_string(),
+                n,
+                field: 1.5,
+                seed,
+                top_k: 3,
+                input_mode: Some("spectrum".to_string()),
+                search_method: Some(if n <= 8 {
+                    "exact".to_string()
+                } else {
+                    "annealing".to_string()
+                }),
+                eigenstate_count: Some(if n <= 4 { 2 } else { 3 }),
+                graph_kind: None,
+                rows: None,
+                cols: None,
+                lx: None,
+                ly: None,
+                lz: None,
+                distance_decay: None,
+                annealing_steps: None,
+                spectrum_scramble: if scramble { Some(true) } else { None },
+            })
+            .recovered_identity
+        };
+        let random6 = neg(6, 777, "random", false);
+        let scrambled6 = neg(6, 4242, "shuffled_chain", true);
+        let random8 = neg(8, 888, "random", false);
+        let scrambled8 = neg(8, 4242, "shuffled_chain", true);
+        let passed = !random6 && !scrambled6 && !random8 && !scrambled8;
         tests.push(FalsificationTest {
             id: "M".to_string(),
             name: "Negative controls reject fake locality".to_string(),
-            passed: m1 && m2,
+            passed,
             detail: format!(
-                "randomRecovered={} scrambledRecovered={} (both should be false)",
-                random.recovered_identity, scrambled.recovered_identity
+                "n6 random={random6} scrambled={scrambled6}; n8 random={random8} scrambled={scrambled8} (all should be false)"
             ),
         });
     }

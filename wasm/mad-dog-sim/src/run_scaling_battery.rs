@@ -1,5 +1,6 @@
 //! Phase 12 scaling battery — fast regression checks for scaling research probes.
 
+use crate::factorization::UniquenessReport;
 use crate::locality_spectrum::{blind_lattice_case, blind_case};
 use crate::run_factorization::{run_factorization_search, FactorizationSearchConfig};
 use crate::multi_clock::MultiClockResult;
@@ -101,6 +102,64 @@ fn push_aa_blind_chain(checks: &mut Vec<ScalingCheck>, n: usize) {
     });
 }
 
+fn uniqueness_pass(u: &UniquenessReport, min_gap: f64, max_classes: usize) -> bool {
+    u.true_in_top_k
+        && u.best_class_size <= 2
+        && u.equivalence_class_count <= max_classes
+        && u.score_gap_to_second_class >= min_gap
+}
+
+fn push_uniqueness_spectrum(
+    checks: &mut Vec<ScalingCheck>,
+    id: &str,
+    kind: &str,
+    n: usize,
+    seed: u32,
+    min_gap: f64,
+) {
+    let eigen = if n <= 4 { 2 } else { 3 };
+    let r = run_factorization_search(&FactorizationSearchConfig {
+        kind: kind.to_string(),
+        n,
+        field: 1.5,
+        seed,
+        top_k: 5,
+        input_mode: Some("spectrum".to_string()),
+        search_method: Some("exact".to_string()),
+        eigenstate_count: Some(eigen),
+        graph_kind: None,
+        rows: None,
+        cols: None,
+        lx: None,
+        ly: None,
+        lz: None,
+        distance_decay: None,
+        annealing_steps: None,
+        spectrum_scramble: None,
+    });
+    let pass = r.recovered_identity
+        && r.uniqueness
+            .as_ref()
+            .map(|u| uniqueness_pass(u, min_gap, 3))
+            .unwrap_or(false);
+    let detail = match &r.uniqueness {
+        Some(u) => format!(
+            "recovered={} classes={} bestSize={} gap={:.3} trueInTopK={}",
+            r.recovered_identity,
+            u.equivalence_class_count,
+            u.best_class_size,
+            u.score_gap_to_second_class,
+            u.true_in_top_k
+        ),
+        None => format!("recovered={} (no uniqueness report)", r.recovered_identity),
+    };
+    checks.push(ScalingCheck {
+        id: id.to_string(),
+        pass,
+        detail,
+    });
+}
+
 /// Key scaling probes from Phase 12 research (target runtime under ~2 min).
 pub fn run_scaling_battery() -> ScalingBatteryResult {
     let mut checks = Vec::new();
@@ -160,6 +219,31 @@ pub fn run_scaling_battery() -> ScalingBatteryResult {
             detail: format!("gap6={:.3} gap8={:.3} (narrows, stays positive)", g6, g8),
         });
     }
+
+    push_uniqueness_spectrum(
+        &mut checks,
+        "uniqueness_spectrum_n4",
+        "shuffled_chain",
+        4,
+        4242,
+        0.15,
+    );
+    push_uniqueness_spectrum(
+        &mut checks,
+        "uniqueness_xx_n6",
+        "shuffled_xx_chain",
+        6,
+        4242,
+        0.08,
+    );
+    push_uniqueness_spectrum(
+        &mut checks,
+        "uniqueness_sparse_n6",
+        "shuffled_sparse_chain",
+        6,
+        4242,
+        0.004,
+    );
 
     let grid = blind_lattice_case("grid", 3, 3, 1.5, 4242);
     checks.push(ScalingCheck {

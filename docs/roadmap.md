@@ -144,6 +144,9 @@ Operational checklist — each maps to falsification tests and roadmap phases.
 | UI modular network | `ModularMultiClockViz.tsx` chain / grid / cube presets |
 | Eigenvalue-only impossibility | `inputMode: eigenvaluesOnly`; `run_eigenvalue_only_json`; falsification **AK** |
 | UI eigenvalues-only demo | `FactorizationViz.tsx` negative-control preset |
+| Uniqueness tightening (Phase 12) | `check:scaling` — `equivalenceClassCount`, `scoreGapToSecondClass` vs n + model zoo (TFIM/XX/sparse); `bench:factorization` assertions |
+| Negative controls at scale (**M**) | Falsification **M** extended to n=8 (random + scrambled spectrum) |
+| AA-blind 2D tiebreak (partial) | MDS–grid fit + edge-MI heterogeneity tiebreak in exact search; **AL still fails** — true labeling below top score bucket on 3×3 |
 
 ---
 
@@ -160,14 +163,14 @@ Phases 1–11 and signatures **S1–S10** are shipped. The main gap is no longer
 | Item | Question | Notes | Doc |
 |------|----------|-------|-----|
 | ~~**Scaling battery (minimal)**~~ | Do key signatures hold at growing `n`? | **Shipped** — `check:scaling` (factorization n=4/6/8, AA-blind chain, 2D negatives, G n=7/9/11, uniqueness gap); falsification **AM** | [scaling-research.md](./scaling-research.md) |
-| **Uniqueness tightening** | Is factorization non-arbitrary beyond top-k? | `equivalenceClassCount`, `scoreGapToSecondClass` vs `n` and model zoo | [factorization.md](./factorization.md) |
-| **Negative controls at scale** | Do random / scrambled-spectrum cases still fail at larger `n`? | Extend **M** grid | [factorization.md](./factorization.md) |
+| ~~**Uniqueness tightening**~~ | Is factorization non-arbitrary beyond top-k? | **Shipped** — scaling checks on n=4/6/8 + XX/sparse zoo; gap narrows with n, stays positive | [factorization.md](./factorization.md) |
+| ~~**Negative controls at scale**~~ | Do random / scrambled-spectrum cases still fail at larger `n`? | **Shipped** — **M** extended to n=8 | [factorization.md](./factorization.md) |
 
 ### Priority 2 — Spectrum-first locality (post-AK)
 
 | Item | Question | Notes | Doc |
 |------|----------|-------|-----|
-| **Grid/torus blind spectrum** | Does MI+bandwidth recover 2D labelings? | **Negative (AL)** — graph-native scorer partial; truth in top score bucket but **8-way tie** on 3×3. Next: tiebreaker (edge MI pattern / MDS–grid fit) | [factorization.md](./factorization.md), [scaling-research.md](./scaling-research.md) |
+| **Grid/torus blind spectrum** | Does MI+bandwidth recover 2D labelings? | **Negative (AL)** — tiebreak shipped (MDS–grid fit + edge-MI heterogeneity) but **true labeling scores below top bucket** on 3×3; spurious labelings inflate MI-NN ratio | [factorization.md](./factorization.md), [scaling-research.md](./scaling-research.md) |
 | **Gapless / frustrated limits** | Is XX failure fundamental for MI-only blind search? | Document or extend scorer; XX remains negative control | `locality_spectrum.rs` |
 | **Minimal extra data** | What beyond {Eₙ} is needed to recover labeling? | **AK** closed {Eₙ}-only; probe correlators / low-weight Pauli expectations | [factorization.md](./factorization.md) |
 

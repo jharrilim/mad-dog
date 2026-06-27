@@ -148,13 +148,20 @@ for (const { label, config, expectRecover } of cases) {
   if (wasm.permMatchDistance !== undefined) {
     console.log(`  permMatchDistance=${wasm.permMatchDistance}`)
   }
-  if (wasm.uniqueness && label === 'spectrum n=6') {
+  if (wasm.uniqueness) {
     const u = wasm.uniqueness
-    const uniqOk = u.trueInTopK && u.bestClassSize <= 2
-    if (!uniqOk) failures++
-    console.log(
-      `  uniqueness classes=${u.equivalenceClassCount} bestSize=${u.bestClassSize} trueInTopK=${u.trueInTopK}${uniqOk ? ' OK' : ' FAIL'}`,
-    )
+    const uniqOk =
+      u.trueInTopK &&
+      u.bestClassSize <= 2 &&
+      u.equivalenceClassCount <= 3 &&
+      u.scoreGapToSecondClass > 0.05
+    const uniqLabels = ['spectrum n=6', 'spectrum n=8', 'spectrum XX n=6']
+    if (uniqLabels.includes(label)) {
+      if (!uniqOk) failures++
+      console.log(
+        `  uniqueness classes=${u.equivalenceClassCount} bestSize=${u.bestClassSize} gap=${u.scoreGapToSecondClass.toFixed(3)} trueInTopK=${u.trueInTopK}${uniqOk ? ' OK' : ' FAIL'}`,
+      )
+    }
   }
   console.log(`  best score=${wasm.best.score.toFixed(3)}  locality=${(wasm.best.localityFraction * 100).toFixed(0)}%  method=${wasm.searchMethod}`)
 }
