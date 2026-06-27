@@ -44,6 +44,7 @@ use crate::poincare::{run_poincare_composite, PoincareCompositeConfig};
 use crate::dispersion::{run_dispersion, DispersionConfig};
 use crate::lorentz::grid_cardinal_speed_cv;
 use crate::run_lorentz_scaling::run_lorentz_scaling;
+use crate::run_scaling_battery::run_multi_clock_g_scaling_boundary;
 use crate::scattering::{run_two_defect_scattering, lattice_separation, ScatteringConfig};
 use crate::locality_spectrum::{run_aa_blind_2d_boundary, run_locality_spectrum_battery};
 use serde::Serialize;
@@ -1269,6 +1270,23 @@ pub fn run_falsification_battery() -> FalsificationBatteryResult {
             detail: format!(
                 "chain n=6 recovered={}; grid 3×3 recovered={}; torus 2×2 recovered={}",
                 b.chain_recovered, b.grid_recovered, b.torus_recovered
+            ),
+        });
+    }
+
+    // AM — multi-clock G relational-time signature breaks on long chains (n≥11)
+    {
+        let b = run_multi_clock_g_scaling_boundary();
+        tests.push(FalsificationTest {
+            id: "AM".to_string(),
+            name: "Multi-clock G signature breaks on long chains; n=9 control passes".to_string(),
+            passed: b.pass,
+            detail: format!(
+                "n=9 G pass={} minPairwiseR2={:.3}; n=11 G fail={} minPairwiseR2={:.3}",
+                b.n9_g_pass,
+                b.n9_min_pairwise_r2,
+                b.n11_g_fail,
+                b.n11_min_pairwise_r2
             ),
         });
     }

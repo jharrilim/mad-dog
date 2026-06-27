@@ -153,13 +153,13 @@ Phases 1–11 and signatures **S1–S10** are shipped. The main gap is no longer
 
 **Suggested first pick:** Extend scaling battery (G at n≥11, full falsification subset).
 
-**2026-06-27 probe ([scaling-research.md](./scaling-research.md)):** chain factorization holds n=4–8; AA-blind chain holds n=4–8; **AA-blind 2D (grid/torus) fails**; multi-clock **G** fails at n=11 (passes n=9); Lorentz L′ CoV=0. **Shipped:** falsification **AL** (2D blind negative); `npm run check:scaling` (minimal battery, ~23s).
+**2026-06-27 probe ([scaling-research.md](./scaling-research.md)):** chain factorization holds n=4–8; AA-blind chain holds n=4–8; **AA-blind 2D (grid/torus) fails**; multi-clock **G** fails at n=11 (passes n=9); Lorentz L′ CoV=0. **Shipped:** falsification **AL** (2D blind negative), **AM** (G breaks n≥11); `npm run check:scaling` (G n=7/9/11, uniqueness gap).
 
 ### Priority 1 — Scaling and uniqueness
 
 | Item | Question | Notes | Doc |
 |------|----------|-------|-----|
-| ~~**Scaling battery (minimal)**~~ | Do key signatures hold at growing `n`? | **Shipped** — `check:scaling` (factorization n=4/6/8, AA-blind chain, 2D negatives, G n=9); extend for G n≥11 | [scaling-research.md](./scaling-research.md) |
+| ~~**Scaling battery (minimal)**~~ | Do key signatures hold at growing `n`? | **Shipped** — `check:scaling` (factorization n=4/6/8, AA-blind chain, 2D negatives, G n=7/9/11, uniqueness gap); falsification **AM** | [scaling-research.md](./scaling-research.md) |
 | **Uniqueness tightening** | Is factorization non-arbitrary beyond top-k? | `equivalenceClassCount`, `scoreGapToSecondClass` vs `n` and model zoo | [factorization.md](./factorization.md) |
 | **Negative controls at scale** | Do random / scrambled-spectrum cases still fail at larger `n`? | Extend **M** grid | [factorization.md](./factorization.md) |
 

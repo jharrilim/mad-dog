@@ -82,7 +82,7 @@ Semi-blind spectrum (uses Ĥ locality term; not AA-blind):
 | 9 | 1.000 | 0.757 | 4 | ✓ |
 | 11 | 1.000 | **0.977** | 0 | **✗** |
 
-Falsification **G** uses n=9 (still passes). No automated check at n=11 today.
+Falsification **G** uses n=9 (still passes). Falsification **AM** documents the n≥11 breakdown; `check:scaling` probes n=7/9/11.
 
 ---
 
@@ -104,15 +104,21 @@ Automate pass-rate vs `n` for: factorization (exact to n=8, annealing beyond wit
 
 **Why first:** Surfaces *where* signatures degrade (G at n≈11) without committing to 2D scorer redesign; produces the Phase 12 “progress metric” from the roadmap.
 
-**Status (2026-06-27):** `npm run check:scaling` runs the minimal battery; falsification **AL** encodes the 2D AA-blind negative.
+**Status (2026-06-27):** `npm run check:scaling` runs the minimal battery; falsification **AL** encodes the 2D AA-blind negative; falsification **AM** encodes multi-clock G breaking at n≥11.
 
-### 2. New falsification **AL** — implemented
+### 2. New falsification **AM** — implemented
+
+**AM:** *Multi-clock G relational-time signature holds at n=9 but breaks at n≥11 (minPairwiseR² ≥ 0.95).*
+
+Complements **G** (n=9 positive). Documents honest scaling boundary: long chains lose edge-clock desync while defect still tracks uniform Δt.
+
+### 3. New falsification **AL** — implemented
 
 **AL:** *AA-blind MI+bandwidth fails on 2D TFIM (3×3 grid, 2×2 torus) while chain n≤8 passes.*
 
 Complements **AA** (chain positive) and **AK** ({Eₙ}-only impossible). Documents an honest boundary: spectrum-first locality is not yet a 2D signature.
 
-### 3. 2D blind scorer (Priority 2) — after scaling battery
+### 4. 2D blind scorer (Priority 2) — after scaling battery
 
 Before extending AA to grid/torus in the battery:
 
@@ -122,11 +128,11 @@ Before extending AA to grid/torus in the battery:
 
 Pauli-mode 2D search already passes (**AH**); the gap is specifically **blind** spectrum inference.
 
-### 4. Uniqueness tightening
+### 5. Uniqueness tightening
 
-At n=6 and n=8 the true class is in top-k with gap 0.11→0.07. Track gap vs n across model zoo; consider requiring `scoreGapToSecondClass > ε(n)` in bench only if gap stays above noise at n=10+ (annealing).
+At n=6 and n=8 the true class is in top-k with gap 0.11→0.07. `check:scaling` includes `uniqueness_gap_n6_vs_n8` (gap narrows but stays positive). Track gap vs n across model zoo; consider requiring `scoreGapToSecondClass > ε(n)` in bench only if gap stays above noise at n=10+ (annealing).
 
-### 5. Blockers
+### 6. Blockers
 
 | Blocker | Impact |
 |---------|--------|

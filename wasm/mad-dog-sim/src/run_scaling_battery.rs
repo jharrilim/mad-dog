@@ -2,6 +2,7 @@
 
 use crate::locality_spectrum::{blind_lattice_case, blind_case};
 use crate::run_factorization::{run_factorization_search, FactorizationSearchConfig};
+use crate::multi_clock::MultiClockResult;
 use crate::run_multi_clock::{run_multi_clock, MultiClockRunConfig};
 use serde::Serialize;
 
@@ -21,40 +22,71 @@ pub struct ScalingBatteryResult {
     pub elapsed_ms: f64,
 }
 
-fn push_factorization_chain(checks: &mut Vec<ScalingCheck>, n: usize) {
-    let eigen = if n <= 4 { 2 } else { 3 };
-    let r = run_factorization_search(&FactorizationSearchConfig {
-        kind: "shuffled_chain".to_string(),
-        n,
-        field: 1.5,
-        seed: 4242,
-        top_k: 5,
-        input_mode: Some("spectrum".to_string()),
-        search_method: Some("exact".to_string()),
-        eigenstate_count: Some(eigen),
-        graph_kind: None,
+
+fn multiclock_chain_config(n: usize) -> MultiClockRunConfig {
+    MultiClockRunConfig {
+        kind: "chain".to_string(),
+        n: Some(n),
         rows: None,
         cols: None,
-        lx: None,
-        ly: None,
         lz: None,
-        distance_decay: None,
-        annealing_steps: None,
-        spectrum_scramble: None,
-    });
+        field: 1.0,
+        dt: 0.2,
+        steps: 40,
+        clock_sites: None,
+        physical_slices: Some(15),
+    }
+}
+
+fn g_criterion_pass(m: &MultiClockResult) -> bool {
+    m.defect_uniform_r2 > 0.95 && m.min_pairwise_r2 < 0.95
+}
+
+fn push_multiclock_chain_g(checks: &mut Vec<ScalingCheck>, n: usize, expect_g_pass: bool) {
+    let m = run_multi_clock(&multiclock_chain_config(n));
+    let g_pass = g_criterion_pass(&m);
+    let pass = if expect_g_pass { g_pass } else { !g_pass };
+    let suffix = if expect_g_pass {
+        String::new()
+    } else {
+        "_g_breaks".to_string()
+    };
     checks.push(ScalingCheck {
-        id: format!("factorization_spectrum_chain_n{n}"),
-        pass: r.recovered_identity,
+        id: format!("multiclock_chain_n{n}{suffix}"),
+        pass,
         detail: format!(
-            "recovered={} score={:.3} gap={:.3}",
-            r.recovered_identity,
-            r.best.score,
-            r.uniqueness
-                .as_ref()
-                .map(|u| u.score_gap_to_second_class)
-                .unwrap_or(-1.0)
+            "expect {}: defectUniformR2={:.3} minPairwiseR2={:.3} inconsistentPairs={}",
+            if expect_g_pass { "G pass" } else { "G fail" },
+            m.defect_uniform_r2,
+            m.min_pairwise_r2,
+            m.inconsistent_pairs
         ),
     });
+}
+
+/// Phase 12 falsification AM: G relational-time signature holds at n=9 but breaks at n≥11.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MultiClockGScalingBoundaryResult {
+    pub pass: bool,
+    pub n9_g_pass: bool,
+    pub n11_g_fail: bool,
+    pub n9_min_pairwise_r2: f64,
+    pub n11_min_pairwise_r2: f64,
+}
+
+pub fn run_multi_clock_g_scaling_boundary() -> MultiClockGScalingBoundaryResult {
+    let n9 = run_multi_clock(&multiclock_chain_config(9));
+    let n11 = run_multi_clock(&multiclock_chain_config(11));
+    let n9_g_pass = g_criterion_pass(&n9);
+    let n11_g_fail = n11.min_pairwise_r2 >= 0.95;
+    MultiClockGScalingBoundaryResult {
+        pass: n9_g_pass && n11_g_fail,
+        n9_g_pass,
+        n11_g_fail,
+        n9_min_pairwise_r2: n9.min_pairwise_r2,
+        n11_min_pairwise_r2: n11.min_pairwise_r2,
+    }
 }
 
 fn push_aa_blind_chain(checks: &mut Vec<ScalingCheck>, n: usize) {
@@ -73,12 +105,60 @@ fn push_aa_blind_chain(checks: &mut Vec<ScalingCheck>, n: usize) {
 pub fn run_scaling_battery() -> ScalingBatteryResult {
     let mut checks = Vec::new();
 
+    let mut gap_n6 = None;
+    let mut gap_n8 = None;
+
     for n in [4usize, 6, 8] {
-        push_factorization_chain(&mut checks, n);
+        let eigen = if n <= 4 { 2 } else { 3 };
+        let r = run_factorization_search(&FactorizationSearchConfig {
+            kind: "shuffled_chain".to_string(),
+            n,
+            field: 1.5,
+            seed: 4242,
+            top_k: 5,
+            input_mode: Some("spectrum".to_string()),
+            search_method: Some("exact".to_string()),
+            eigenstate_count: Some(eigen),
+            graph_kind: None,
+            rows: None,
+            cols: None,
+            lx: None,
+            ly: None,
+            lz: None,
+            distance_decay: None,
+            annealing_steps: None,
+            spectrum_scramble: None,
+        });
+        let gap = r
+            .uniqueness
+            .as_ref()
+            .map(|u| u.score_gap_to_second_class)
+            .unwrap_or(-1.0);
+        if n == 6 {
+            gap_n6 = Some(gap);
+        } else if n == 8 {
+            gap_n8 = Some(gap);
+        }
+        checks.push(ScalingCheck {
+            id: format!("factorization_spectrum_chain_n{n}"),
+            pass: r.recovered_identity,
+            detail: format!(
+                "recovered={} score={:.3} gap={:.3}",
+                r.recovered_identity, r.best.score, gap
+            ),
+        });
     }
 
     for n in [4usize, 6, 8] {
         push_aa_blind_chain(&mut checks, n);
+    }
+
+    if let (Some(g6), Some(g8)) = (gap_n6, gap_n8) {
+        checks.push(ScalingCheck {
+            id: "uniqueness_gap_n6_vs_n8".to_string(),
+            pass: g6 > 0.10 && g8 > 0.06 && g8 < g6,
+            detail: format!("gap6={:.3} gap8={:.3} (narrows, stays positive)", g6, g8),
+        });
     }
 
     let grid = blind_lattice_case("grid", 3, 3, 1.5, 4242);
@@ -101,28 +181,10 @@ pub fn run_scaling_battery() -> ScalingBatteryResult {
         ),
     });
 
-    let n = 9;
-    let m = run_multi_clock(&MultiClockRunConfig {
-        kind: "chain".to_string(),
-        n: Some(n),
-        rows: None,
-        cols: None,
-        lz: None,
-        field: 1.0,
-        dt: 0.2,
-        steps: 40,
-        clock_sites: Some(vec![0, n / 2, n - 1]),
-        physical_slices: Some(15),
-    });
-    let mc_pass = m.defect_uniform_r2 > 0.95 && m.min_pairwise_r2 < 0.95;
-    checks.push(ScalingCheck {
-        id: "multiclock_chain_n9".to_string(),
-        pass: mc_pass,
-        detail: format!(
-            "defectUniformR2={:.3} minPairwiseR2={:.3}",
-            m.defect_uniform_r2, m.min_pairwise_r2
-        ),
-    });
+    for n in [7usize, 9] {
+        push_multiclock_chain_g(&mut checks, n, true);
+    }
+    push_multiclock_chain_g(&mut checks, 11, false);
 
     let pass = checks.iter().all(|c| c.pass);
     ScalingBatteryResult {
@@ -148,6 +210,19 @@ mod tests {
                 .map(|c| format!("  {} — {}", c.id, c.detail))
                 .collect::<Vec<_>>()
                 .join("\n")
+        );
+    }
+
+    #[test]
+    fn multi_clock_g_scaling_boundary() {
+        let b = run_multi_clock_g_scaling_boundary();
+        assert!(
+            b.pass,
+            "n9_g_pass={} n11_g_fail={} n9_minPairwiseR2={:.3} n11_minPairwiseR2={:.3}",
+            b.n9_g_pass,
+            b.n11_g_fail,
+            b.n9_min_pairwise_r2,
+            b.n11_min_pairwise_r2
         );
     }
 }
