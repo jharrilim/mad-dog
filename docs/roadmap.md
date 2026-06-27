@@ -151,15 +151,15 @@ Operational checklist — each maps to falsification tests and roadmap phases.
 
 Phases 1–11 and signatures **S1–S10** are shipped. The main gap is no longer missing demos — it is whether behaviors **scale**, **generalize across models**, and **fail loudly** when they should.
 
-**Suggested first pick:** Scaling battery (pass-rate vs `n`).
+**Suggested first pick:** Extend scaling battery (G at n≥11, full falsification subset).
 
-**2026-06-27 probe ([scaling-research.md](./scaling-research.md)):** chain factorization holds n=4–8; AA-blind chain holds n=4–8; **AA-blind 2D (grid/torus) fails**; multi-clock **G** fails at n=11 (passes n=9); Lorentz L′ CoV=0. Recommend falsification **AL** for 2D blind negative.
+**2026-06-27 probe ([scaling-research.md](./scaling-research.md)):** chain factorization holds n=4–8; AA-blind chain holds n=4–8; **AA-blind 2D (grid/torus) fails**; multi-clock **G** fails at n=11 (passes n=9); Lorentz L′ CoV=0. **Shipped:** falsification **AL** (2D blind negative); `npm run check:scaling` (minimal battery, ~23s).
 
 ### Priority 1 — Scaling and uniqueness
 
 | Item | Question | Notes | Doc |
 |------|----------|-------|-----|
-| **Scaling battery** | Do S1–S10 signatures hold at growing `n`? | Pass-rate curves for K, AA, L/L′, G/G′, AJ, etc.; report where annealing luck dominates | [falsification.md](./falsification.md) |
+| ~~**Scaling battery (minimal)**~~ | Do key signatures hold at growing `n`? | **Shipped** — `check:scaling` (factorization n=4/6/8, AA-blind chain, 2D negatives, G n=9); extend for G n≥11 | [scaling-research.md](./scaling-research.md) |
 | **Uniqueness tightening** | Is factorization non-arbitrary beyond top-k? | `equivalenceClassCount`, `scoreGapToSecondClass` vs `n` and model zoo | [factorization.md](./factorization.md) |
 | **Negative controls at scale** | Do random / scrambled-spectrum cases still fail at larger `n`? | Extend **M** grid | [factorization.md](./factorization.md) |
 
@@ -167,7 +167,7 @@ Phases 1–11 and signatures **S1–S10** are shipped. The main gap is no longer
 
 | Item | Question | Notes | Doc |
 |------|----------|-------|-----|
-| **Grid/torus blind spectrum** | Does MI+bandwidth recover 2D labelings? | Extend **AA** beyond chain TFIM; 3×3 grid, 2×2 torus | [factorization.md](./factorization.md) |
+| **Grid/torus blind spectrum** | Does MI+bandwidth recover 2D labelings? | **Negative (AL)** — 3×3 grid, 2×2 torus fail; chain passes. Scorer fix open | [factorization.md](./factorization.md) |
 | **Gapless / frustrated limits** | Is XX failure fundamental for MI-only blind search? | Document or extend scorer; XX remains negative control | `locality_spectrum.rs` |
 | **Minimal extra data** | What beyond {Eₙ} is needed to recover labeling? | **AK** closed {Eₙ}-only; probe correlators / low-weight Pauli expectations | [factorization.md](./factorization.md) |
 
