@@ -35,6 +35,7 @@ mod run_falsification;
 mod run_holography;
 mod multi_clock;
 mod modular_time;
+mod modular_multi_clock;
 mod boost_invariance;
 mod dispersion;
 mod lorentz;
@@ -42,6 +43,7 @@ mod run_light_cone_compare;
 mod run_lorentz_scaling;
 mod run_multi_clock;
 mod run_modular_dual_clock;
+mod run_modular_multi_clock;
 mod particle_stability;
 mod run_matter;
 mod run_refinement;
@@ -83,6 +85,7 @@ use run_lorentz_scaling::run_lorentz_scaling;
 use run_multi_clock::{run_multi_clock, MultiClockRunConfig};
 use run_modular_dual_clock::run_modular_dual_clock;
 use modular_time::ModularDualClockConfig;
+use run_modular_multi_clock::{run_modular_multi_clock, ModularMultiClockRunConfig};
 use scattering::{run_two_defect_scattering, ScatteringConfig};
 use run_refinement::{
     run_adaptive_refinement, run_predictive_refinement, run_refinement_n_compare,
@@ -187,6 +190,16 @@ pub fn run_modular_dual_clock_json(config_json: &str) -> Result<String, JsValue>
     let config: ModularDualClockConfig =
         serde_json::from_str(config_json).map_err(|e| JsValue::from_str(&e.to_string()))?;
     let mut result = run_modular_dual_clock(&config);
+    result.elapsed_ms = js_sys::Date::now() - start;
+    serde_json::to_string(&result).map_err(|e| JsValue::from_str(&e.to_string()))
+}
+
+#[wasm_bindgen]
+pub fn run_modular_multi_clock_json(config_json: &str) -> Result<String, JsValue> {
+    let start = js_sys::Date::now();
+    let config: ModularMultiClockRunConfig =
+        serde_json::from_str(config_json).map_err(|e| JsValue::from_str(&e.to_string()))?;
+    let mut result = run_modular_multi_clock(&config);
     result.elapsed_ms = js_sys::Date::now() - start;
     serde_json::to_string(&result).map_err(|e| JsValue::from_str(&e.to_string()))
 }

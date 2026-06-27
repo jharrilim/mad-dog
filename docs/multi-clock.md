@@ -55,3 +55,27 @@ Falsification test **G**: defectUniformR² > 0.95 **and** minPairwiseR² < 0.95.
 - Z-signal threshold clocks only (modular-flow network on lattices not yet wired).
 - ~~1D chain; cube multi-clock not wired.~~ **2026-06 Phase 3:** grid 3×3 and cube 2×2×3 multi-clock; simultaneity bend metric **N**.
 - R² threshold 0.95 is hand-tuned on TFIM demos.
+
+## Modular-flow clock network (shipped 2026-06-27)
+
+Extends the dual modular clock (**D**, **D′**) to N sites on chain / grid / cube — same pairwise matrix as Z-threshold clocks, but ticks come from cumulative modular entropy ΔS on single-site regions.
+
+WASM: `run_modular_multi_clock_json` → `ModularMultiClockResult`
+
+```ts
+import { runModularMultiClockAsync } from '@/sim/runner-async'
+
+const result = await runModularMultiClockAsync({
+  kind: 'grid',
+  rows: 3,
+  cols: 3,
+  field: 1,
+  dt: 0.2,
+  steps: 40,
+  modularSlices: 12,
+})
+```
+
+Falsification **AJ** (grid): `minPairwiseR² < 0.95` on the uniform-inclusive network (modular site clocks can agree with each other while still disagreeing with uniform Δt).
+
+UI: **Experiments** → *Modular-flow clock network*

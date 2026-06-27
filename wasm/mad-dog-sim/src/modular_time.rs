@@ -44,7 +44,7 @@ pub struct ModularDualClockResult {
     pub backend: &'static str,
 }
 
-fn cumulative_modular_time(trajectory: &[TrajectoryPoint], region: &[usize]) -> Vec<f64> {
+pub(crate) fn cumulative_modular_time(trajectory: &[TrajectoryPoint], region: &[usize]) -> Vec<f64> {
     let mut tau = vec![0.0];
     let mut prev_s = entropy_of_region(&trajectory[0].psi, region);
     for k in 1..trajectory.len() {
@@ -55,7 +55,7 @@ fn cumulative_modular_time(trajectory: &[TrajectoryPoint], region: &[usize]) -> 
     tau
 }
 
-fn event_ticks_from_cumulative(cumulative: &[f64], num_slices: usize) -> Vec<usize> {
+pub(crate) fn event_ticks_from_cumulative(cumulative: &[f64], num_slices: usize) -> Vec<usize> {
     let max = *cumulative.last().unwrap_or(&0.0);
     if max < 1e-12 {
         return (0..cumulative.len()).collect();

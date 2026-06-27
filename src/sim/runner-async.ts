@@ -18,6 +18,8 @@ import type {
   LightConeCompareResult,
   ModularDualClockConfig,
   ModularDualClockResult,
+  ModularMultiClockConfig,
+  ModularMultiClockResult,
   MultiClockConfig,
   MultiClockResult,
   RefinementNCompareConfig,
@@ -114,6 +116,9 @@ export type AdaptiveRefinementResultWithBackend = AdaptiveRefinementResult & {
 export type DualClockResultWithBackend = DualClockResult & { backend: SimBackend }
 export type MultiClockResultWithBackend = MultiClockResult & { backend: SimBackend }
 export type ModularDualClockResultWithBackend = ModularDualClockResult & {
+  backend: SimBackend
+}
+export type ModularMultiClockResultWithBackend = ModularMultiClockResult & {
   backend: SimBackend
 }
 export type ScatteringResultWithBackend = ScatteringResult & { backend: SimBackend }
@@ -240,6 +245,12 @@ export async function runModularDualClockAsync(
   config: ModularDualClockConfig,
 ): Promise<ModularDualClockResultWithBackend> {
   return runWasm('modularDualClock', config)
+}
+
+export async function runModularMultiClockAsync(
+  config: ModularMultiClockConfig,
+): Promise<ModularMultiClockResultWithBackend> {
+  return runWasm('modularMultiClock', config)
 }
 
 export async function runSimultaneityAsync(

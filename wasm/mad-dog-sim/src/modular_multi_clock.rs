@@ -1,26 +1,29 @@
-//! N-clock consistency networks — extend relational time to multiple physical clocks.
+//! N-site modular-flow clock networks — entropy-threshold clocks on lattices.
 
-use crate::quantum::{expectation_z, QuantumState};
+use crate::modular_time::{cumulative_modular_time, event_ticks_from_cumulative};
+use crate::multi_clock::{
+    default_clock_sites_chain, default_clock_sites_cube, default_clock_sites_grid,
+};
+use crate::quantum::QuantumState;
 use crate::relational_time::{
-    evolve_trajectory, fit_affine, physical_clock_indices, physical_time_at_uniform,
-    TimeMapPoint,
+    evolve_trajectory, fit_affine, physical_time_at_uniform, TimeMapPoint,
 };
 use serde::{Deserialize, Serialize};
 
-fn default_physical_slices() -> usize {
-    15
+fn default_modular_slices() -> usize {
+    12
 }
 
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct MultiClockConfig {
+pub struct ModularMultiClockConfig {
     pub n: usize,
     pub dt: f64,
     pub steps: usize,
     #[serde(default)]
     pub clock_sites: Option<Vec<usize>>,
-    #[serde(default = "default_physical_slices")]
-    pub physical_slices: usize,
+    #[serde(default = "default_modular_slices")]
+    pub modular_slices: usize,
     #[serde(default)]
     pub defect_site: Option<usize>,
     #[serde(default)]
@@ -29,9 +32,10 @@ pub struct MultiClockConfig {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct PhysicalClockReading {
+pub struct ModularClockReading {
     pub site: usize,
     pub label: String,
+    pub modular_tau: Vec<f64>,
     pub time_map: Vec<TimeMapPoint>,
     pub sync_r2_vs_uniform: f64,
     pub sync_slope_vs_uniform: f64,
@@ -39,13 +43,13 @@ pub struct PhysicalClockReading {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct MultiClockResult {
+pub struct ModularMultiClockResult {
     pub kind: String,
     pub label: String,
     pub sites: usize,
     pub defect_site: usize,
     pub labels: Vec<String>,
-    pub clocks: Vec<PhysicalClockReading>,
+    pub clocks: Vec<ModularClockReading>,
     pub pairwise_r2: Vec<Vec<f64>>,
     pub min_pairwise_r2: f64,
     pub defect_uniform_r2: f64,
@@ -53,29 +57,6 @@ pub struct MultiClockResult {
     pub inconsistent_pairs: usize,
     pub elapsed_ms: f64,
     pub backend: &'static str,
-}
-
-pub(crate) fn default_clock_sites_chain(n: usize) -> Vec<usize> {
-    let center = n / 2;
-    vec![0, center, n.saturating_sub(1)]
-}
-
-pub(crate) fn default_clock_sites_grid(rows: usize, cols: usize, defect_site: usize) -> Vec<usize> {
-    let corners = [0, cols - 1, (rows - 1) * cols, rows * cols - 1];
-    if corners.contains(&defect_site) {
-        vec![corners[0], corners[2], corners[3]]
-    } else {
-        vec![corners[0], defect_site, corners[3]]
-    }
-}
-
-pub(crate) fn default_clock_sites_cube(sites: usize, defect_site: usize) -> Vec<usize> {
-    vec![0, defect_site, sites - 1]
-}
-
-/// Interpolated physical tick reading at uniform slice `k`.
-fn physical_time_at_uniform_local(phys_indices: &[usize], k: usize) -> f64 {
-    physical_time_at_uniform(phys_indices, k)
 }
 
 fn uniform_times(steps: usize) -> Vec<f64> {
@@ -99,8 +80,8 @@ fn sync_r2_time_map(time_map: &[TimeMapPoint]) -> f64 {
     fit_affine(&xs, &ys).2
 }
 
-fn build_time_map(phys_indices: &[usize]) -> Vec<TimeMapPoint> {
-    phys_indices
+fn build_time_map(tick_indices: &[usize]) -> Vec<TimeMapPoint> {
+    tick_indices
         .iter()
         .enumerate()
         .map(|(k_physical, &uniform_idx)| TimeMapPoint {
@@ -110,14 +91,14 @@ fn build_time_map(phys_indices: &[usize]) -> Vec<TimeMapPoint> {
         .collect()
 }
 
-pub fn build_multi_clock(
+pub fn build_modular_multi_clock(
     hamiltonian: &crate::quantum::Hamiltonian,
     initial: QuantumState,
     reference: QuantumState,
-    config: &MultiClockConfig,
+    config: &ModularMultiClockConfig,
     kind: &str,
     label: &str,
-) -> MultiClockResult {
+) -> ModularMultiClockResult {
     let sites = config.n;
     let defect_site = config.defect_site.unwrap_or(sites / 2);
     let clock_sites = config.clock_sites.clone().unwrap_or_else(|| match kind {
@@ -139,27 +120,24 @@ pub fn build_multi_clock(
         6,
     );
 
-    let base_z: Vec<f64> = (0..sites)
-        .map(|q| expectation_z(&initial, q))
-        .collect();
-
     let uniform_track = uniform_times(trajectory.len());
     let mut phys_tracks: Vec<Vec<f64>> = Vec::with_capacity(clock_sites.len());
     let mut clocks = Vec::with_capacity(clock_sites.len());
 
     for &site in &clock_sites {
-        let (indices, _) =
-            physical_clock_indices(&trajectory, site, &base_z, config.physical_slices);
-        let time_map = build_time_map(&indices);
+        let region = vec![site];
+        let modular_tau = cumulative_modular_time(&trajectory, &region);
+        let tick_indices = event_ticks_from_cumulative(&modular_tau, config.modular_slices);
+        let time_map = build_time_map(&tick_indices);
         let track: Vec<f64> = (0..trajectory.len())
-            .map(|k| physical_time_at_uniform_local(&indices, k))
+            .map(|k| physical_time_at_uniform(&tick_indices, k))
             .collect();
         let sync = sync_r2_time_map(&time_map);
         let (slope, _, _) = fit_affine(
             &time_map.iter().map(|p| p.tau_physical).collect::<Vec<_>>(),
             &time_map.iter().map(|p| p.tau_uniform).collect::<Vec<_>>(),
         );
-        clocks.push(PhysicalClockReading {
+        clocks.push(ModularClockReading {
             site,
             label: if site == defect_site {
                 format!("Site {site} (defect)")
@@ -168,6 +146,7 @@ pub fn build_multi_clock(
             } else {
                 format!("Site {site}")
             },
+            modular_tau,
             time_map,
             sync_r2_vs_uniform: sync,
             sync_slope_vs_uniform: slope,
@@ -178,7 +157,6 @@ pub fn build_multi_clock(
     let mut labels = vec!["Uniform (Δt)".to_string()];
     labels.extend(clocks.iter().map(|c| c.label.clone()));
 
-    // Index 0 = uniform; 1.. = physical clocks.
     let n_clocks = 1 + clock_sites.len();
     let mut pairwise_r2 = vec![vec![1.0; n_clocks]; n_clocks];
     let mut all_tracks: Vec<&[f64]> = vec![&uniform_track];
@@ -235,7 +213,7 @@ pub fn build_multi_clock(
         _ => 1.0,
     };
 
-    MultiClockResult {
+    ModularMultiClockResult {
         kind: kind.to_string(),
         label: label.to_string(),
         sites,
@@ -255,7 +233,7 @@ pub fn build_multi_clock(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::tfim_chain;
+    use crate::models::{tfim_chain, tfim_grid};
     use crate::quantum::QuantumState;
 
     fn defect_reference(n: usize, center: usize) -> (QuantumState, QuantumState) {
@@ -267,27 +245,71 @@ mod tests {
     }
 
     #[test]
-    fn multi_clock_network_not_globally_consistent() {
+    fn modular_multi_clock_chain_not_globally_consistent() {
         let n = 9;
         let model = tfim_chain(n, 1.0, 1.0);
         let (initial, reference) = defect_reference(n, n / 2);
-        let result = build_multi_clock(
+        let result = build_modular_multi_clock(
             &model.hamiltonian,
             initial,
             reference,
-            &MultiClockConfig {
+            &ModularMultiClockConfig {
                 n,
                 dt: 0.2,
                 steps: 40,
                 clock_sites: Some(vec![0, n / 2, n - 1]),
-                physical_slices: 15,
+                modular_slices: 12,
                 defect_site: Some(n / 2),
                 edge_sites: Some([0, n - 1]),
             },
             "chain",
             "TFIM chain",
         );
-        assert!(result.defect_uniform_r2 > 0.9);
-        assert!(result.min_pairwise_r2 < 0.95);
+        assert!(
+            result.defect_uniform_r2 > 0.85,
+            "defectUniform={:.3}",
+            result.defect_uniform_r2
+        );
+        assert!(
+            result.min_pairwise_r2 < 0.95,
+            "minPair={:.3}",
+            result.min_pairwise_r2
+        );
+    }
+
+    #[test]
+    fn modular_multi_clock_grid_not_globally_consistent() {
+        let rows = 3;
+        let cols = 3;
+        let sites = rows * cols;
+        let model = tfim_grid(rows, cols, 1.0, 1.0);
+        let defect_site = (rows / 2) * cols + cols / 2;
+        let (initial, reference) = defect_reference(sites, defect_site);
+        let result = build_modular_multi_clock(
+            &model.hamiltonian,
+            initial,
+            reference,
+            &ModularMultiClockConfig {
+                n: sites,
+                dt: 0.2,
+                steps: 40,
+                clock_sites: None,
+                modular_slices: 12,
+                defect_site: Some(defect_site),
+                edge_sites: Some([0, sites - 1]),
+            },
+            "grid",
+            "TFIM grid",
+        );
+        assert!(
+            result.min_pairwise_r2 < 0.95,
+            "minPair={:.3}",
+            result.min_pairwise_r2
+        );
+        assert!(
+            result.defect_uniform_r2 < 0.95,
+            "modular grid clocks should desync from uniform Δt, defectUniform={:.3}",
+            result.defect_uniform_r2
+        );
     }
 }

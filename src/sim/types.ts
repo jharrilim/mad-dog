@@ -460,6 +460,44 @@ export interface ModularDualClockResult {
   backend?: SimBackend
 }
 
+export interface ModularMultiClockConfig {
+  kind?: 'chain' | 'grid' | 'cube'
+  n?: number
+  rows?: number
+  cols?: number
+  lz?: number
+  field: number
+  dt: number
+  steps: number
+  clockSites?: number[]
+  modularSlices?: number
+}
+
+export interface ModularClockReading {
+  site: number
+  label: string
+  modularTau: number[]
+  timeMap: TimeMapPoint[]
+  syncR2VsUniform: number
+  syncSlopeVsUniform: number
+}
+
+export interface ModularMultiClockResult {
+  kind: string
+  label: string
+  sites: number
+  defectSite: number
+  labels: string[]
+  clocks: ModularClockReading[]
+  pairwiseR2: number[][]
+  minPairwiseR2: number
+  defectUniformR2: number
+  edgeEdgeR2: number
+  inconsistentPairs: number
+  elapsedMs: number
+  backend?: SimBackend
+}
+
 export interface SimultaneityConfig {
   n: number
   field: number

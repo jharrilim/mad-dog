@@ -10,6 +10,7 @@ import {
   initSync,
   run_multi_clock_json,
   run_modular_dual_clock_json,
+  run_modular_multi_clock_json,
   run_simultaneity_json,
 } from '../src/sim/wasm/pkg/mad_dog_sim.js'
 
@@ -69,6 +70,25 @@ console.log(
   `Modular vs uniform: minMod=${modular.minModularUniformR2.toFixed(3)} minZEdge=${modular.minZEdgeUniformR2.toFixed(3)} ${modOk ? 'OK' : 'FAIL'}`,
 )
 if (!modOk) failures++
+
+const modGrid = JSON.parse(
+  run_modular_multi_clock_json(
+    JSON.stringify({
+      kind: 'grid',
+      rows: 3,
+      cols: 3,
+      field: 1,
+      dt: 0.2,
+      steps: 40,
+      modularSlices: 12,
+    }),
+  ),
+)
+const modGridOk = modGrid.minPairwiseR2 < 0.95 && modGrid.inconsistentPairs >= 1
+console.log(
+  `Grid 3×3 modular network: defectUniform=${modGrid.defectUniformR2.toFixed(3)} minPair=${modGrid.minPairwiseR2.toFixed(3)} ${modGridOk ? 'OK' : 'FAIL'}`,
+)
+if (!modGridOk) failures++
 
 const sim = JSON.parse(
   run_simultaneity_json(

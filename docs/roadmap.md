@@ -2,7 +2,7 @@
 
 Dated backlog for testing whether systems **behave Mad-Dog-ly** — recoverable locality, relational time, holographic entanglement, excitations, branches, and (eventually) Lorentz-ish causality — without claiming to derive our universe from axioms.
 
-**Last updated:** 2026-06-27 (Phase 11 AD)
+**Last updated:** 2026-06-27 (Phase 11 AJ — modular-flow clock network)
 
 See also: [falsification.md](./falsification.md) (automated battery), [open-questions.md](./open-questions.md) (honest limits).
 
@@ -16,7 +16,7 @@ Operational checklist — each maps to falsification tests and roadmap phases.
 |----|-----------|---------|-------|--------|
 | **S1** | Locality entanglement-readable | A, A′, **K**, **M** | 1 | **Shipped** — model zoo ensemble + negative controls |
 | **S2** | Low-dim MI geometry | B, J, **J′** | 2 | **Shipped** — chain + 2×2×3 cube; dim sweep bench |
-| **S3** | Relational time (no global clock) | D, D′, G, G′, **N** | **Shipped** — grid/cube clocks; modular vs uniform; simultaneity bend |
+| **S3** | Relational time (no global clock) | D, D′, G, G′, **N**, **AJ** | **Shipped** — grid/cube clocks; modular-flow network; simultaneity bend |
 | **S4** | Causal light cones | E, B, **Q** | **Shipped** — scattering phase + grid isotropy |
 | **S5** | Holographic entanglement | C, C′, F, F′, H, **R′** | **Shipped** — RT quench series, predictive split, geodesic proxy |
 | **S6** | Particles = excitations | E, **S′** | **Shipped** — ordered-phase defect localization |
@@ -140,6 +140,8 @@ Operational checklist — each maps to falsification tests and roadmap phases.
 | UI cube/torus presets | `FactorizationViz.tsx` torus + cube buttons |
 | QECC on non-TFIM chains | `model: xx \| heisenberg` on decoherence/QECC configs; falsification **AI** |
 | UI QECC model presets | `QeccViz.tsx` TFIM / XX / Heisenberg |
+| Modular-flow clock network (grid/cube) | `run_modular_multi_clock_json`; entropy-threshold N clocks; falsification **AJ** |
+| UI modular network | `ModularMultiClockViz.tsx` chain / grid / cube presets |
 
 ---
 
@@ -149,10 +151,9 @@ Phase 11 **shipped 2026-06-27**. Remaining backlog:
 
 | Priority | Item | Notes | Doc |
 |----------|------|-------|-----|
-| **Lower** | **Modular / QFT-style clock graphs** | Z-threshold clocks on lattices shipped; modular-flow networks on grids/cubes not wired | [multi-clock.md](./multi-clock.md), [emergent-time.md](./emergent-time.md) |
 | **Research** | **True eigenvalue-only blind inference** | Spectrum mode still uses eigenvector amplitudes; no {Eₙ}-only recovery | [factorization.md](./factorization.md), Phase 1 deferred |
 
-**Suggested first pick:** Modular / QFT-style clock graphs.
+**Suggested first pick:** True eigenvalue-only blind inference (research).
 
 ## Deferred (not rejected)
 

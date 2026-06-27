@@ -44,6 +44,7 @@ Run: `npm run check:falsification` or **Experiments → Falsification Tests**.
 | **AG** | Same \|ψ⟩ factorization stable under embed/truncate | `embeddingFaithful`: roundtrip F > 0.99, \|Δlocality_roundtrip\| < 0.05, roundtrip dim within 1 of native |
 | **AH** | Cube/torus factorization search | 2×2×2 cube + 2×2 torus: `recoveredIdentity` and locality > 90% (Pauli, exact) |
 | **AI** | QECC on non-TFIM chains | XX (n=8) and Heisenberg (n=6 tuned): `codeSubspaceFound` and `fidelitySelectivity` > 1.1 |
+| **AJ** | Grid modular-flow clock network not globally consistent | 3×3 grid: `minPairwiseR² < 0.95` (uniform-inclusive network) |
 | **R′** | RT slope deficit structured vs density under quench *(prototype diagnostic)* | `structuredDeviation` on hold-out `(n, field, seed)` grid (3/3); calibration `n=10, h=1.5, seed=7711` informational |
 | **F′** | Predictive RT warning precedes failure; late split recovers *(prototype diagnostic)* | hold-out grid: `leadTime > 0` and late split accepted (3/3) |
 | **C′** | Curvature proxy suite internally consistent *(prototype diagnostic)* | hold-out grid: geodesic deviation tracks density or cross-proxy (3/3) |
@@ -61,7 +62,7 @@ Run: `npm run check:falsification` or **Experiments → Falsification Tests**.
 | **AC** | Holographic structure absent in ordered phase, emerges at critical point | `emergenceNearCritical` and `orderedPhaseNonholographic` on field sweep h=0.3..1.5; profile: None/None/None→6/6/6 at h_c≈1.0 |
 | **M** | Negative controls reject fake locality | `random` n=6 and scrambled-spectrum shuffled chain do not recover |
 
-**K**, **L**, **L′**, **O**, **P**, **Q**, **AD**, **AE**, **AF**, **AG**, **AH**, **AI**, **R′**, **F′**, **C′**, **I′**, **S′**, **T′**, **U′**, **V′**, **W′**, **X**, **Y**, **Z**, **AA**, **AB**, **AC**, and **M** target [roadmap.md](./roadmap.md) signatures **S1**, **S4**, **S5**, **S6–S8**, **S9**, and **S10**.
+**K**, **L**, **L′**, **O**, **P**, **Q**, **AD**, **AE**, **AF**, **AG**, **AH**, **AI**, **AJ**, **R′**, **F′**, **C′**, **I′**, **S′**, **T′**, **U′**, **V′**, **W′**, **X**, **Y**, **Z**, **AA**, **AB**, **AC**, and **M** target [roadmap.md](./roadmap.md) signatures **S1**, **S4**, **S5**, **S6–S8**, **S9**, and **S10**.
 
 ## Known circularity (Phase 9 — complete)
 

@@ -9,6 +9,7 @@ use crate::run_factorization_ensemble::run_factorization_ensemble;
 use crate::run_light_cone_compare::{run_light_cone_compare, LightConeCompareConfig};
 use crate::modular_time::ModularDualClockConfig;
 use crate::run_modular_dual_clock::run_modular_dual_clock;
+use crate::run_modular_multi_clock::{run_modular_multi_clock, ModularMultiClockRunConfig};
 use crate::run_refinement::{
     run_adaptive_refinement, run_predictive_refinement, run_refinement_quench,
     AdaptiveRefinementConfig, RefinementQuenchConfig,
@@ -868,6 +869,31 @@ pub fn run_falsification_battery() -> FalsificationBatteryResult {
                 xx.excitation.model,
                 heisenberg.qecc.fidelity_selectivity,
                 heisenberg.excitation.model
+            ),
+        });
+    }
+
+    // AJ — modular-flow multi-clock on 3×3 grid: defect local, network not globally consistent
+    {
+        let m = run_modular_multi_clock(&ModularMultiClockRunConfig {
+            kind: "grid".to_string(),
+            n: None,
+            rows: Some(3),
+            cols: Some(3),
+            lz: None,
+            field: 1.0,
+            dt: 0.2,
+            steps: 40,
+            clock_sites: None,
+            modular_slices: Some(12),
+        });
+        tests.push(FalsificationTest {
+            id: "AJ".to_string(),
+            name: "Grid modular-flow clock network lacks global consistency".to_string(),
+            passed: m.min_pairwise_r2 < 0.95 && m.inconsistent_pairs >= 1,
+            detail: format!(
+                "{} defectUniformR2={:.3}, minPairwiseR2={:.3}, edgeEdgeR2={:.3}",
+                m.label, m.defect_uniform_r2, m.min_pairwise_r2, m.edge_edge_r2
             ),
         });
     }

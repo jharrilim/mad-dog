@@ -16,6 +16,7 @@ import { FactorizationCompareViz } from '@/components/FactorizationCompareViz'
 import { FactorizationRefinementViz } from '@/components/FactorizationRefinementViz'
 import { LightConeCompareViz } from '@/components/LightConeCompareViz'
 import { ModularClockViz } from '@/components/ModularClockViz'
+import { ModularMultiClockViz } from '@/components/ModularMultiClockViz'
 import { ScatteringViz } from '@/components/ScatteringViz'
 import { DecoherenceQuenchViz } from '@/components/DecoherenceQuenchViz'
 import { ExcitationSubspaceViz } from '@/components/ExcitationSubspaceViz'
@@ -74,6 +75,7 @@ function Experiments() {
           <Spacetime2DViz />
           <LightConeCompareViz />
           <ModularClockViz />
+          <ModularMultiClockViz />
           <ScatteringViz />
           <DecoherenceQuenchViz />
           <ExcitationSubspaceViz />

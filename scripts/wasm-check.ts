@@ -24,6 +24,7 @@ import {
   run_universe_slice_json,
   run_light_cone_compare_json,
   run_modular_dual_clock_json,
+  run_modular_multi_clock_json,
   run_multi_clock_json,
   run_simultaneity_json,
   run_lorentz_scaling_json,
@@ -438,6 +439,25 @@ for (const config of [
   )
   console.log('\nmodularDualClock:')
   ok(`syncR² mod=${r.syncR2Modular.toFixed(4)}`)
+}
+
+{
+  const r = JSON.parse(
+    run_modular_multi_clock_json(
+      JSON.stringify({
+        kind: 'grid',
+        rows: 3,
+        cols: 3,
+        field: 1,
+        dt: 0.2,
+        steps: 40,
+        modularSlices: 12,
+      }),
+    ),
+  )
+  console.log('\nmodularMultiClock (grid 3x3):')
+  if (r.minPairwiseR2 >= 0.95) fail('network should not be globally consistent with uniform Δt')
+  else ok(`minPairwiseR2=${r.minPairwiseR2.toFixed(3)} defectUniform=${r.defectUniformR2.toFixed(3)}`)
 }
 
 // --- Scattering (lite) ---
