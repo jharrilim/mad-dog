@@ -38,6 +38,9 @@ pub struct DispersionResult {
     pub omega_intercept: f64,
     pub linear_r2: f64,
     pub linear_at_small_k: bool,
+    /// Rest mass from ω² = m² + v²k² fit on measured modes (ħ=1 quench units).
+    pub effective_mass: f64,
+    pub group_velocity_mean: f64,
     pub elapsed_ms: f64,
     pub backend: &'static str,
 }
@@ -96,6 +99,17 @@ fn com_velocity(
     fit_affine(&ts, &coms).0
 }
 
+/// Infer m from ω² = m² + v²k² across measured modes.
+pub fn effective_mass_from_modes(modes: &[DispersionMode]) -> f64 {
+    if modes.is_empty() {
+        return 0.0;
+    }
+    let xs: Vec<f64> = modes.iter().map(|m| m.k * m.k).collect();
+    let ys: Vec<f64> = modes.iter().map(|m| m.omega * m.omega).collect();
+    let (_, intercept, _) = fit_affine(&xs, &ys);
+    intercept.max(0.0).sqrt()
+}
+
 pub fn build_dispersion(
     hamiltonian: &Hamiltonian,
     config: &DispersionConfig,
@@ -142,6 +156,8 @@ pub fn build_dispersion(
     };
     let linear_at_small_k =
         v_mean > 0.01 && v_cov < 0.35 && slope > 0.0 && r2 > 0.85 && intercept.abs() < slope * 0.35;
+    let effective_mass = effective_mass_from_modes(&modes);
+    let group_velocity_mean = v_mean;
 
     DispersionResult {
         n,
@@ -151,6 +167,8 @@ pub fn build_dispersion(
         omega_intercept: intercept,
         linear_r2: r2,
         linear_at_small_k,
+        effective_mass,
+        group_velocity_mean,
         elapsed_ms: 0.0,
         backend: "wasm",
     }
@@ -176,5 +194,6 @@ mod tests {
         });
         assert_eq!(result.modes.len(), 2);
         assert!(result.omega_slope.is_finite());
+        assert!(result.effective_mass.is_finite());
     }
 }

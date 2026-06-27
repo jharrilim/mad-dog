@@ -50,6 +50,8 @@ Falsification **AD**: `overlapDetected && |interactionPhaseShift| > 0.05 && fini
 
 On grid/cube, dual worldlines use per-defect global peak tracking (`embed_dim ≥ 2`). Falsification **AE** checks 3×3 grid propagation.
 
+**Effective mass (chain, Phase 11):** fit ω² = m² + v²k² on wavepacket modes at the same `(n, h, dt, steps)` as scattering. Reported as `effectiveMass`; `velocityDispersionRatio` compares peak-tracked defect speed to wavepacket v_g (diagnostic — not expected ≈ 1). Falsification **AF**.
+
 ```ts
 await runScatteringAsync({
   kind: 'grid',
@@ -89,4 +91,4 @@ Tracked on [roadmap.md](./roadmap.md) Phase 11:
 
 1. ~~**Scattering phase shift / time delay**~~ — **Shipped 2026-06-27** — falsification **AD**; see [scattering.md](./scattering.md)
 2. ~~**Two defects on 2D grid or 3D cube**~~ — **Shipped 2026-06-27** — `kind: grid|cube` in `scattering.rs`; falsification **AE** (3×3 grid); UI lattice selector
-3. **Effective mass** from dispersion relation of lattice excitations (extends falsification **O**).
+3. ~~**Effective mass** from dispersion relation of lattice excitations.~~ **Shipped 2026-06-27** — falsification **AF**; `effectiveMass` on dispersion + chain scattering.

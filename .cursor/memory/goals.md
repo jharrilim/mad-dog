@@ -11,4 +11,4 @@
 
 See phased signature program in [roadmap.md](../docs/roadmap.md) (S1–S10). **Phases 1–10 complete.**
 
-Next (Phase 11): effective mass from dispersion — see roadmap for full backlog.
+Next (Phase 11): factorization embedding comparison, 3D/torus search — see roadmap.

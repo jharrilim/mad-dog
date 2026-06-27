@@ -697,6 +697,31 @@ pub fn run_falsification_battery() -> FalsificationBatteryResult {
         });
     }
 
+    // AF — effective mass from ω² = m² + v²k² on same chain as scattering
+    {
+        let s = run_two_defect_scattering(&ScatteringConfig {
+            defect_sites: Some([3, 8]),
+            lite: true,
+            taylor_order: 4,
+            ..Default::default()
+        });
+        let passed = s.kind == "chain"
+            && s.effective_mass.is_finite()
+            && s.effective_mass > 0.01
+            && s.dispersion_velocity_mean > 0.01;
+        tests.push(FalsificationTest {
+            id: "AF".to_string(),
+            name: "Effective mass from dispersion ω(k) on scattering chain".to_string(),
+            passed,
+            detail: format!(
+                "m_eff={:.3}, v_g={:.3}, v_scatter/v_g={:.2}",
+                s.effective_mass,
+                s.dispersion_velocity_mean,
+                s.velocity_dispersion_ratio
+            ),
+        });
+    }
+
     // R′ — RT deviation tracks excitation density (hold-out grid; tuning default is calibration only)
     {
         let cal = REFINEMENT_TUNING_DEFAULT;

@@ -544,6 +544,9 @@ export interface ScatteringResult {
   overlapDetected: boolean
   interactionPhaseShift: number
   separationTimeDelay: number
+  effectiveMass: number
+  dispersionVelocityMean: number
+  velocityDispersionRatio: number
   elapsedMs: number
   backend?: SimBackend
 }
@@ -594,6 +597,8 @@ export interface DispersionResult {
   omegaIntercept: number
   linearR2: number
   linearAtSmallK: boolean
+  effectiveMass: number
+  groupVelocityMean: number
   elapsedMs: number
   backend?: SimBackend
 }

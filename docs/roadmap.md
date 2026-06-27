@@ -132,26 +132,24 @@ Operational checklist — each maps to falsification tests and roadmap phases.
 | UI phase chart + overlap marker | `ScatteringViz.tsx` |
 | h sweep columns | `sweep:scattering` reports phaseShift, timeDelay |
 | Two-defect scattering on grid/cube | `kind: grid|cube`; Manhattan separation; falsification **AE** |
+| Effective mass from dispersion (chain) | `effectiveMass` from ω² = m² + v²k²; falsification **AF** |
 | UI lattice selector | Chain / 3×3 grid / 2×2×2 cube presets |
 
 ---
 
 ## Next up — Phase 11 (physics extensions)
 
-Signatures **S1–S10** and Phase 10 are complete. Remaining Phase 11 items:
+Phase 11 scattering items **shipped 2026-06-27**. Remaining backlog:
 
 | Priority | Item | Notes | Doc |
 |----------|------|-------|-----|
-| ~~**High**~~ | ~~**Scattering phase shift / time delay**~~ | **Shipped 2026-06-27** — falsification **AD** | [scattering.md](./scattering.md) |
-| ~~**High**~~ | ~~**Two-defect scattering on 2D / 3D**~~ | **Shipped 2026-06-27** — falsification **AE**; grid + cube | [scattering.md](./scattering.md) |
-| **Medium** | **Effective mass from dispersion** | Tie lattice excitation ω(k) to emergent particle mass (extends falsification **O**) | [scattering.md](./scattering.md), [emergent-particles.md](./emergent-particles.md) |
 | **Medium** | **Same \|ψ⟩, different `n`** | Compare factorizations via explicit embedding / truncation across factor counts | [open-questions.md](./open-questions.md) |
 | **Medium** | **3D / torus factorization search** | Builders exist; permutation search is line/grid only today | [factorization.md](./factorization.md) |
 | **Lower** | **QECC on non-TFIM models** | Extend code-subspace probe beyond TFIM decoherence quench | [qecc-probe.md](./qecc-probe.md), [open-questions.md](./open-questions.md) |
 | **Lower** | **Modular / QFT-style clock graphs** | Z-threshold clocks on lattices shipped; modular-flow networks on grids/cubes not wired | [multi-clock.md](./multi-clock.md), [emergent-time.md](./emergent-time.md) |
 | **Research** | **True eigenvalue-only blind inference** | Spectrum mode still uses eigenvector amplitudes; no {Eₙ}-only recovery | [factorization.md](./factorization.md), Phase 1 deferred |
 
-**Suggested first pick:** effective mass from lattice excitation dispersion.
+**Suggested first pick:** same |ψ⟩ factorization comparison across factor counts.
 
 ## Deferred (not rejected)
 

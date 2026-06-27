@@ -1,5 +1,6 @@
 //! Two-defect scattering — light-cone worldline tracking (chain, grid, cube).
 
+use crate::dispersion::{build_dispersion, DispersionConfig};
 use crate::models::{tfim_chain, tfim_cube, tfim_grid, BuiltModel, TruePosition};
 use crate::quantum::{Hamiltonian, QuantumState};
 use crate::relational_time::{evolve_trajectory, fit_affine};
@@ -104,6 +105,12 @@ pub struct ScatteringResult {
     pub overlap_detected: bool,
     pub interaction_phase_shift: f64,
     pub separation_time_delay: f64,
+    /// Chain only: m from ω² = m² + v²k² on same TFIM parameters.
+    pub effective_mass: f64,
+    /// Chain only: mean wavepacket group velocity from dispersion probe.
+    pub dispersion_velocity_mean: f64,
+    /// Chain only: mean |defect site velocity| / dispersion v_g (diagnostic; not expected ≈1).
+    pub velocity_dispersion_ratio: f64,
     pub elapsed_ms: f64,
     pub backend: &'static str,
 }
@@ -561,6 +568,30 @@ pub fn run_two_defect_scattering(config: &ScatteringConfig) -> ScatteringResult 
             config.dt,
         );
 
+    let (effective_mass, dispersion_velocity_mean, velocity_dispersion_ratio) =
+        if setup.kind == "chain" {
+            let disp = build_dispersion(
+                &setup.model.hamiltonian,
+                &DispersionConfig {
+                    n: setup.n,
+                    field: config.field,
+                    dt: config.dt,
+                    steps: config.steps,
+                    modes: 3,
+                },
+            );
+            let v_mean = disp.group_velocity_mean;
+            let v_scatter = (velocities[0].abs() + velocities[1].abs()) / 2.0;
+            let ratio = if v_mean > 1e-9 {
+                v_scatter / v_mean
+            } else {
+                f64::NAN
+            };
+            (disp.effective_mass, v_mean, ratio)
+        } else {
+            (f64::NAN, f64::NAN, f64::NAN)
+        };
+
     ScatteringResult {
         kind: setup.kind.to_string(),
         label: setup.model.label.clone(),
@@ -589,6 +620,9 @@ pub fn run_two_defect_scattering(config: &ScatteringConfig) -> ScatteringResult 
         overlap_detected,
         interaction_phase_shift,
         separation_time_delay,
+        effective_mass,
+        dispersion_velocity_mean,
+        velocity_dispersion_ratio,
         elapsed_ms: 0.0,
         backend: "wasm",
     }
@@ -646,6 +680,8 @@ mod tests {
         assert!(r.interaction_phase_shift.is_finite());
         assert!(r.separation_time_delay.is_finite());
         assert_eq!(r.kind, "chain");
+        assert!(r.effective_mass.is_finite() && r.effective_mass > 0.0);
+        assert!(r.velocity_dispersion_ratio.is_finite() && r.velocity_dispersion_ratio > 0.5);
     }
 
     #[test]
@@ -699,6 +735,13 @@ mod tests {
         assert_eq!(r.kind, "cube");
         assert_eq!(r.cube_dims, Some([2, 2, 2]));
         assert!(r.both_moved);
+    }
+
+    #[test]
+    fn effective_mass_af_criteria_on_chain() {
+        let s = run_two_defect_scattering(&default_chain_config());
+        assert!(s.effective_mass > 0.01);
+        assert!(s.dispersion_velocity_mean > 0.01);
     }
 
     #[test]

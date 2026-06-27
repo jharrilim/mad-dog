@@ -82,7 +82,8 @@ export function CausalityViz() {
             <h4 className="font-medium">Dispersion (O)</h4>
             <p className="text-xs text-muted-foreground font-mono">
               ω slope={dispersion.omegaSlope.toFixed(3)} R²={dispersion.linearR2.toFixed(3)}{' '}
-              linear={dispersion.linearAtSmallK ? 'yes' : 'no'}
+              m_eff≈{dispersion.effectiveMass.toFixed(3)} linear=
+              {dispersion.linearAtSmallK ? 'yes' : 'no'}
             </p>
           </div>
         )}

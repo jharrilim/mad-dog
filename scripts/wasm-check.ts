@@ -422,6 +422,8 @@ for (const config of [
   else ok(`phaseShift=${r.interactionPhaseShift.toFixed(3)}`)
   if (!Number.isFinite(r.separationTimeDelay)) fail('separation time delay should be finite')
   else ok(`timeDelay=${r.separationTimeDelay.toFixed(3)}`)
+  if (!(r.effectiveMass > 0.01)) fail(`effective mass too small (${r.effectiveMass})`)
+  else ok(`m_eff=${r.effectiveMass.toFixed(3)} v_ratio=${r.velocityDispersionRatio.toFixed(2)}`)
   if (r.separationSeries?.length !== 40) fail('separation series length')
   else ok(`separationSeries=${r.separationSeries.length}`)
   if (r.kind !== 'chain') fail(`expected kind=chain, got ${r.kind}`)
@@ -649,7 +651,7 @@ const excitationCfg = {
   )
   console.log('\ndispersion:')
   if (!r.linearAtSmallK) fail('omega(k) should be linear at small k')
-  else ok(`slope=${r.omegaSlope.toFixed(3)} R²=${r.linearR2.toFixed(3)}`)
+  else ok(`slope=${r.omegaSlope.toFixed(3)} R²=${r.linearR2.toFixed(3)} m_eff=${r.effectiveMass.toFixed(3)}`)
 }
 
 console.log(failures === 0 ? '\nAll WASM checks passed.' : `\n${failures} check(s) failed.`)

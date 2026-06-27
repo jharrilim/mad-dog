@@ -368,6 +368,16 @@ export function ScatteringViz() {
               <Badge variant="outline">
                 time delay = {result.separationTimeDelay.toFixed(3)}
               </Badge>
+              {result.kind === 'chain' && Number.isFinite(result.effectiveMass) && (
+                <>
+                  <Badge variant="outline">
+                    m_eff ≈ {result.effectiveMass.toFixed(3)}
+                  </Badge>
+                  <Badge variant="outline">
+                    v_scatter/v_g ≈ {result.velocityDispersionRatio.toFixed(2)}
+                  </Badge>
+                </>
+              )}
               <Badge variant={result.phaseStable ? 'default' : 'secondary'}>
                 phase stable: {result.phaseStable ? 'yes' : 'no'}
               </Badge>

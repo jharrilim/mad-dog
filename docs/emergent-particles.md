@@ -52,4 +52,4 @@ See [roadmap.md](./roadmap.md) Phase 11. Near term:
 
 1. ~~**Scattering phase shift** when two cones overlap (chain, h sweep).~~ **Done (2026-06-27)** — falsification **AD**.
 2. ~~**Two-defect scattering on 2D / 3D** lattices.~~ **Done (2026-06-27)** — `kind: grid|cube`; falsification **AE**.
-3. **Effective mass** from dispersion relation of lattice excitations.
+3. ~~**Effective mass** from dispersion relation of lattice excitations.~~ **Done (2026-06-27)** — `effective_mass` from ω² = m² + v²k² fit; falsification **AF**; chain scattering reports m_eff + v_scatter/v_g.
