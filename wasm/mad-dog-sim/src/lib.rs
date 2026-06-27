@@ -29,6 +29,7 @@ mod run_factorization;
 mod run_factorization_ensemble;
 mod run_factorization_refinement;
 mod locality_spectrum;
+mod eigenvalue_only;
 mod poincare;
 mod qecc;
 mod run_falsification;
@@ -96,6 +97,7 @@ use run_factor_dynamics::{run_holographic_bound_probe, run_inplace_split_probe};
 use factor_count_dynamics::{run_factor_count_dynamics, FactorCountDynamicsConfig};
 use crate::holographic_bound::{run_field_sweep_probe, FieldSweepConfig};
 use locality_spectrum::run_locality_spectrum_battery;
+use eigenvalue_only::run_eigenvalue_only_battery;
 use crate::holographic_bound::HolographicBoundConfig;
 use crate::tensor_split::InplaceSplitConfig;
 use run_matter::{
@@ -522,6 +524,14 @@ pub fn run_eft_dimension_json(config_json: &str) -> Result<String, JsValue> {
 pub fn run_locality_spectrum_json(_config_json: &str) -> Result<String, JsValue> {
     let start = js_sys::Date::now();
     let mut result = run_locality_spectrum_battery();
+    result.elapsed_ms = js_sys::Date::now() - start;
+    serde_json::to_string(&result).map_err(|e| JsValue::from_str(&e.to_string()))
+}
+
+#[wasm_bindgen]
+pub fn run_eigenvalue_only_json(_config_json: &str) -> Result<String, JsValue> {
+    let start = js_sys::Date::now();
+    let mut result = run_eigenvalue_only_battery();
     result.elapsed_ms = js_sys::Date::now() - start;
     serde_json::to_string(&result).map_err(|e| JsValue::from_str(&e.to_string()))
 }

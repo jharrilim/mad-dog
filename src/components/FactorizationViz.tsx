@@ -50,7 +50,7 @@ export function FactorizationViz() {
       seed: 4242,
       topK: 5,
       inputMode,
-      eigenstateCount: inputMode === 'spectrum' ? 3 : 1,
+      eigenstateCount: inputMode === 'spectrum' ? 3 : inputMode === 'eigenvaluesOnly' ? 6 : 1,
       searchMethod:
         kind === 'random' || kind === 'shuffled_grid' ? undefined : 'exact',
       ...lattice,
@@ -77,7 +77,9 @@ export function FactorizationViz() {
           Search qubit label permutations that make coupling look local on a line,
           grid, torus, or cube. <strong>Pauli mode</strong> uses Ĥ structure + MI;{' '}
           <strong>spectrum mode</strong> scores from eigenvectors only (no Pauli
-          terms in the search).
+          terms in the search). <strong>Eigenvalues only</strong> is a negative demo
+          — global {'{Eₙ}'} cannot discriminate labelings (falsification <strong>AK</strong>
+          ).
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -153,6 +155,13 @@ export function FactorizationViz() {
             onClick={() => setInputMode('spectrum')}
           >
             Spectrum only
+          </Button>
+          <Button
+            size="sm"
+            variant={inputMode === 'eigenvaluesOnly' ? 'default' : 'outline'}
+            onClick={() => setInputMode('eigenvaluesOnly')}
+          >
+            Eigenvalues only
           </Button>
         </div>
 

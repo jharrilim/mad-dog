@@ -809,7 +809,7 @@ export type FactorizationKind =
   | 'shuffled_grid'
   | 'shuffled_torus'
   | 'shuffled_cube'
-export type FactorizationInputMode = 'pauli' | 'spectrum'
+export type FactorizationInputMode = 'pauli' | 'spectrum' | 'eigenvaluesOnly'
 export type FactorizationSearchMethod = 'exact' | 'annealing' | 'greedy'
 export type FactorizationGraphKind = 'line' | 'grid' | 'torus' | 'cube'
 

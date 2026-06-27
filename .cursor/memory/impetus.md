@@ -86,7 +86,7 @@ Dated bullets for decisions future agents should not relitigate without cause.
 - **Ensemble K:** `run_factorization_ensemble` — TFIM/XX/Heisenberg/sparse, ≥80% recovery.
 - **Uniqueness report** on top-k equivalence classes (`line_equiv_distance` clustering).
 - **Negative control M:** random nonlocal + `spectrumScramble` must not recover.
-- **Deferred:** true eigenvalue-only blind inference; 3D/torus graph factorization.
+- **Deferred:** ~~true eigenvalue-only blind inference~~ **Resolved (AK 2026-06-27)** — global {Eₙ} permutation-invariant; impossibility wired; spectrum+ψ still required.
 
 ## 2026-06-21 — Phase 3 S3 (relational time)
 

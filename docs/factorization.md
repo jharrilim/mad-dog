@@ -8,6 +8,7 @@ Open hypothesis from [open-questions.md](./open-questions.md): given spectral da
 |------|----------------------|--------|
 | **Pauli + MI** (`inputMode: 'pauli'`) | Pauli expansion of Ĥ + low-energy states | H locality + multi-state MI + emergent dim |
 | **Spectrum only** (`inputMode: 'spectrum'`) | Eigenvalues + eigenvector amplitudes only | Weighted MI + **line-support bandwidth** (permutation-aware span of active sites) + emergent dim |
+| **Eigenvalues only** (`inputMode: 'eigenvaluesOnly'`) | Low-lying {Eₙ} only — **cannot recover labeling** | Permutation-invariant level-spacing summary (flat across all candidates) |
 
 Spectrum scoring uses low-lying eigenstate weights (heavier weight on ground state) and measures how compact each eigenvector’s support is along the **candidate line** after permuting qubit indices — not raw Hamming weight, which ignores the permutation. On an open chain, the reflected labeling (k ↦ n−1−k) is equivalent; recovery uses `line_equiv_distance`.
 
@@ -87,10 +88,16 @@ WASM: `factorizationSearch`, `factorizationRefinement`, `factorizationEnsemble`.
 - **Experiments** → *Locality from H and low-energy states* (`FactorizationViz`) — model zoo buttons + uniqueness panel
 - **Experiments** → *Quench + factorization drift* (`FactorizationRefinementViz`)
 
+## Eigenvalue-only impossibility (shipped 2026-06-27)
+
+Global Ĥ eigenvalues are **invariant under qubit permutations** — no labeling information is present in {Eₙ} alone. The codebase wires `inputMode: 'eigenvaluesOnly'` as an explicit negative demo; falsification **AK** checks that recovery fails while spectrum+ψ control still succeeds.
+
+WASM battery: `run_eigenvalue_only_json`
+
 ## Limits
 
 - Line/grid/torus/cube permutations — no dynamic factor splitting.
-- Spectrum mode is a **toy**: eigenvectors in the hidden computational basis, not true “only {Eₙ}” inference.
+- ~~Spectrum mode is a **toy**: eigenvectors in the hidden computational basis, not true “only {Eₙ}” inference.~~ **Eigenvalues-only mode shipped** as documented impossibility; spectrum mode still needs ψₙ amplitudes.
 - ~~Torus/cube builders exist but are not factorization targets yet.~~ **Shipped (AH)** — `GraphKind::Torus` / `Cube`; `shuffled_torus` (2×2) and `shuffled_cube` (2×2×2) in factorization search.
 - `n > 8` uses simulated annealing (tune via `annealingSteps`).
 

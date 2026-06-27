@@ -10,6 +10,7 @@ use crate::run_light_cone_compare::{run_light_cone_compare, LightConeCompareConf
 use crate::modular_time::ModularDualClockConfig;
 use crate::run_modular_dual_clock::run_modular_dual_clock;
 use crate::run_modular_multi_clock::{run_modular_multi_clock, ModularMultiClockRunConfig};
+use crate::eigenvalue_only::run_eigenvalue_only_battery;
 use crate::run_refinement::{
     run_adaptive_refinement, run_predictive_refinement, run_refinement_quench,
     AdaptiveRefinementConfig, RefinementQuenchConfig,
@@ -894,6 +895,24 @@ pub fn run_falsification_battery() -> FalsificationBatteryResult {
             detail: format!(
                 "{} defectUniformR2={:.3}, minPairwiseR2={:.3}, edgeEdgeR2={:.3}",
                 m.label, m.defect_uniform_r2, m.min_pairwise_r2, m.edge_edge_r2
+            ),
+        });
+    }
+
+    // AK — {Eₙ}-only cannot recover factorization; spectrum+ψ control still can
+    {
+        let r = run_eigenvalue_only_battery();
+        tests.push(FalsificationTest {
+            id: "AK".to_string(),
+            name: "Eigenvalue-only blind inference cannot recover labeling".to_string(),
+            passed: r.pass,
+            detail: format!(
+                "eigenRecovered={}/{} spectrumRecovered={}/{} scoreFlat={}",
+                r.eigenvalue_recovered,
+                r.total,
+                r.spectrum_recovered,
+                r.total,
+                r.cases.iter().all(|c| c.score_spread < 1e-9)
             ),
         });
     }

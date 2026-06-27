@@ -2,7 +2,7 @@
 
 Dated backlog for testing whether systems **behave Mad-Dog-ly** — recoverable locality, relational time, holographic entanglement, excitations, branches, and (eventually) Lorentz-ish causality — without claiming to derive our universe from axioms.
 
-**Last updated:** 2026-06-27 (Phase 11 AJ — modular-flow clock network)
+**Last updated:** 2026-06-27 (Phase 11 AK — eigenvalue-only impossibility)
 
 See also: [falsification.md](./falsification.md) (automated battery), [open-questions.md](./open-questions.md) (honest limits).
 
@@ -142,6 +142,8 @@ Operational checklist — each maps to falsification tests and roadmap phases.
 | UI QECC model presets | `QeccViz.tsx` TFIM / XX / Heisenberg |
 | Modular-flow clock network (grid/cube) | `run_modular_multi_clock_json`; entropy-threshold N clocks; falsification **AJ** |
 | UI modular network | `ModularMultiClockViz.tsx` chain / grid / cube presets |
+| Eigenvalue-only impossibility | `inputMode: eigenvaluesOnly`; `run_eigenvalue_only_json`; falsification **AK** |
+| UI eigenvalues-only demo | `FactorizationViz.tsx` negative-control preset |
 
 ---
 
@@ -151,9 +153,9 @@ Phase 11 **shipped 2026-06-27**. Remaining backlog:
 
 | Priority | Item | Notes | Doc |
 |----------|------|-------|-----|
-| **Research** | **True eigenvalue-only blind inference** | Spectrum mode still uses eigenvector amplitudes; no {Eₙ}-only recovery | [factorization.md](./factorization.md), Phase 1 deferred |
+| **Research** | ~~**True eigenvalue-only blind inference**~~ | **Shipped (AK)** — impossibility documented; {Eₙ}-only cannot recover labeling | [factorization.md](./factorization.md) |
 
-**Suggested first pick:** True eigenvalue-only blind inference (research).
+**Suggested first pick:** Review open questions / observational bridge extensions.
 
 ## Deferred (not rejected)
 

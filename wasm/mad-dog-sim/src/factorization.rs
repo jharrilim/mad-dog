@@ -20,6 +20,8 @@ pub enum GraphKind {
 pub enum InputMode {
     Pauli,
     Spectrum,
+    /// Blind search from {Eₙ} only — fits uniform TFIM spectra on each candidate line.
+    EigenvaluesOnly,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -429,6 +431,7 @@ pub fn score_permutation(
     perm: &[usize],
     params: &SearchParams,
     spectrum_eigenvectors: Option<&[Vec<f64>]>,
+    target_eigenvalues: Option<&[f64]>,
     skip_mds: bool,
 ) -> FactorizationCandidate {
     let n = perm.len();
@@ -476,6 +479,8 @@ pub fn score_permutation(
     let mi_nn_ratio = if params.input_mode == InputMode::Spectrum {
         let weights = spectrum_state_weights(mi_list.len());
         weighted_mi_nn_ratio(mi_list, perm, params, Some(&weights))
+    } else if params.input_mode == InputMode::EigenvaluesOnly {
+        0.0
     } else {
         mean_mi_nn_ratio(mi_list, perm, params)
     };
@@ -511,6 +516,18 @@ pub fn score_permutation(
             let mi_w = if params.spectrum_scrambled { 0.50 } else { 0.30 };
             let bw_w = if params.spectrum_scrambled { 0.35 } else { 0.25 };
             loc_w * locality_fraction + mi_w * mi_term + bw_w * bw + 0.15 * dim_bonus
+        }
+        InputMode::EigenvaluesOnly => {
+            // Global spectrum is unitarily permutation-invariant — score cannot depend on `perm`.
+            let target = target_eigenvalues.unwrap_or(&[]);
+            let spacings: Vec<f64> = target.windows(2).map(|w| (w[1] - w[0]).abs()).collect();
+            if spacings.is_empty() {
+                0.0
+            } else {
+                let mean = spacings.iter().sum::<f64>() / spacings.len() as f64;
+                let var = spacings.iter().map(|s| (s - mean).powi(2)).sum::<f64>() / spacings.len() as f64;
+                mean / (1.0 + var.sqrt())
+            }
         }
     };
 
@@ -565,18 +582,35 @@ fn greedy_search(
     mi_list: &[Vec<Vec<f64>>],
     params: &SearchParams,
     spectrum_eigenvectors: Option<&[Vec<f64>]>,
+    target_eigenvalues: Option<&[f64]>,
     max_iters: usize,
 ) -> (FactorizationCandidate, usize) {
     let n = h.map(|x| x.n).unwrap_or_else(|| mi_list[0].len());
     let mut perm = identity_perm(n);
-    let mut best = score_permutation(h, mi_list, &perm, params, spectrum_eigenvectors, true);
+    let mut best = score_permutation(
+        h,
+        mi_list,
+        &perm,
+        params,
+        spectrum_eigenvectors,
+        target_eigenvalues,
+        true,
+    );
     let mut iters = 0usize;
     for _ in 0..max_iters {
         let mut improved = false;
         for i in 0..n {
             for j in (i + 1)..n {
                 perm.swap(i, j);
-                let cand = score_permutation(h, mi_list, &perm, params, spectrum_eigenvectors, true);
+                let cand = score_permutation(
+                    h,
+                    mi_list,
+                    &perm,
+                    params,
+                    spectrum_eigenvectors,
+                    target_eigenvalues,
+                    true,
+                );
                 iters += 1;
                 if cand.score > best.score + 1e-12 {
                     best = cand;
@@ -598,13 +632,22 @@ fn annealing_search(
     mi_list: &[Vec<Vec<f64>>],
     params: &SearchParams,
     spectrum_eigenvectors: Option<&[Vec<f64>]>,
+    target_eigenvalues: Option<&[f64]>,
     seed: u32,
 ) -> (FactorizationCandidate, usize) {
     let n = h.map(|x| x.n).unwrap_or_else(|| mi_list[0].len());
     let steps = params.annealing_steps.max(100);
     let mut rng = Rng::new(seed);
     let mut perm = random_permutation(n, &mut rng);
-    let mut current = score_permutation(h, mi_list, &perm, params, spectrum_eigenvectors, true);
+    let mut current = score_permutation(
+        h,
+        mi_list,
+        &perm,
+        params,
+        spectrum_eigenvectors,
+        target_eigenvalues,
+        true,
+    );
     let mut best = current.clone();
     let t0 = 1.0_f64;
     let t1 = 0.001_f64;
@@ -616,7 +659,15 @@ fn annealing_search(
             j = (j + 1) % n;
         }
         perm.swap(i, j);
-        let cand = score_permutation(h, mi_list, &perm, params, spectrum_eigenvectors, true);
+        let cand = score_permutation(
+            h,
+            mi_list,
+            &perm,
+            params,
+            spectrum_eigenvectors,
+            target_eigenvalues,
+            true,
+        );
         let delta = cand.score - current.score;
         if delta > 1e-12 || rng.next() < (delta / t).exp() {
             current = cand;
@@ -631,6 +682,7 @@ fn annealing_search(
 }
 
 pub struct SpectrumData {
+    pub eigenvalues: Vec<f64>,
     pub eigenvectors: Vec<Vec<f64>>,
 }
 
@@ -639,6 +691,7 @@ pub fn spectrum_from_hamiltonian(h: &Hamiltonian, k: usize) -> SpectrumData {
     let (eigenvalues, eigenvectors) = hermitian_eigen_decomposition(&re, &im);
     let k = k.min(eigenvalues.len());
     SpectrumData {
+        eigenvalues: eigenvalues[..k].to_vec(),
         eigenvectors: eigenvectors[..k].to_vec(),
     }
 }
@@ -665,8 +718,8 @@ pub fn search_factorization(
     spectrum: Option<&SpectrumData>,
 ) -> SearchOutcome {
     let n = h.n;
-    let (h_ref, mi_list, spectrum_ev) = match params.input_mode {
-        InputMode::Pauli => (Some(h), mi_list_from_states(states), None),
+    let (h_ref, mi_list, spectrum_ev, target_ev) = match params.input_mode {
+        InputMode::Pauli => (Some(h), mi_list_from_states(states), None, None),
         InputMode::Spectrum => {
             let spec = spectrum.expect("spectrum data required");
             let h_ref = if params.spectrum_scrambled {
@@ -678,15 +731,34 @@ pub fn search_factorization(
                 h_ref,
                 mi_list_from_eigenvectors(n, &spec.eigenvectors),
                 Some(spec.eigenvectors.as_slice()),
+                None,
+            )
+        }
+        InputMode::EigenvaluesOnly => {
+            let spec = spectrum.expect("spectrum data required");
+            let dummy_mi = vec![vec![vec![0.0; n]; n]];
+            (
+                None,
+                dummy_mi,
+                None,
+                Some(spec.eigenvalues.as_slice()),
             )
         }
     };
 
-    let identity = score_permutation(h_ref, &mi_list, &identity_perm(n), params, spectrum_ev, false);
-    let scorer_used = if params.input_mode == InputMode::Spectrum {
-        "spectrum+mi"
-    } else {
-        "pauli+mi"
+    let identity = score_permutation(
+        h_ref,
+        &mi_list,
+        &identity_perm(n),
+        params,
+        spectrum_ev,
+        target_ev,
+        false,
+    );
+    let scorer_used = match params.input_mode {
+        InputMode::Spectrum => "spectrum+mi",
+        InputMode::EigenvaluesOnly => "eigenvalues-only",
+        InputMode::Pauli => "pauli+mi",
     };
 
     let (method_name, candidates, search_iters) = if matches!(params.search_method, SearchMethod::Exact)
@@ -694,7 +766,9 @@ pub fn search_factorization(
     {
         let cands: Vec<FactorizationCandidate> = all_permutations(n)
             .into_iter()
-            .map(|perm| score_permutation(h_ref, &mi_list, &perm, params, spectrum_ev, true))
+            .map(|perm| {
+                score_permutation(h_ref, &mi_list, &perm, params, spectrum_ev, target_ev, true)
+            })
             .collect();
         let iters = cands.len();
         let mut candidates = cands;
@@ -712,12 +786,13 @@ pub fn search_factorization(
                 &cand.permutation,
                 params,
                 spectrum_ev,
+                target_ev,
                 false,
             );
         }
         ("exact".to_string(), candidates, iters)
     } else if matches!(params.search_method, SearchMethod::Greedy) {
-        let (best, iters) = greedy_search(h_ref, &mi_list, params, spectrum_ev, 40);
+        let (best, iters) = greedy_search(h_ref, &mi_list, params, spectrum_ev, target_ev, 40);
         (
             "greedy".to_string(),
             vec![identity.clone(), best],
@@ -734,10 +809,11 @@ pub fn search_factorization(
                 &perm,
                 params,
                 spectrum_ev,
+                target_ev,
                 true,
             ));
         }
-        let (ann, iters) = annealing_search(h_ref, &mi_list, params, spectrum_ev, 4242);
+        let (ann, iters) = annealing_search(h_ref, &mi_list, params, spectrum_ev, target_ev, 4242);
         cands.push(ann);
         ("annealing".to_string(), cands, iters + 16)
     };
@@ -759,6 +835,7 @@ pub fn search_factorization(
         &best.permutation,
         params,
         spectrum_ev,
+        target_ev,
         false,
     );
     let top: Vec<FactorizationCandidate> = candidates.into_iter().take(top_k).collect();
@@ -802,8 +879,16 @@ pub fn fast_search_on_state(
         ..Default::default()
     };
     let mi_list = mi_list_from_states(&[state.clone_state()]);
-    let (best, _) = annealing_search(Some(h), &mi_list, &params, None, 55);
-    score_permutation(Some(h), &mi_list, &best.permutation, &params, None, false)
+    let (best, _) = annealing_search(Some(h), &mi_list, &params, None, None, 55);
+    score_permutation(
+        Some(h),
+        &mi_list,
+        &best.permutation,
+        &params,
+        None,
+        None,
+        false,
+    )
 }
 
 pub fn shuffle_hamiltonian(h: &Hamiltonian, seed: u32) -> (Hamiltonian, Vec<usize>) {
@@ -934,5 +1019,65 @@ pub fn shuffle_spectrum_components(spectrum: &mut SpectrumData, seed: u32) {
             scrambled[2 * t + 1] = ev[2 * s + 1];
         }
         *ev = scrambled;
+    }
+}
+
+#[cfg(test)]
+mod eigenvalue_fit_tests {
+    use super::*;
+    use crate::models::tfim_chain;
+
+    #[test]
+    fn global_eigenvalues_invariant_under_qubit_shuffle() {
+        let n = 6;
+        let base = tfim_chain(n, 1.0, 1.5);
+        let (shuffled, _) = shuffle_hamiltonian(&base.hamiltonian, 42);
+        let s0 = spectrum_from_hamiltonian(&base.hamiltonian, n);
+        let s1 = spectrum_from_hamiltonian(&shuffled, n);
+        for i in 0..n {
+            assert!(
+                (s0.eigenvalues[i] - s1.eigenvalues[i]).abs() < 1e-8,
+                "eigenvalue {i}: {} vs {}",
+                s0.eigenvalues[i],
+                s1.eigenvalues[i]
+            );
+        }
+    }
+
+    #[test]
+    fn eigenvalue_only_scores_flat_across_permutations() {
+        let n = 4;
+        let base = tfim_chain(n, 1.0, 1.5);
+        let (shuffled, _) = shuffle_hamiltonian(&base.hamiltonian, 42);
+        let spec = spectrum_from_hamiltonian(&shuffled, n);
+        let params = SearchParams {
+            input_mode: InputMode::EigenvaluesOnly,
+            graph_kind: GraphKind::Line,
+            cols: n,
+            ..Default::default()
+        };
+        let dummy_mi = vec![vec![vec![0.0; n]; n]];
+        let scores: Vec<f64> = all_permutations(n)
+            .iter()
+            .map(|perm| {
+                score_permutation(
+                    None,
+                    &dummy_mi,
+                    perm,
+                    &params,
+                    None,
+                    Some(&spec.eigenvalues),
+                    true,
+                )
+                .score
+            })
+            .collect();
+        let min_s = scores.iter().cloned().fold(f64::INFINITY, f64::min);
+        let max_s = scores.iter().cloned().fold(f64::NEG_INFINITY, f64::max);
+        let spread = max_s - min_s;
+        assert!(
+            spread < 1e-12,
+            "eigenvalue-only scores must not discriminate permutations; spread={spread}"
+        );
     }
 }

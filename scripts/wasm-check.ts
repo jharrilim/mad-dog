@@ -403,6 +403,26 @@ for (const config of [
   const r = JSON.parse(
     run_factorization_search_json(
       JSON.stringify({
+        kind: 'shuffled_chain',
+        n: 5,
+        field: 1.5,
+        seed: 42,
+        topK: 3,
+        inputMode: 'eigenvaluesOnly',
+        eigenstateCount: 5,
+        searchMethod: 'exact',
+      }),
+    ),
+  )
+  console.log('\nfactorization eigenvaluesOnly (negative):')
+  if (r.recoveredIdentity) fail('eigenvalue-only should not recover labeling')
+  else ok(`scorer=${r.scorerUsed} permMatch=${r.permMatchDistance ?? '?'}`)
+}
+
+{
+  const r = JSON.parse(
+    run_factorization_search_json(
+      JSON.stringify({
         kind: 'shuffled_xx_chain',
         n: 6,
         field: 1.5,

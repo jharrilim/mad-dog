@@ -83,6 +83,7 @@ pub struct FactorizationSearchResult {
 fn parse_input_mode(s: Option<&String>) -> InputMode {
     match s.map(|x| x.as_str()) {
         Some("spectrum") => InputMode::Spectrum,
+        Some("eigenvaluesOnly") | Some("eigenvalues_only") => InputMode::EigenvaluesOnly,
         _ => InputMode::Pauli,
     }
 }
@@ -258,7 +259,10 @@ pub fn run_factorization_search(config: &FactorizationSearchConfig) -> Factoriza
         .collect();
     let energy = hamiltonian.expectation(&states[0]);
 
-    let mut spectrum = if params.input_mode == InputMode::Spectrum {
+    let mut spectrum = if matches!(
+        params.input_mode,
+        InputMode::Spectrum | InputMode::EigenvaluesOnly
+    ) {
         Some(spectrum_from_hamiltonian(&hamiltonian, k))
     } else {
         None
@@ -283,12 +287,18 @@ pub fn run_factorization_search(config: &FactorizationSearchConfig) -> Factoriza
 
     let recovered_identity = if let Some(ref shuffle) = true_shuffle {
         let inv = inverse_shuffle(shuffle);
-        let perm_ok = if params.input_mode == InputMode::Spectrum {
+        let perm_ok = if matches!(
+            params.input_mode,
+            InputMode::Spectrum | InputMode::EigenvaluesOnly
+        ) {
             line_equiv_match(&outcome.best.permutation, &inv)
         } else {
             perm_distance(&outcome.best.permutation, &inv) == 0
         };
-        if params.input_mode == InputMode::Spectrum {
+        if matches!(
+            params.input_mode,
+            InputMode::Spectrum | InputMode::EigenvaluesOnly
+        ) {
             perm_ok
         } else {
             let mi = mutual_information_matrix(&states[0]);
@@ -297,6 +307,7 @@ pub fn run_factorization_search(config: &FactorizationSearchConfig) -> Factoriza
                 &[mi],
                 &inv,
                 &params,
+                None,
                 None,
                 false,
             );
@@ -314,6 +325,7 @@ pub fn run_factorization_search(config: &FactorizationSearchConfig) -> Factoriza
     let input_mode_str = match params.input_mode {
         InputMode::Pauli => "pauli",
         InputMode::Spectrum => "spectrum",
+        InputMode::EigenvaluesOnly => "eigenvaluesOnly",
     }
     .to_string();
 
