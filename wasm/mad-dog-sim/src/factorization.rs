@@ -134,6 +134,94 @@ fn torus_axis_dist(a: usize, b: usize, period: usize) -> usize {
     d.min(period - d)
 }
 
+/// Manhattan (or torus-wrap) distance between canonical lattice site indices.
+fn site_graph_distance(graph: GraphKind, si: usize, sj: usize, params: &SearchParams) -> usize {
+    match graph {
+        GraphKind::Line => si.abs_diff(sj),
+        GraphKind::Grid => {
+            let ri = si / params.cols;
+            let ci = si % params.cols;
+            let rj = sj / params.cols;
+            let cj = sj % params.cols;
+            ri.abs_diff(rj) + ci.abs_diff(cj)
+        }
+        GraphKind::Torus => {
+            let ri = si / params.cols;
+            let ci = si % params.cols;
+            let rj = sj / params.cols;
+            let cj = sj % params.cols;
+            torus_axis_dist(ri, rj, params.rows) + torus_axis_dist(ci, cj, params.cols)
+        }
+        GraphKind::Cube => {
+            let lx = params.lx;
+            let ly = params.ly;
+            let xi = si % lx;
+            let yi = (si / lx) % ly;
+            let zi = si / (lx * ly);
+            let xj = sj % lx;
+            let yj = (sj / lx) % ly;
+            let zj = sj / (lx * ly);
+            xi.abs_diff(xj) + yi.abs_diff(yj) + zi.abs_diff(zj)
+        }
+    }
+}
+
+fn max_site_diameter(graph: GraphKind, n: usize, params: &SearchParams) -> f64 {
+    match graph {
+        GraphKind::Line => (n.saturating_sub(1)).max(1) as f64,
+        GraphKind::Grid => {
+            ((params.rows.saturating_sub(1)) + (params.cols.saturating_sub(1))).max(1) as f64
+        }
+        GraphKind::Torus => {
+            ((params.rows / 2) + (params.cols / 2)).max(1) as f64
+        }
+        GraphKind::Cube => {
+            ((params.lx.saturating_sub(1))
+                + (params.ly.saturating_sub(1))
+                + (params.lz.saturating_sub(1)))
+            .max(1) as f64
+        }
+    }
+}
+
+fn active_site_span(graph: GraphKind, sites: &[usize], params: &SearchParams) -> f64 {
+    if sites.len() < 2 {
+        return 0.0;
+    }
+    if matches!(graph, GraphKind::Line) {
+        return (*sites.iter().max().unwrap() - *sites.iter().min().unwrap()) as f64;
+    }
+    sites
+        .iter()
+        .enumerate()
+        .flat_map(|(i, &si)| {
+            sites[i + 1..]
+                .iter()
+                .map(move |&sj| site_graph_distance(graph, si, sj, params))
+        })
+        .max()
+        .unwrap_or(0) as f64
+}
+
+fn accumulate_far_mi(
+    mi: &[Vec<f64>],
+    inv: &[usize],
+    n: usize,
+    graph: GraphKind,
+    params: &SearchParams,
+    far_sum: &mut f64,
+    far_count: &mut usize,
+) {
+    for k in 0..n {
+        for d in (k + 1)..n {
+            if site_graph_distance(graph, k, d, params) >= 2 {
+                *far_sum += mi[inv[k]][inv[d]];
+                *far_count += 1;
+            }
+        }
+    }
+}
+
 fn graph_distance(
     graph: GraphKind,
     perm: &[usize],
@@ -230,14 +318,7 @@ fn mean_mi_nn_ratio(mi_list: &[Vec<Vec<f64>>], perm: &[usize], params: &SearchPa
                     nn_sum += mi[i][j];
                     nn_count += 1;
                 }
-                for k in 0..n {
-                    for d in 2..n {
-                        if k + d < n {
-                            far_sum += mi[inv[k]][inv[k + d]];
-                            far_count += 1;
-                        }
-                    }
-                }
+                accumulate_far_mi(mi, &inv, n, GraphKind::Line, params, &mut far_sum, &mut far_count);
             }
             GraphKind::Grid => {
                 let rows = params.rows;
@@ -258,14 +339,7 @@ fn mean_mi_nn_ratio(mi_list: &[Vec<Vec<f64>>], perm: &[usize], params: &SearchPa
                         }
                     }
                 }
-                for k in 0..n {
-                    for d in 2..n {
-                        if k + d < n {
-                            far_sum += mi[inv[k]][inv[k + d]];
-                            far_count += 1;
-                        }
-                    }
-                }
+                accumulate_far_mi(mi, &inv, n, GraphKind::Grid, params, &mut far_sum, &mut far_count);
             }
             GraphKind::Torus => {
                 let rows = params.rows;
@@ -284,14 +358,7 @@ fn mean_mi_nn_ratio(mi_list: &[Vec<Vec<f64>>], perm: &[usize], params: &SearchPa
                         nn_count += 1;
                     }
                 }
-                for k in 0..n {
-                    for d in 2..n {
-                        if k + d < n {
-                            far_sum += mi[inv[k]][inv[k + d]];
-                            far_count += 1;
-                        }
-                    }
-                }
+                accumulate_far_mi(mi, &inv, n, GraphKind::Torus, params, &mut far_sum, &mut far_count);
             }
             GraphKind::Cube => {
                 let lx = params.lx;
@@ -318,14 +385,7 @@ fn mean_mi_nn_ratio(mi_list: &[Vec<Vec<f64>>], perm: &[usize], params: &SearchPa
                         }
                     }
                 }
-                for k in 0..n {
-                    for d in 2..n {
-                        if k + d < n {
-                            far_sum += mi[inv[k]][inv[k + d]];
-                            far_count += 1;
-                        }
-                    }
-                }
+                accumulate_far_mi(mi, &inv, n, GraphKind::Cube, params, &mut far_sum, &mut far_count);
             }
         }
         let nn_avg = if nn_count > 0 { nn_sum / nn_count as f64 } else { 0.0 };
@@ -358,12 +418,18 @@ fn state_from_data(n: usize, data: &[f64]) -> QuantumState {
     }
 }
 
-fn line_support_bandwidth(eigenvectors: &[Vec<f64>], perm: &[usize], n: usize) -> f64 {
+fn support_bandwidth(
+    graph: GraphKind,
+    eigenvectors: &[Vec<f64>],
+    perm: &[usize],
+    n: usize,
+    params: &SearchParams,
+) -> f64 {
     if eigenvectors.is_empty() || n < 2 {
         return 0.0;
     }
     let mut total = 0.0;
-    let max_span = (n - 1) as f64;
+    let max_span = max_site_diameter(graph, n, params);
     for ev in eigenvectors {
         let dim = 1 << n;
         let mut weighted_span = 0.0;
@@ -379,11 +445,7 @@ fn line_support_bandwidth(eigenvectors: &[Vec<f64>], perm: &[usize], n: usize) -
                 .filter(|&q| (s >> q) & 1 == 1)
                 .map(|q| perm[q])
                 .collect();
-            let span = if active.len() < 2 {
-                0.0
-            } else {
-                (*active.iter().max().unwrap() - active.iter().min().unwrap()) as f64
-            };
+            let span = active_site_span(graph, &active, params);
             weighted_span += p * span;
             mass += p;
         }
@@ -510,7 +572,7 @@ pub fn score_permutation(
         }
         InputMode::Spectrum => {
             let bw = spectrum_eigenvectors
-                .map(|ev| line_support_bandwidth(ev, perm, n))
+                .map(|ev| support_bandwidth(params.graph_kind, ev, perm, n, params))
                 .unwrap_or(0.0);
             let loc_w = if params.spectrum_scrambled { 0.0 } else { 0.40 };
             let mi_w = if params.spectrum_scrambled { 0.50 } else { 0.30 };

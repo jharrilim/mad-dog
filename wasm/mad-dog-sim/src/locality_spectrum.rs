@@ -4,8 +4,9 @@
 //! 1D factorization of shuffled quantum chains from eigenvectors only.
 //!
 //! When `spectrum_scrambled=true`, `search_factorization` sets h_ref=None and
-//! uses weights: 50% MI nearest-neighbor ratio, 35% bandwidth, 15% emergent-dim
-//! bonus — no Hamiltonian term structure is consulted.
+//! uses weights: 50% MI nearest-neighbor ratio, 35% graph bandwidth, 15% emergent-dim
+//! bonus — no Hamiltonian term structure is consulted. Far MI pairs and bandwidth
+//! are graph-native for Grid/Torus (Manhattan / wrap-aware), not chain-linear.
 
 use crate::factorization::{
     line_equiv_match, search_factorization, shuffle_hamiltonian, spectrum_from_hamiltonian,

@@ -7,10 +7,10 @@ Open hypothesis from [open-questions.md](./open-questions.md): given spectral da
 | Mode | What the search sees | Scorer |
 |------|----------------------|--------|
 | **Pauli + MI** (`inputMode: 'pauli'`) | Pauli expansion of Ĥ + low-energy states | H locality + multi-state MI + emergent dim |
-| **Spectrum only** (`inputMode: 'spectrum'`) | Eigenvalues + eigenvector amplitudes only | Weighted MI + **line-support bandwidth** (permutation-aware span of active sites) + emergent dim |
+| **Spectrum only** (`inputMode: 'spectrum'`) | Eigenvalues + eigenvector amplitudes only | Weighted MI + **graph support bandwidth** (permutation-aware span/diameter of active sites on the candidate graph) + emergent dim |
 | **Eigenvalues only** (`inputMode: 'eigenvaluesOnly'`) | Low-lying {Eₙ} only — **cannot recover labeling** | Permutation-invariant level-spacing summary (flat across all candidates) |
 
-Spectrum scoring uses low-lying eigenstate weights (heavier weight on ground state) and measures how compact each eigenvector’s support is along the **candidate line** after permuting qubit indices — not raw Hamming weight, which ignores the permutation. On an open chain, the reflected labeling (k ↦ n−1−k) is equivalent; recovery uses `line_equiv_distance`.
+Spectrum scoring uses low-lying eigenstate weights (heavier weight on ground state) and measures how compact each eigenvector’s support is on the **candidate graph** after permuting qubit indices — line uses index span; grid/torus use Manhattan/torus graph diameter among active sites. On an open chain, the reflected labeling (k ↦ n−1−k) is equivalent; recovery uses `line_equiv_distance`.
 
 ## Model zoo (Phase 1, 2026-06)
 

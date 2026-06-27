@@ -49,8 +49,8 @@ n=8 uniqueness (spectrum, seed=100): same pattern — recovered ✓, gap=0.074, 
 | chain | 6 | ✓ | 0.729 | 4.22 |
 | chain | 7 | ✓ | 0.726 | 4.86 |
 | chain | 8 | ✓ | 0.723 | 5.50 |
-| **grid 3×3** | 9 | **✗** | 0.580 | 1.31 |
-| **torus 2×2** | 4 | **✗** | 0.587 | 1.13 |
+| **grid 3×3** | 9 | **✗** | 0.584 | 1.47 |
+| **torus 2×2** | 4 | **✗** | 0.576 | 1.13 |
 
 AA battery (n=6 only, 9 TFIM cases): **9/9** recovered (100%, pass threshold 67%).
 
@@ -118,13 +118,19 @@ Complements **G** (n=9 positive). Documents honest scaling boundary: long chains
 
 Complements **AA** (chain positive) and **AK** ({Eₙ}-only impossible). Documents an honest boundary: spectrum-first locality is not yet a 2D signature.
 
-### 4. 2D blind scorer (Priority 2) — after scaling battery
+### 4. 2D blind scorer (Priority 2) — partial (2026-06-27)
 
-Before extending AA to grid/torus in the battery:
+**Shipped in `factorization.rs`:**
 
-- Graph-aware NN MI ratio (grid/torus adjacency, not line `line_equiv_match` for recovery).
-- Torus wrap-aware bandwidth.
+- **Graph-native far MI:** non-NN pairs use `site_graph_distance ≥ 2` (Manhattan / torus-wrap), not linear chain index `k+d`.
+- **Lattice support bandwidth:** `support_bandwidth` uses graph diameter on active sites (grid Manhattan, torus wrap); line mode unchanged.
+
+**Result:** AA-blind chain regression passes. 2D **still fails** exact recovery (`recovered=false` on 3×3 grid, 2×2 torus, seed 4242) but scores improve (grid miNn 1.31→1.47; truth labeling reaches the top score bucket). Exact search finds **8 tied permutations** at the maximum score on 3×3 (8/362880); tie-break is lex order, so the true inverse shuffle is not selected. Same degeneracy on torus (8/24). Aggregate MI+bandwidth statistics are identical across the tie class — a sharper signal (per-edge pattern, MDS–grid fit, or semi-blind Ĥ) is needed for unique 2D recovery.
+
+**Still open:**
+
 - Separate `blindSpectrum` JSON flag (decouple from eigenvector scrambling).
+- Recovery metric: consider lattice symmetry class vs raw `perm_distance`.
 
 Pauli-mode 2D search already passes (**AH**); the gap is specifically **blind** spectrum inference.
 
