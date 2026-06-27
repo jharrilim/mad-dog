@@ -68,6 +68,8 @@ import type {
   HolographicBoundResult,
   FactorCountDynamicsConfig,
   FactorCountDynamicsResult,
+  FieldSweepConfig,
+  FieldSweepResult,
   GeometryStabilityConfig,
   GeometryStabilityResult,
   SimBackend,
@@ -322,6 +324,12 @@ export async function runFactorCountDynamicsAsync(
   config: FactorCountDynamicsConfig,
 ): Promise<FactorCountDynamicsResult & { backend: SimBackend }> {
   return runWasm('factorCountDynamics', config)
+}
+
+export async function runFieldSweepAsync(
+  config: FieldSweepConfig,
+): Promise<FieldSweepResult & { backend: SimBackend }> {
+  return runWasm('fieldSweep', config)
 }
 
 export async function runGeometryStabilityAsync(

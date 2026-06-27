@@ -40,6 +40,7 @@ import init, {
   run_inplace_split_json,
   run_holographic_bound_json,
   run_factor_count_dynamics_json,
+  run_field_sweep_json,
   run_qecc_json,
   run_poincare_json,
   run_locality_spectrum_json,
@@ -84,6 +85,7 @@ export type WasmMethod =
   | 'inplaceSplit'
   | 'holographicBound'
   | 'factorCountDynamics'
+  | 'fieldSweep'
   | 'qeccProbe'
   | 'poincareComposite'
   | 'localitySpectrum'
@@ -136,6 +138,7 @@ const runners: Record<WasmMethod, (json: string) => string> = {
   inplaceSplit: run_inplace_split_json,
   holographicBound: run_holographic_bound_json,
   factorCountDynamics: run_factor_count_dynamics_json,
+  fieldSweep: run_field_sweep_json,
   qeccProbe: run_qecc_json,
   poincareComposite: run_poincare_json,
   localitySpectrum: run_locality_spectrum_json,

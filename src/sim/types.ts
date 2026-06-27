@@ -1074,6 +1074,29 @@ export interface HolographicBoundResult {
   backend?: SimBackend
 }
 
+export interface FieldSweepConfig {
+  fields?: number[]
+  nMin?: number
+  nMax?: number
+  skipLocality?: boolean
+}
+
+export interface FieldSweepPoint {
+  field: number
+  scan: HolographicBoundResult
+}
+
+export interface FieldSweepResult {
+  points: FieldSweepPoint[]
+  fieldMaxNMin: number | null
+  nMinMax: number | null
+  hHolographicEmergence: number | null
+  emergenceNearCritical: boolean
+  orderedPhaseNonholographic: boolean
+  elapsedMs: number
+  backend?: SimBackend
+}
+
 export interface FactorCountDynamicsConfig {
   nStart?: number
   nMax?: number

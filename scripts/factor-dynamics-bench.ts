@@ -11,11 +11,13 @@ import {
   run_inplace_split_json,
   run_holographic_bound_json,
   run_factor_count_dynamics_json,
+  run_field_sweep_json,
 } from '../src/sim/wasm/pkg/mad_dog_sim.js'
 import type {
   HolographicBoundResult,
   InplaceSplitResult,
   FactorCountDynamicsResult,
+  FieldSweepResult,
 } from '../src/sim/types.ts'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -23,7 +25,7 @@ initSync({ module: readFileSync(join(__dirname, '../src/sim/wasm/pkg/mad_dog_sim
 
 let failures = 0
 
-console.warn('[mad-dog factor] Phase-7 in-place split + holographic n_min + AB factor-count dynamics.')
+console.warn('[mad-dog factor] Phase-7 V′/W′ + AB factor-count dynamics + AC field-sweep holographic emergence.')
 
 const split = JSON.parse(
   run_inplace_split_json(
@@ -68,6 +70,29 @@ const staircase = fcd.series
   .join('  ')
 console.log(`  staircase: ${staircase}`)
 if (!abOk) failures++
+
+// Falsification AC: holographic structure is absent in the ordered phase (h<1) and
+// emerges near the TFIM critical point (h≈1.0). Skip locality for speed.
+const sweep = JSON.parse(
+  run_field_sweep_json(
+    JSON.stringify({
+      fields: [0.3, 0.5, 0.7, 1.0, 1.2, 1.5],
+      nMin: 6,
+      nMax: 12,
+      skipLocality: false,
+    }),
+  ),
+) as FieldSweepResult
+const acOk = sweep.emergenceNearCritical && sweep.orderedPhaseNonholographic
+console.log(`\nFalsification AC — field-sweep holographic emergence: ${acOk ? 'OK' : 'FAIL'}`)
+console.log(
+  `  h_emergence=${sweep.hHolographicEmergence} near_critical=${sweep.emergenceNearCritical} ordered_nonholo=${sweep.orderedPhaseNonholographic}`,
+)
+const fieldProfile = sweep.points
+  .map((p) => `h=${p.field.toFixed(1)}→${p.scan.nMin ?? 'None'}`)
+  .join('  ')
+console.log(`  profile: ${fieldProfile}`)
+if (!acOk) failures++
 
 if (failures > 0) {
   console.error(`\n${failures} failure(s)`)

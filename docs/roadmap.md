@@ -128,6 +128,8 @@ Phase 9 is complete. The next meaningful physics-advance items are:
 | n_opt_pressure(t) time series | `factor_count_dynamics.rs` — TFIM defect quench, n=4..14, dt=0.1 |
 | Falsification AB | `nOptPressurePeak ≥ nStart + deltaN`; staircase 4→8→10→14 confirmed |
 | `run_factor_count_dynamics_json` WASM | `bench:factor` extended; `runFactorCountDynamicsAsync` in runner |
+| Field-sweep holographic emergence | `run_field_sweep` in `holographic_bound.rs`; `run_field_sweep_json` WASM |
+| Falsification AC | `emergenceNearCritical` + `orderedPhaseNonholographic`; h=0.3..0.7→None, h=1.0..1.5→6 |
 
 ## Deferred (not rejected)
 

@@ -62,7 +62,7 @@ In simulator terms: instead of hand-picking `tfimChain(n+1)`, detect failure of 
 **What we could still test (not built):**
 
 - Compare factorizations of the same |ψ⟩ with different `n` via explicit embedding / truncation.
-- Field-sweep n_min: how does the minimal holographic n change as h sweeps through the critical point?
+- Field-sweep n_min: **Shipped (AC)** — holographic RT structure absent for h<1 (ordered/cat-state phase), emerges at h≈1.0. Profile: None/None/None→6/6/6. The transition in holographic structure coincides with the TFIM phase transition. n_min does not vary above h_c (all n=6 in paramagnet), so the "more factors near criticality" hypothesis is not supported — instead the story is a phase transition in holographic structure itself.
 
 **Prototype:** see [factorization.md](./factorization.md) — permutation search (line/grid), multi-eigenstate + spectrum modes, annealing for n>8, joint quench study with [refinement.md](./refinement.md).
 

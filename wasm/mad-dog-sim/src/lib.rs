@@ -89,6 +89,7 @@ use run_refinement::{
 };
 use run_factor_dynamics::{run_holographic_bound_probe, run_inplace_split_probe};
 use factor_count_dynamics::{run_factor_count_dynamics, FactorCountDynamicsConfig};
+use crate::holographic_bound::{run_field_sweep_probe, FieldSweepConfig};
 use locality_spectrum::run_locality_spectrum_battery;
 use crate::holographic_bound::HolographicBoundConfig;
 use crate::tensor_split::InplaceSplitConfig;
@@ -428,6 +429,16 @@ pub fn run_factor_count_dynamics_json(config_json: &str) -> Result<String, JsVal
     let config: FactorCountDynamicsConfig =
         serde_json::from_str(config_json).map_err(|e| JsValue::from_str(&e.to_string()))?;
     let mut result = run_factor_count_dynamics(&config);
+    result.elapsed_ms = js_sys::Date::now() - start;
+    serde_json::to_string(&result).map_err(|e| JsValue::from_str(&e.to_string()))
+}
+
+#[wasm_bindgen]
+pub fn run_field_sweep_json(config_json: &str) -> Result<String, JsValue> {
+    let start = js_sys::Date::now();
+    let config: FieldSweepConfig =
+        serde_json::from_str(config_json).map_err(|e| JsValue::from_str(&e.to_string()))?;
+    let mut result = run_field_sweep_probe(&config);
     result.elapsed_ms = js_sys::Date::now() - start;
     serde_json::to_string(&result).map_err(|e| JsValue::from_str(&e.to_string()))
 }
