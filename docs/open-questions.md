@@ -10,7 +10,7 @@ We are **not** proving Mad-Dog from axioms or solving the measurement problem. W
 
 | Layer | Status |
 |-------|--------|
-| **Necessary conditions (S1–S10)** | Shipped — falsification battery **A–AL** (44 tests in `check:falsification`; **AB**, **AC** in `bench:factor`; `check:scaling` for n-sweep subset) |
+| **Necessary conditions (S1–S10)** | Shipped — falsification battery **A–AM** (45 tests in `check:falsification`; **AB**, **AC** in `bench:factor`; `check:scaling` for n-sweep + G boundary) |
 | **Toy demonstrations** | Universe Lab, scattering, decoherence, factorization, clocks, holography |
 | **Scaling / uniqueness** | **Open** — biggest gap between mechanism and “our-universe-likeness”; Phase 12 priority |
 | **Observational export** | Shipped — [observational-bridge.md](./observational-bridge.md), `npm run bench:observational` |
