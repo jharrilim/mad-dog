@@ -7,7 +7,7 @@ Proto-particle diagnostics on TFIM quenches:
 1. **Single-defect worldline** — peak signal in a half-chain window (1D) or global peak (3D cube). Enabled on chain spacetime, 2D spacetime, and Universe Lab cube runs.
 2. **Dual-defect scattering** — two flipped spins, half-chain peak tracking (left/right) to avoid cross-talk. Metrics: separation series, fitted site velocities, `bothMoved`, `crossed`, `minSeparation`, exchange-phase series, overlap-localized **phase shift** and **time delay** (Phase 11, 2026-06-27).
 
-WASM: `track_single_worldline` in `spacetime.rs`, `run_two_defect_scattering` in `scattering.rs`.
+WASM: `track_single_worldline` in `spacetime.rs`, `run_two_defect_scattering` in `scattering.rs` — **chain**, **grid**, and **cube** lattices (`kind` in config).
 
 UI:
 
@@ -40,6 +40,29 @@ Falsification **AD**: `overlapDetected && |interactionPhaseShift| > 0.05 && fini
 
 `npm run sweep:scattering` reports `phaseShift` and `timeDelay` across h values.
 
+## Lattice kinds (Phase 11, 2026-06-27)
+
+| `kind` | Defaults | Defects | Separation metric |
+|--------|----------|---------|-------------------|
+| `chain` | n=12 | [3, 8] | \|site₁ − site₂\| along chain |
+| `grid` | 3×3 | [0, 8] corners | Manhattan graph distance |
+| `cube` | 2×2×2 | [0, 7] corners | Manhattan graph distance (3D layout) |
+
+On grid/cube, dual worldlines use per-defect global peak tracking (`embed_dim ≥ 2`). Falsification **AE** checks 3×3 grid propagation.
+
+```ts
+await runScatteringAsync({
+  kind: 'grid',
+  rows: 3,
+  cols: 3,
+  field: 0.7,
+  dt: 0.12,
+  steps: 40,
+  defectSites: [0, 8],
+  lite: false,
+})
+```
+
 ## Tracking methods
 
 | Case | Method |
@@ -64,6 +87,6 @@ See [parameters-and-phases.md](./parameters-and-phases.md).
 
 Tracked on [roadmap.md](./roadmap.md) Phase 11:
 
-1. ~~**Scattering phase shift / time delay**~~ — **Shipped 2026-06-27** — `analyze_interaction` in `scattering.rs`; falsification **AD**; UI phase chart + h sweep columns.
-2. **Two defects on 2D grid or 3D cube** — scattering runner is chain-only today.
+1. ~~**Scattering phase shift / time delay**~~ — **Shipped 2026-06-27** — falsification **AD**; see [scattering.md](./scattering.md)
+2. ~~**Two defects on 2D grid or 3D cube**~~ — **Shipped 2026-06-27** — `kind: grid|cube` in `scattering.rs`; falsification **AE** (3×3 grid); UI lattice selector
 3. **Effective mass** from dispersion relation of lattice excitations (extends falsification **O**).

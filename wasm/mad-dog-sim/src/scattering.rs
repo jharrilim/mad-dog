@@ -1,7 +1,7 @@
-//! Two-defect scattering — light-cone worldline tracking.
+//! Two-defect scattering — light-cone worldline tracking (chain, grid, cube).
 
-use crate::models::tfim_chain;
-use crate::quantum::QuantumState;
+use crate::models::{tfim_chain, tfim_cube, tfim_grid, BuiltModel, TruePosition};
+use crate::quantum::{Hamiltonian, QuantumState};
 use crate::relational_time::{evolve_trajectory, fit_affine};
 use crate::spacetime::{build_light_cone_trajectory, SpacetimeConfig, SpacetimeSlice, WorldlinePoint};
 use serde::{Deserialize, Serialize};
@@ -13,17 +13,51 @@ fn default_scatter_order() -> usize {
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ScatteringConfig {
+    #[serde(default)]
     pub n: usize,
     pub field: f64,
     pub dt: f64,
     pub steps: usize,
     #[serde(default)]
     pub defect_sites: Option<[usize; 2]>,
+    /// `chain` (default), `grid`, or `cube`.
+    #[serde(default)]
+    pub kind: Option<String>,
+    #[serde(default)]
+    pub rows: Option<usize>,
+    #[serde(default)]
+    pub cols: Option<usize>,
+    #[serde(default)]
+    pub lx: Option<usize>,
+    #[serde(default)]
+    pub ly: Option<usize>,
+    #[serde(default)]
+    pub lz: Option<usize>,
     /// Omit full slice payload (metrics + worldlines only).
     #[serde(default)]
     pub lite: bool,
     #[serde(default = "default_scatter_order")]
     pub taylor_order: usize,
+}
+
+impl Default for ScatteringConfig {
+    fn default() -> Self {
+        Self {
+            n: 12,
+            field: 0.7,
+            dt: 0.12,
+            steps: 40,
+            defect_sites: None,
+            kind: None,
+            rows: None,
+            cols: None,
+            lx: None,
+            ly: None,
+            lz: None,
+            lite: false,
+            taylor_order: default_scatter_order(),
+        }
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -47,7 +81,13 @@ impl From<WorldlinePoint> for ScatteringWorldlinePoint {
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ScatteringResult {
+    pub kind: String,
+    pub label: String,
     pub n: usize,
+    pub rows: Option<usize>,
+    pub cols: Option<usize>,
+    pub cube_dims: Option<[usize; 3]>,
+    pub layout_positions: Vec<TruePosition>,
     pub field: f64,
     pub defect_sites: [usize; 2],
     pub slices: Vec<SpacetimeSlice>,
@@ -66,6 +106,104 @@ pub struct ScatteringResult {
     pub separation_time_delay: f64,
     pub elapsed_ms: f64,
     pub backend: &'static str,
+}
+
+struct ScatterSetup {
+    model: BuiltModel,
+    n: usize,
+    embed_dim: usize,
+    defect_sites: [usize; 2],
+    kind: &'static str,
+    rows: Option<usize>,
+    cols: Option<usize>,
+    cube_dims: Option<[usize; 3]>,
+}
+
+fn resolve_scatter_setup(config: &ScatteringConfig) -> ScatterSetup {
+    let kind = config.kind.as_deref().unwrap_or("chain");
+    match kind {
+        "grid" => {
+            let rows = config.rows.unwrap_or(3).max(2);
+            let cols = config.cols.unwrap_or(3).max(2);
+            let model = tfim_grid(rows, cols, 1.0, config.field);
+            let n = rows * cols;
+            let d1 = config.defect_sites.map(|s| s[0]).unwrap_or(0);
+            let d2 = config
+                .defect_sites
+                .map(|s| s[1])
+                .unwrap_or(n.saturating_sub(1));
+            ScatterSetup {
+                model,
+                n,
+                embed_dim: 2,
+                defect_sites: [d1.min(n - 1), d2.min(n - 1)],
+                kind: "grid",
+                rows: Some(rows),
+                cols: Some(cols),
+                cube_dims: None,
+            }
+        }
+        "cube" => {
+            let lx = config.lx.unwrap_or(2).max(2);
+            let ly = config.ly.unwrap_or(2).max(2);
+            let lz = config.lz.unwrap_or(2).max(2);
+            let model = tfim_cube(lx, ly, lz, 1.0, config.field);
+            let n = lx * ly * lz;
+            let d1 = config.defect_sites.map(|s| s[0]).unwrap_or(0);
+            let d2 = config
+                .defect_sites
+                .map(|s| s[1])
+                .unwrap_or(n.saturating_sub(1));
+            ScatterSetup {
+                model,
+                n,
+                embed_dim: 3,
+                defect_sites: [d1.min(n - 1), d2.min(n - 1)],
+                kind: "cube",
+                rows: None,
+                cols: None,
+                cube_dims: Some([lx, ly, lz]),
+            }
+        }
+        _ => {
+            let n = if config.n > 0 {
+                config.n
+            } else {
+                12
+            };
+            let model = tfim_chain(n, 1.0, config.field);
+            let d1 = config.defect_sites.map(|s| s[0]).unwrap_or(3);
+            let d2 = config
+                .defect_sites
+                .map(|s| s[1])
+                .unwrap_or(n.saturating_sub(4));
+            ScatterSetup {
+                model,
+                n,
+                embed_dim: 1,
+                defect_sites: [d1.min(n - 1), d2.min(n - 1)],
+                kind: "chain",
+                rows: None,
+                cols: None,
+                cube_dims: None,
+            }
+        }
+    }
+}
+
+fn manhattan_distance(a: &TruePosition, b: &TruePosition) -> f64 {
+    let mut d = (a.x - b.x).abs() + (a.y - b.y).abs();
+    match (a.z, b.z) {
+        (Some(za), Some(zb)) => d += (za - zb).abs(),
+        _ => {}
+    }
+    d
+}
+
+pub(crate) fn lattice_separation(site_a: usize, site_b: usize, positions: &[TruePosition]) -> f64 {
+    let a = site_a.min(positions.len().saturating_sub(1));
+    let b = site_b.min(positions.len().saturating_sub(1));
+    manhattan_distance(&positions[a], &positions[b])
 }
 
 fn fit_site_velocity(worldline: &[ScatteringWorldlinePoint], burn_in_frac: f64) -> f64 {
@@ -94,31 +232,87 @@ fn fit_site_velocity(worldline: &[ScatteringWorldlinePoint], burn_in_frac: f64) 
     (count * sum_ts - sum_t * sum_s) / denom
 }
 
-fn worldline_moved(worldline: &[ScatteringWorldlinePoint], initial: usize) -> bool {
-    worldline
-        .iter()
-        .any(|p| (p.site as i32 - initial as i32).abs() >= 1)
+fn fit_graph_distance_velocity(
+    worldline: &[ScatteringWorldlinePoint],
+    initial: usize,
+    positions: &[TruePosition],
+    burn_in_frac: f64,
+) -> f64 {
+    let start = ((worldline.len() as f64) * burn_in_frac).floor() as usize;
+    if worldline.len().saturating_sub(start) < 2 {
+        return 0.0;
+    }
+    let mut sum_t = 0.0;
+    let mut sum_d = 0.0;
+    let mut sum_tt = 0.0;
+    let mut sum_td = 0.0;
+    let mut count = 0.0;
+    for p in worldline.iter().skip(start) {
+        let t = p.t;
+        let d = lattice_separation(p.site, initial, positions);
+        sum_t += t;
+        sum_d += d;
+        sum_tt += t * t;
+        sum_td += t * d;
+        count += 1.0;
+    }
+    let denom = count * sum_tt - sum_t * sum_t;
+    if denom.abs() < 1e-12 {
+        return 0.0;
+    }
+    (count * sum_td - sum_t * sum_d) / denom
+}
+
+fn worldline_moved(
+    worldline: &[ScatteringWorldlinePoint],
+    initial: usize,
+    positions: Option<&[TruePosition]>,
+) -> bool {
+    if let Some(pos) = positions {
+        worldline
+            .iter()
+            .any(|p| lattice_separation(p.site, initial, pos) >= 1.0)
+    } else {
+        worldline
+            .iter()
+            .any(|p| (p.site as i32 - initial as i32).abs() >= 1)
+    }
 }
 
 fn analyze_crossing(
-    left: &[ScatteringWorldlinePoint],
-    right: &[ScatteringWorldlinePoint],
+    wl1: &[ScatteringWorldlinePoint],
+    wl2: &[ScatteringWorldlinePoint],
     d1: usize,
     d2: usize,
+    positions: Option<&[TruePosition]>,
 ) -> (bool, f64, Vec<f64>) {
     let mut min_sep = f64::INFINITY;
     let mut crossed = false;
-    let mut separation_series = Vec::with_capacity(left.len());
-    let overlap_start = left.len() * 15 / 100;
-    for (k, (l, r)) in left.iter().zip(right.iter()).enumerate() {
-        let sep = (l.site as i32 - r.site as i32).unsigned_abs() as f64;
+    let mut separation_series = Vec::with_capacity(wl1.len());
+    let overlap_start = wl1.len() * 15 / 100;
+    for (k, (l, r)) in wl1.iter().zip(wl2.iter()).enumerate() {
+        let sep = if let Some(pos) = positions {
+            lattice_separation(l.site, r.site, pos)
+        } else {
+            (l.site as i32 - r.site as i32).unsigned_abs() as f64
+        };
         separation_series.push(sep);
         if k >= overlap_start {
             min_sep = min_sep.min(sep);
-            if d1 < d2 && l.site >= r.site {
+            if let Some(pos) = positions {
+                let x0_d1 = pos[d1.min(pos.len() - 1)].x;
+                let x0_d2 = pos[d2.min(pos.len() - 1)].x;
+                let x_l = pos[l.site.min(pos.len() - 1)].x;
+                let x_r = pos[r.site.min(pos.len() - 1)].x;
+                if x0_d1 < x0_d2 && x_l >= x_r {
+                    crossed = true;
+                }
+                if x0_d1 > x0_d2 && x_l <= x_r {
+                    crossed = true;
+                }
+            } else if d1 < d2 && l.site >= r.site {
                 crossed = true;
-            }
-            if d1 > d2 && l.site <= r.site {
+            } else if d1 > d2 && l.site <= r.site {
                 crossed = true;
             }
         }
@@ -144,7 +338,6 @@ fn exchange_phase(psi: &QuantumState, d1: usize, d2: usize) -> f64 {
         im.atan2(re)
     });
     let delta = phases[3] + phases[0] - phases[1] - phases[2];
-    // Wrap to [-π, π]
     let mut wrapped = delta;
     while wrapped > std::f64::consts::PI {
         wrapped -= std::f64::consts::TAU;
@@ -176,7 +369,7 @@ fn unwrap_phases(phases: &[f64]) -> Vec<f64> {
 }
 
 fn track_exchange_phases(
-    hamiltonian: &crate::quantum::Hamiltonian,
+    hamiltonian: &Hamiltonian,
     initial: &QuantumState,
     reference: &QuantumState,
     dt: f64,
@@ -277,16 +470,27 @@ fn analyze_interaction(
     )
 }
 
-pub fn run_two_defect_scattering(config: &ScatteringConfig) -> ScatteringResult {
-    let d1 = config.defect_sites.map(|s| s[0]).unwrap_or(3);
-    let d2 = config.defect_sites.map(|s| s[1]).unwrap_or(config.n - 4);
-    let model = tfim_chain(config.n, 1.0, config.field);
-
-    let mut initial = QuantumState::zero(config.n);
+fn two_defect_initial(n: usize, d1: usize, d2: usize) -> QuantumState {
+    let mut initial = QuantumState::zero(n);
     initial.data[2 * (1 << d1)] = 1.0;
     initial.data[2 * (1 << d2)] = 1.0;
+    initial
+}
+
+pub fn run_two_defect_scattering(config: &ScatteringConfig) -> ScatteringResult {
+    let setup = resolve_scatter_setup(config);
+    let d1 = setup.defect_sites[0];
+    let d2 = setup.defect_sites[1];
+    let positions = setup.model.layout.true_positions.clone();
+    let pos_ref = if setup.embed_dim >= 2 {
+        Some(positions.as_slice())
+    } else {
+        None
+    };
+
+    let initial = two_defect_initial(setup.n, d1, d2);
     let reference = {
-        let mut r = QuantumState::zero(config.n);
+        let mut r = QuantumState::zero(setup.n);
         r.data[0] = 1.0;
         r
     };
@@ -295,12 +499,12 @@ pub fn run_two_defect_scattering(config: &ScatteringConfig) -> ScatteringResult 
     let initial_for_phase = initial.clone_state();
     let reference_for_phase = reference.clone_state();
     let spacetime = build_light_cone_trajectory(SpacetimeConfig {
-        hamiltonian: &model.hamiltonian,
+        hamiltonian: &setup.model.hamiltonian,
         initial,
         reference: Some(reference),
         dt: config.dt,
         steps: config.steps,
-        embed_dim: 1,
+        embed_dim: setup.embed_dim,
         align_to: None,
         order: config.taylor_order,
         include_geometry: false,
@@ -324,14 +528,23 @@ pub fn run_two_defect_scattering(config: &ScatteringConfig) -> ScatteringResult 
         .into_iter()
         .map(ScatteringWorldlinePoint::from)
         .collect();
-    let (crossed, min_separation, separation_series) = analyze_crossing(&wl1, &wl2, d1, d2);
-    let velocities = [
-        fit_site_velocity(&wl1, 0.15),
-        fit_site_velocity(&wl2, 0.15),
-    ];
-    let both_moved = worldline_moved(&wl1, d1) && worldline_moved(&wl2, d2);
+    let (crossed, min_separation, separation_series) =
+        analyze_crossing(&wl1, &wl2, d1, d2, pos_ref);
+    let velocities = if setup.embed_dim >= 2 {
+        [
+            fit_graph_distance_velocity(&wl1, d1, &positions, 0.15),
+            fit_graph_distance_velocity(&wl2, d2, &positions, 0.15),
+        ]
+    } else {
+        [
+            fit_site_velocity(&wl1, 0.15),
+            fit_site_velocity(&wl2, 0.15),
+        ]
+    };
+    let both_moved =
+        worldline_moved(&wl1, d1, pos_ref) && worldline_moved(&wl2, d2, pos_ref);
     let (phase_series, post_interaction_phase_std, phase_stable) = track_exchange_phases(
-        &model.hamiltonian,
+        &setup.model.hamiltonian,
         &initial_for_phase,
         &reference_for_phase,
         config.dt,
@@ -349,7 +562,13 @@ pub fn run_two_defect_scattering(config: &ScatteringConfig) -> ScatteringResult 
         );
 
     ScatteringResult {
-        n: config.n,
+        kind: setup.kind.to_string(),
+        label: setup.model.label.clone(),
+        n: setup.n,
+        rows: setup.rows,
+        cols: setup.cols,
+        cube_dims: setup.cube_dims,
+        layout_positions: positions,
         field: config.field,
         defect_sites: [d1, d2],
         slices: if lite {
@@ -379,13 +598,37 @@ pub fn run_two_defect_scattering(config: &ScatteringConfig) -> ScatteringResult 
 mod tests {
     use super::*;
 
-    fn default_config() -> ScatteringConfig {
+    fn default_chain_config() -> ScatteringConfig {
         ScatteringConfig {
             n: 12,
             field: 0.7,
             dt: 0.12,
             steps: 40,
             defect_sites: Some([3, 8]),
+            kind: None,
+            rows: None,
+            cols: None,
+            lx: None,
+            ly: None,
+            lz: None,
+            lite: true,
+            taylor_order: 4,
+        }
+    }
+
+    fn default_grid_config() -> ScatteringConfig {
+        ScatteringConfig {
+            n: 9,
+            field: 0.7,
+            dt: 0.12,
+            steps: 40,
+            defect_sites: Some([0, 8]),
+            kind: Some("grid".to_string()),
+            rows: Some(3),
+            cols: Some(3),
+            lx: None,
+            ly: None,
+            lz: None,
             lite: true,
             taylor_order: 4,
         }
@@ -393,31 +636,69 @@ mod tests {
 
     #[test]
     fn interaction_metrics_on_default_config() {
-        let r = run_two_defect_scattering(&default_config());
+        let r = run_two_defect_scattering(&default_chain_config());
         assert!(r.overlap_detected, "cones should close on default demo");
         assert!(
             r.overlap_step > 0 && r.overlap_step < r.separation_series.len(),
             "overlap_step={} out of range",
             r.overlap_step
         );
-        assert!(
-            r.interaction_phase_shift.is_finite(),
-            "interaction_phase_shift should be finite"
-        );
-        assert!(
-            r.separation_time_delay.is_finite(),
-            "separation_time_delay should be finite"
-        );
+        assert!(r.interaction_phase_shift.is_finite());
+        assert!(r.separation_time_delay.is_finite());
+        assert_eq!(r.kind, "chain");
     }
 
     #[test]
     fn interaction_phase_shift_exceeds_ad_threshold() {
-        let r = run_two_defect_scattering(&default_config());
+        let r = run_two_defect_scattering(&default_chain_config());
         assert!(
             r.interaction_phase_shift.abs() > 0.05,
             "AD threshold: |phase_shift|={:.4}",
             r.interaction_phase_shift
         );
+    }
+
+    #[test]
+    fn grid_scattering_both_defects_propagate() {
+        let r = run_two_defect_scattering(&default_grid_config());
+        assert_eq!(r.kind, "grid");
+        assert_eq!(r.rows, Some(3));
+        assert_eq!(r.cols, Some(3));
+        assert!(r.both_moved, "both defects should move on 3x3 grid");
+        let init_sep = lattice_separation(
+            r.defect_sites[0],
+            r.defect_sites[1],
+            &r.layout_positions,
+        );
+        assert!(
+            r.min_separation < init_sep,
+            "graph separation should decrease from initial {}, got min {}",
+            init_sep,
+            r.min_separation
+        );
+        assert_eq!(r.layout_positions.len(), 9);
+    }
+
+    #[test]
+    fn cube_scattering_runs() {
+        let r = run_two_defect_scattering(&ScatteringConfig {
+            n: 8,
+            field: 0.7,
+            dt: 0.12,
+            steps: 32,
+            defect_sites: Some([0, 7]),
+            kind: Some("cube".to_string()),
+            rows: None,
+            cols: None,
+            lx: Some(2),
+            ly: Some(2),
+            lz: Some(2),
+            lite: true,
+            taylor_order: 4,
+        });
+        assert_eq!(r.kind, "cube");
+        assert_eq!(r.cube_dims, Some([2, 2, 2]));
+        assert!(r.both_moved);
     }
 
     #[test]

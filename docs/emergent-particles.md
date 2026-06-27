@@ -50,6 +50,6 @@ Scrubbing `k`: a **bright cluster** of nodes moves through emergent MDS position
 
 See [roadmap.md](./roadmap.md) Phase 11. Near term:
 
-1. ~~**Scattering phase shift** when two cones overlap (chain, h sweep).~~ **Done (2026-06-27)** — see [scattering.md](./scattering.md), falsification **AD**.
-2. **Two-defect scattering on 2D / 3D** lattices.
+1. ~~**Scattering phase shift** when two cones overlap (chain, h sweep).~~ **Done (2026-06-27)** — falsification **AD**.
+2. ~~**Two-defect scattering on 2D / 3D** lattices.~~ **Done (2026-06-27)** — `kind: grid|cube`; falsification **AE**.
 3. **Effective mass** from dispersion relation of lattice excitations.

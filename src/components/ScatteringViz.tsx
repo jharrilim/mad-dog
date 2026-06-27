@@ -13,11 +13,55 @@ import {
   runScatteringAsync,
   type ScatteringResultWithBackend,
 } from '@/sim/runner-async'
+import type { ScatteringConfig } from '@/sim/types'
 import {
   timeSeriesChartPath,
   worldlinePolylinePoints,
   WORLDLINE_COLORS,
 } from '@/components/worldline-viz'
+
+type LatticeKind = NonNullable<ScatteringConfig['kind']>
+
+const PRESETS: Record<
+  LatticeKind,
+  { label: string; config: Omit<ScatteringConfig, 'field' | 'lite'> }
+> = {
+  chain: {
+    label: 'Chain (n=12)',
+    config: {
+      kind: 'chain',
+      n: 12,
+      dt: 0.12,
+      steps: 40,
+      defectSites: [3, 8],
+    },
+  },
+  grid: {
+    label: 'Grid (3×3)',
+    config: {
+      kind: 'grid',
+      n: 9,
+      rows: 3,
+      cols: 3,
+      dt: 0.12,
+      steps: 40,
+      defectSites: [0, 8],
+    },
+  },
+  cube: {
+    label: 'Cube (2×2×2)',
+    config: {
+      kind: 'cube',
+      n: 8,
+      lx: 2,
+      ly: 2,
+      lz: 2,
+      dt: 0.12,
+      steps: 32,
+      defectSites: [0, 7],
+    },
+  },
+}
 
 function ScatteringDiagram({ result }: { result: ScatteringResultWithBackend }) {
   const rows = result.slices.length
@@ -66,12 +110,79 @@ function ScatteringDiagram({ result }: { result: ScatteringResultWithBackend }) 
   )
 }
 
+function LatticeScatteringDiagram({ result }: { result: ScatteringResultWithBackend }) {
+  const gridRows = result.rows ?? Math.ceil(Math.sqrt(result.n))
+  const gridCols = result.cols ?? gridRows
+  const slice = result.slices[result.slices.length - 1]
+  if (!slice) return null
+
+  let max = 1e-9
+  for (const v of slice.signal) max = Math.max(max, v)
+
+  const cell = 36
+  const pad = 20
+  const W = pad * 2 + gridCols * cell
+  const H = pad * 2 + gridRows * cell
+  const cx = (site: number) => {
+    const p = result.layoutPositions[site]
+    return pad + (p?.x ?? 0) * cell + cell / 2
+  }
+  const cy = (site: number) => {
+    const p = result.layoutPositions[site]
+    return pad + (p?.y ?? 0) * cell + cell / 2
+  }
+
+  const [wl0, wl1] = result.worldlines
+
+  return (
+    <div className="space-y-1">
+      <h4 className="text-sm font-medium">Lattice signal (final slice)</h4>
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto max-w-md" role="img">
+        {slice.signal.map((v, i) => {
+          const p = result.layoutPositions[i]
+          const x = pad + (p?.x ?? 0) * cell
+          const y = pad + (p?.y ?? 0) * cell
+          return (
+            <rect
+              key={i}
+              x={x + 2}
+              y={y + 2}
+              width={cell - 4}
+              height={cell - 4}
+              rx={4}
+              fill={`oklch(0.72 0.16 290 / ${0.08 + (v / max) * 0.92})`}
+            />
+          )
+        })}
+        <polyline
+          fill="none"
+          stroke={WORLDLINE_COLORS[0]}
+          strokeWidth={2}
+          points={wl0.map((p) => `${cx(p.site)},${cy(p.site)}`).join(' ')}
+        />
+        <polyline
+          fill="none"
+          stroke={WORLDLINE_COLORS[1]}
+          strokeWidth={2}
+          points={wl1.map((p) => `${cx(p.site)},${cy(p.site)}`).join(' ')}
+        />
+      </svg>
+      <p className="text-xs text-muted-foreground">
+        {result.label} — worldline paths on native lattice coordinates (x–y projection
+        {result.kind === 'cube' ? ', z averaged in layout' : ''}).
+      </p>
+    </div>
+  )
+}
+
 function SeparationChart({
   series,
   overlapStep,
+  graphDistance,
 }: {
   series: number[]
   overlapStep?: number
+  graphDistance?: boolean
 }) {
   const W = 280
   const H = 72
@@ -99,15 +210,16 @@ function SeparationChart({
         )}
         <polyline fill="none" stroke={WORLDLINE_COLORS[0]} strokeWidth={2} points={line} />
         <text x={12} y={14} className="fill-muted-foreground text-[9px]">
-          {maxY.toFixed(0)} sites
+          {maxY.toFixed(1)} {graphDistance ? 'graph' : 'sites'}
         </text>
         <text x={W - 8} y={H - 2} textAnchor="end" className="fill-muted-foreground text-[9px]">
           time →
         </text>
       </svg>
       <p className="text-xs text-muted-foreground">
-        Lattice separation between tracked excitation centroids. A dip toward zero
-        marks cone overlap; dashed line = overlap step.
+        {graphDistance
+          ? 'Manhattan graph distance between tracked peaks. A dip marks cone overlap.'
+          : 'Lattice separation between tracked excitation centroids. A dip toward zero marks cone overlap; dashed line = overlap step.'}
       </p>
     </div>
   )
@@ -164,36 +276,51 @@ function PhaseChart({
 }
 
 export function ScatteringViz() {
+  const [kind, setKind] = useState<LatticeKind>('chain')
   const [field, setField] = useState(0.7)
   const [result, setResult] = useState<ScatteringResultWithBackend | null>(null)
   const [loading, setLoading] = useState(false)
 
   const run = useCallback(() => {
     setLoading(true)
+    const preset = PRESETS[kind]
     void runScatteringAsync({
-      n: 12,
+      ...preset.config,
       field,
-      dt: 0.12,
-      steps: 40,
-      defectSites: [3, 8],
       lite: false,
     })
       .then(setResult)
       .finally(() => setLoading(false))
-  }, [field])
+  }, [field, kind])
+
+  const isLattice = result?.kind === 'grid' || result?.kind === 'cube'
 
   return (
     <Card>
       <CardHeader>
         <CardTitle>Two-defect scattering</CardTitle>
         <CardDescription>
-          Two Z-defects in ordered-phase TFIM. Tracks whether both excitations
-          propagate (worldlines move) without binding (min separation ≥ 1). Lower
-          h sharpens worldlines; higher h smears the signal.
+          Two Z-defects on a chain, 2D grid, or 3D cube. Tracks propagation, graph
+          separation, and exchange-phase shift at cone overlap. Lower h sharpens
+          worldlines.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="flex flex-wrap items-center gap-4">
+          <label className="text-sm flex items-center gap-2">
+            <span className="text-muted-foreground">Lattice</span>
+            <select
+              value={kind}
+              onChange={(e) => setKind(e.target.value as LatticeKind)}
+              className="rounded-md border bg-background px-2 py-1 text-sm"
+            >
+              {(Object.keys(PRESETS) as LatticeKind[]).map((k) => (
+                <option key={k} value={k}>
+                  {PRESETS[k].label}
+                </option>
+              ))}
+            </select>
+          </label>
           <label className="text-sm flex items-center gap-2">
             <span className="text-muted-foreground whitespace-nowrap">
               Field h = {field.toFixed(1)}
@@ -221,6 +348,7 @@ export function ScatteringViz() {
         {result && (
           <>
             <div className="flex flex-wrap gap-2 text-xs">
+              <Badge variant="secondary">{result.label}</Badge>
               <Badge variant={result.bothMoved ? 'default' : 'destructive'}>
                 both moved: {result.bothMoved ? 'yes' : 'no'}
               </Badge>
@@ -228,7 +356,8 @@ export function ScatteringViz() {
                 crossed: {result.crossed ? 'yes' : 'no'}
               </Badge>
               <Badge variant="outline">
-                min separation = {result.minSeparation.toFixed(1)} sites
+                min sep = {result.minSeparation.toFixed(1)}
+                {isLattice ? ' graph' : ' sites'}
               </Badge>
               <Badge variant={result.overlapDetected ? 'default' : 'outline'}>
                 overlap step = {result.overlapStep}
@@ -244,7 +373,8 @@ export function ScatteringViz() {
               </Badge>
               <Badge variant="outline">
                 v₀ ≈ {result.velocities[0].toFixed(2)} · v₁ ≈{' '}
-                {result.velocities[1].toFixed(2)} sites/time
+                {result.velocities[1].toFixed(2)}
+                {isLattice ? ' dist/time' : ' sites/time'}
               </Badge>
               <Badge variant="outline">
                 defects at {result.defectSites.join(', ')}
@@ -254,11 +384,16 @@ export function ScatteringViz() {
               </Badge>
             </div>
             <div className="grid lg:grid-cols-2 gap-6 items-start">
-              <ScatteringDiagram result={result} />
+              {isLattice ? (
+                <LatticeScatteringDiagram result={result} />
+              ) : (
+                <ScatteringDiagram result={result} />
+              )}
               <div className="space-y-6">
                 <SeparationChart
                   series={result.separationSeries}
                   overlapStep={result.overlapStep}
+                  graphDistance={isLattice}
                 />
                 <PhaseChart series={result.phaseSeries} overlapStep={result.overlapStep} />
               </div>

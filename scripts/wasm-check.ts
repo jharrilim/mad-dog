@@ -424,6 +424,33 @@ for (const config of [
   else ok(`timeDelay=${r.separationTimeDelay.toFixed(3)}`)
   if (r.separationSeries?.length !== 40) fail('separation series length')
   else ok(`separationSeries=${r.separationSeries.length}`)
+  if (r.kind !== 'chain') fail(`expected kind=chain, got ${r.kind}`)
+}
+
+// --- Scattering grid (lite) ---
+{
+  const r = JSON.parse(
+    run_scattering_json(
+      JSON.stringify({
+        kind: 'grid',
+        rows: 3,
+        cols: 3,
+        n: 9,
+        field: 0.7,
+        dt: 0.12,
+        steps: 40,
+        defectSites: [0, 8],
+        lite: true,
+      }),
+    ),
+  )
+  console.log('\nscattering grid (lite):')
+  if (r.kind !== 'grid') fail(`expected kind=grid, got ${r.kind}`)
+  else ok(`label=${r.label}`)
+  if (!r.bothMoved) fail('grid: both defects should move')
+  else ok(`bothMoved minSep=${r.minSeparation.toFixed(2)}`)
+  if (r.layoutPositions?.length !== 9) fail('grid layout positions')
+  else ok(`layout=${r.layoutPositions.length} sites`)
 }
 
 // --- Scattering (full) ---

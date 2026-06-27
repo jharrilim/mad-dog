@@ -498,23 +498,36 @@ export interface SimultaneityResult {
 }
 
 export interface ScatteringConfig {
-  n: number
+  n?: number
   field: number
   dt: number
   steps: number
   defectSites?: [number, number]
+  /** `chain` (default), `grid`, or `cube` */
+  kind?: 'chain' | 'grid' | 'cube'
+  rows?: number
+  cols?: number
+  lx?: number
+  ly?: number
+  lz?: number
   lite?: boolean
   taylorOrder?: number
 }
 
-export interface WorldlinePoint {
-  t: number
-  site: number
-  amplitude: number
+export interface LatticePosition {
+  x: number
+  y: number
+  z?: number
 }
 
 export interface ScatteringResult {
+  kind: string
+  label: string
   n: number
+  rows?: number
+  cols?: number
+  cubeDims?: [number, number, number]
+  layoutPositions: LatticePosition[]
   field: number
   defectSites: [number, number]
   slices: SpacetimeSlice[]
@@ -533,6 +546,12 @@ export interface ScatteringResult {
   separationTimeDelay: number
   elapsedMs: number
   backend?: SimBackend
+}
+
+export interface WorldlinePoint {
+  t: number
+  site: number
+  amplitude: number
 }
 
 export interface LorentzScalingCase {

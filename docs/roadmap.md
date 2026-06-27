@@ -123,7 +123,7 @@ Operational checklist — each maps to falsification tests and roadmap phases.
 
 ---
 
-### Phase 11 (partial) — Scattering interaction — **shipped 2026-06-27**
+### Phase 11 (partial) — Scattering extensions — **shipped 2026-06-27**
 
 | Item | Notes |
 |------|-------|
@@ -131,6 +131,8 @@ Operational checklist — each maps to falsification tests and roadmap phases.
 | Falsification AD | `overlapDetected`, \|phaseShift\| > 0.05, finite `separationTimeDelay` |
 | UI phase chart + overlap marker | `ScatteringViz.tsx` |
 | h sweep columns | `sweep:scattering` reports phaseShift, timeDelay |
+| Two-defect scattering on grid/cube | `kind: grid|cube`; Manhattan separation; falsification **AE** |
+| UI lattice selector | Chain / 3×3 grid / 2×2×2 cube presets |
 
 ---
 
@@ -140,8 +142,8 @@ Signatures **S1–S10** and Phase 10 are complete. Remaining Phase 11 items:
 
 | Priority | Item | Notes | Doc |
 |----------|------|-------|-----|
-| ~~**High**~~ | ~~**Scattering phase shift / time delay**~~ | **Shipped 2026-06-27** — falsification **AD**; see [scattering.md](./scattering.md) | |
-| **High** | **Two-defect scattering on 2D / 3D** | Extend scattering runner beyond 1D chain (grid, cube) | [scattering.md](./scattering.md) |
+| ~~**High**~~ | ~~**Scattering phase shift / time delay**~~ | **Shipped 2026-06-27** — falsification **AD** | [scattering.md](./scattering.md) |
+| ~~**High**~~ | ~~**Two-defect scattering on 2D / 3D**~~ | **Shipped 2026-06-27** — falsification **AE**; grid + cube | [scattering.md](./scattering.md) |
 | **Medium** | **Effective mass from dispersion** | Tie lattice excitation ω(k) to emergent particle mass (extends falsification **O**) | [scattering.md](./scattering.md), [emergent-particles.md](./emergent-particles.md) |
 | **Medium** | **Same \|ψ⟩, different `n`** | Compare factorizations via explicit embedding / truncation across factor counts | [open-questions.md](./open-questions.md) |
 | **Medium** | **3D / torus factorization search** | Builders exist; permutation search is line/grid only today | [factorization.md](./factorization.md) |
@@ -149,7 +151,7 @@ Signatures **S1–S10** and Phase 10 are complete. Remaining Phase 11 items:
 | **Lower** | **Modular / QFT-style clock graphs** | Z-threshold clocks on lattices shipped; modular-flow networks on grids/cubes not wired | [multi-clock.md](./multi-clock.md), [emergent-time.md](./emergent-time.md) |
 | **Research** | **True eigenvalue-only blind inference** | Spectrum mode still uses eigenvector amplitudes; no {Eₙ}-only recovery | [factorization.md](./factorization.md), Phase 1 deferred |
 
-**Suggested first pick:** two-defect scattering on 2D / 3D grid or cube.
+**Suggested first pick:** effective mass from lattice excitation dispersion.
 
 ## Deferred (not rejected)
 

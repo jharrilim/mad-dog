@@ -42,7 +42,7 @@ use crate::poincare::{run_poincare_composite, PoincareCompositeConfig};
 use crate::dispersion::{run_dispersion, DispersionConfig};
 use crate::lorentz::grid_cardinal_speed_cv;
 use crate::run_lorentz_scaling::run_lorentz_scaling;
-use crate::scattering::{run_two_defect_scattering, ScatteringConfig};
+use crate::scattering::{run_two_defect_scattering, lattice_separation, ScatteringConfig};
 use crate::locality_spectrum::run_locality_spectrum_battery;
 use serde::Serialize;
 
@@ -248,13 +248,10 @@ pub fn run_falsification_battery() -> FalsificationBatteryResult {
     // E — two excitations propagate without binding
     {
         let s = run_two_defect_scattering(&ScatteringConfig {
-            n: 12,
-            field: 0.7,
-            dt: 0.12,
-            steps: 40,
             defect_sites: Some([3, 8]),
             lite: true,
             taylor_order: 4,
+            ..Default::default()
         });
         let d1 = s.defect_sites[0];
         let d2 = s.defect_sites[1];
@@ -629,13 +626,10 @@ pub fn run_falsification_battery() -> FalsificationBatteryResult {
     // Q — scattering exchange phase stabilizes post-interaction
     {
         let s = run_two_defect_scattering(&ScatteringConfig {
-            n: 12,
-            field: 0.7,
-            dt: 0.12,
-            steps: 40,
             defect_sites: Some([3, 8]),
             lite: true,
             taylor_order: 4,
+            ..Default::default()
         });
         tests.push(FalsificationTest {
             id: "Q".to_string(),
@@ -651,13 +645,10 @@ pub fn run_falsification_battery() -> FalsificationBatteryResult {
     // AD — exchange phase shifts measurably at cone overlap
     {
         let s = run_two_defect_scattering(&ScatteringConfig {
-            n: 12,
-            field: 0.7,
-            dt: 0.12,
-            steps: 40,
             defect_sites: Some([3, 8]),
             lite: true,
             taylor_order: 4,
+            ..Default::default()
         });
         let passed = s.overlap_detected
             && s.interaction_phase_shift.abs() > 0.05
@@ -672,6 +663,36 @@ pub fn run_falsification_battery() -> FalsificationBatteryResult {
                 s.interaction_phase_shift,
                 s.separation_time_delay,
                 s.min_separation
+            ),
+        });
+    }
+
+    // AE — two-defect scattering on 2D grid (Phase 11)
+    {
+        let s = run_two_defect_scattering(&ScatteringConfig {
+            n: 9,
+            kind: Some("grid".to_string()),
+            rows: Some(3),
+            cols: Some(3),
+            defect_sites: Some([0, 8]),
+            lite: true,
+            taylor_order: 4,
+            ..Default::default()
+        });
+        let init_sep = {
+            let pos = &s.layout_positions;
+            let a = s.defect_sites[0].min(pos.len().saturating_sub(1));
+            let b = s.defect_sites[1].min(pos.len().saturating_sub(1));
+            lattice_separation(a, b, pos)
+        };
+        let passed = s.kind == "grid" && s.both_moved && s.min_separation < init_sep;
+        tests.push(FalsificationTest {
+            id: "AE".to_string(),
+            name: "Two-defect scattering on 2D TFIM grid".to_string(),
+            passed,
+            detail: format!(
+                "bothMoved={}, minSep={:.1}, initSep={:.1}, label={}",
+                s.both_moved, s.min_separation, init_sep, s.label
             ),
         });
     }

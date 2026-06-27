@@ -11,9 +11,9 @@ We are **not** trying to prove Mad-Dog from axioms or solve the measurement prob
 | **Scaling / uniqueness** | Open — biggest gap between “mechanism” and “our-universe-likeness” |
 | **Observational export** | Map sim thresholds to Lorentz / entropy bounds | **Shipped** — [observational-bridge.md](./observational-bridge.md), `npm run bench:observational` |
 
-Automated today: falsification battery **A–AD** (36 tests in `check:falsification`; **AB**, **AC** in `bench:factor`). Signature program **S1–S10** and Phase 10 complete.
+Automated today: falsification battery **A–AE** (37 tests in `check:falsification`; **AB**, **AC** in `bench:factor`). Signature program **S1–S10** and Phase 10 complete.
 
-**Next ranked (Phase 11):** two-defect scattering on 2D/3D, effective mass from dispersion. See [roadmap.md](./roadmap.md).
+**Next ranked (Phase 11):** effective mass from dispersion. See [roadmap.md](./roadmap.md).
 
 ## From the paper (not yet simulated)
 

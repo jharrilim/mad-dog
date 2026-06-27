@@ -233,8 +233,25 @@ pub fn build_spacetime(config: SpacetimeConfig<'_>) -> SpacetimeResult {
         let signal = signal_from_z(&z_expectation, &ref_z);
 
         if let Some((ref mut wl1, ref mut wl2, defects)) = worldlines.as_mut() {
-            wl1.push(track_worldline_point(&signal, defects[0], sites, "left", t));
-            wl2.push(track_worldline_point(&signal, defects[1], sites, "right", t));
+            if embed_dim >= 2 {
+                wl1.push(track_single_worldline(
+                    &signal,
+                    defects[0],
+                    sites,
+                    embed_dim,
+                    t,
+                ));
+                wl2.push(track_single_worldline(
+                    &signal,
+                    defects[1],
+                    sites,
+                    embed_dim,
+                    t,
+                ));
+            } else {
+                wl1.push(track_worldline_point(&signal, defects[0], sites, "left", t));
+                wl2.push(track_worldline_point(&signal, defects[1], sites, "right", t));
+            }
         }
         if let Some(ref mut wl) = worldline {
             if let Some(defect) = config.defect_site {
