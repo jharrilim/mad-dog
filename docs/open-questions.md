@@ -11,9 +11,9 @@ We are **not** trying to prove Mad-Dog from axioms or solve the measurement prob
 | **Scaling / uniqueness** | Open — biggest gap between “mechanism” and “our-universe-likeness” |
 | **Observational export** | Map sim thresholds to Lorentz / entropy bounds | **Shipped** — [observational-bridge.md](./observational-bridge.md), `npm run bench:observational` |
 
-Automated today: falsification battery **A–AF** (38 tests in `check:falsification`; **AB**, **AC** in `bench:factor`). Signature program **S1–S10** and Phase 10 complete.
+Automated today: falsification battery **A–AG** (39 tests in `check:falsification`; **AB**, **AC** in `bench:factor`). Signature program **S1–S10** and Phase 10 complete.
 
-**Next ranked (Phase 11):** same |ψ⟩ factorization embedding comparison. See [roadmap.md](./roadmap.md).
+**Next ranked (Phase 11):** 3D / torus factorization search. See [roadmap.md](./roadmap.md).
 
 ## From the paper (not yet simulated)
 
@@ -61,7 +61,7 @@ In simulator terms: instead of hand-picking `tfimChain(n+1)`, detect failure of 
 
 **What we could still test (not built):**
 
-- Compare factorizations of the same |ψ⟩ with different `n` via explicit embedding / truncation.
+- ~~Compare factorizations of the same |ψ⟩ with different `n` via explicit embedding / truncation.~~ **Shipped (AG)** — `factorization_compare.rs`, `FactorizationCompareViz.tsx`; roundtrip F > 0.99, locality/dim stable under embed.
 - Field-sweep n_min: **Shipped (AC)** — holographic RT structure absent for h<1 (ordered/cat-state phase), emerges at h≈1.0. Profile: None/None/None→6/6/6. The transition in holographic structure coincides with the TFIM phase transition. n_min does not vary above h_c (all n=6 in paramagnet), so the "more factors near criticality" hypothesis is not supported — instead the story is a phase transition in holographic structure itself.
 
 **Prototype:** see [factorization.md](./factorization.md) — permutation search (line/grid), multi-eigenstate + spectrum modes, annealing for n>8, joint quench study with [refinement.md](./refinement.md).

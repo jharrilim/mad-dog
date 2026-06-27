@@ -1074,6 +1074,41 @@ export interface InplaceSplitResult {
   backend?: SimBackend
 }
 
+export interface FactorizationCompareConfig {
+  nSmall: number
+  field: number
+  dt: number
+  step: number
+  seed: number
+  deltaN?: number
+  splitSite?: number
+}
+
+export interface FactorizationCompareCase {
+  label: string
+  n: number
+  localityFraction: number
+  emergentDim: number
+  pressure: number
+}
+
+export interface FactorizationCompareResult {
+  nSmall: number
+  nLarge: number
+  deltaN: number
+  splitSite: number
+  step: number
+  roundtripFidelity: number
+  localityDriftEmbed: number
+  localityDriftRoundtrip: number
+  dimDriftEmbed: number
+  dimDriftRoundtrip: number
+  embeddingFaithful: boolean
+  cases: FactorizationCompareCase[]
+  elapsedMs: number
+  backend?: SimBackend
+}
+
 export interface HolographicBoundConfig {
   field: number
   nMin?: number

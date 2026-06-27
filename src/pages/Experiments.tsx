@@ -12,6 +12,7 @@ import { RefinementViz } from '@/components/RefinementViz'
 import { AdaptiveRefinementViz } from '@/components/AdaptiveRefinementViz'
 import { HolographyDynamicsViz } from '@/components/HolographyDynamicsViz'
 import { FactorizationViz } from '@/components/FactorizationViz'
+import { FactorizationCompareViz } from '@/components/FactorizationCompareViz'
 import { FactorizationRefinementViz } from '@/components/FactorizationRefinementViz'
 import { LightConeCompareViz } from '@/components/LightConeCompareViz'
 import { ModularClockViz } from '@/components/ModularClockViz'
@@ -107,6 +108,7 @@ function Experiments() {
           <FactorDynamicsViz />
           <HolographyDynamicsViz />
           <FactorizationViz />
+          <FactorizationCompareViz />
           <FactorizationRefinementViz />
         </section>
 

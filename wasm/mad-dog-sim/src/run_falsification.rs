@@ -722,6 +722,36 @@ pub fn run_falsification_battery() -> FalsificationBatteryResult {
         });
     }
 
+    // AG — same |ψ⟩ factorization stable under embed / truncate
+    {
+        use crate::factorization_compare::{run_factorization_compare, FactorizationCompareConfig};
+        let r = run_factorization_compare(&FactorizationCompareConfig {
+            n_small: 8,
+            field: 1.5,
+            dt: 0.2,
+            step: 12,
+            seed: 4242,
+            delta_n: Some(2),
+            split_site: None,
+        });
+        let passed = r.embedding_faithful
+            && r.roundtrip_fidelity > 0.99
+            && r.locality_drift_roundtrip < 0.05;
+        tests.push(FalsificationTest {
+            id: "AG".to_string(),
+            name: "Same |ψ⟩ factorization stable under embed/truncate".to_string(),
+            passed,
+            detail: format!(
+                "F={:.4}, Δloc_rt={:.3}, Δloc_emb={:.3}, Δdim_rt={}, faithful={}",
+                r.roundtrip_fidelity,
+                r.locality_drift_roundtrip,
+                r.locality_drift_embed,
+                r.dim_drift_roundtrip,
+                r.embedding_faithful
+            ),
+        });
+    }
+
     // R′ — RT deviation tracks excitation density (hold-out grid; tuning default is calibration only)
     {
         let cal = REFINEMENT_TUNING_DEFAULT;

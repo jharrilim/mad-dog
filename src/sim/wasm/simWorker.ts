@@ -38,6 +38,7 @@ import init, {
   run_branch_born_json,
   run_eft_dimension_json,
   run_inplace_split_json,
+  run_factorization_compare_json,
   run_holographic_bound_json,
   run_factor_count_dynamics_json,
   run_field_sweep_json,
@@ -83,6 +84,7 @@ export type WasmMethod =
   | 'branchBorn'
   | 'eftDimension'
   | 'inplaceSplit'
+  | 'factorizationCompare'
   | 'holographicBound'
   | 'factorCountDynamics'
   | 'fieldSweep'
@@ -136,6 +138,7 @@ const runners: Record<WasmMethod, (json: string) => string> = {
   branchBorn: run_branch_born_json,
   eftDimension: run_eft_dimension_json,
   inplaceSplit: run_inplace_split_json,
+  factorizationCompare: run_factorization_compare_json,
   holographicBound: run_holographic_bound_json,
   factorCountDynamics: run_factor_count_dynamics_json,
   fieldSweep: run_field_sweep_json,

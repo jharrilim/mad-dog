@@ -64,6 +64,8 @@ import type {
   LocalitySpectrumResult,
   InplaceSplitConfig,
   InplaceSplitResult,
+  FactorizationCompareConfig,
+  FactorizationCompareResult,
   HolographicBoundConfig,
   HolographicBoundResult,
   FactorCountDynamicsConfig,
@@ -312,6 +314,12 @@ export async function runInplaceSplitAsync(
   config: InplaceSplitConfig,
 ): Promise<InplaceSplitResult & { backend: SimBackend }> {
   return runWasm('inplaceSplit', config)
+}
+
+export async function runFactorizationCompareAsync(
+  config: FactorizationCompareConfig,
+): Promise<FactorizationCompareResult & { backend: SimBackend }> {
+  return runWasm('factorizationCompare', config)
 }
 
 export async function runHolographicBoundAsync(

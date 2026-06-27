@@ -134,22 +134,23 @@ Operational checklist — each maps to falsification tests and roadmap phases.
 | Two-defect scattering on grid/cube | `kind: grid|cube`; Manhattan separation; falsification **AE** |
 | Effective mass from dispersion (chain) | `effectiveMass` from ω² = m² + v²k²; falsification **AF** |
 | UI lattice selector | Chain / 3×3 grid / 2×2×2 cube presets |
+| Same \|ψ⟩, different `n` | `run_factorization_compare_json`; embed/truncate roundtrip; falsification **AG** |
+| UI factorization compare | `FactorizationCompareViz.tsx` on Experiments |
 
 ---
 
 ## Next up — Phase 11 (physics extensions)
 
-Phase 11 scattering items **shipped 2026-06-27**. Remaining backlog:
+Phase 11 scattering + same-|ψ⟩ compare **shipped 2026-06-27**. Remaining backlog:
 
 | Priority | Item | Notes | Doc |
 |----------|------|-------|-----|
-| **Medium** | **Same \|ψ⟩, different `n`** | Compare factorizations via explicit embedding / truncation across factor counts | [open-questions.md](./open-questions.md) |
 | **Medium** | **3D / torus factorization search** | Builders exist; permutation search is line/grid only today | [factorization.md](./factorization.md) |
 | **Lower** | **QECC on non-TFIM models** | Extend code-subspace probe beyond TFIM decoherence quench | [qecc-probe.md](./qecc-probe.md), [open-questions.md](./open-questions.md) |
 | **Lower** | **Modular / QFT-style clock graphs** | Z-threshold clocks on lattices shipped; modular-flow networks on grids/cubes not wired | [multi-clock.md](./multi-clock.md), [emergent-time.md](./emergent-time.md) |
 | **Research** | **True eigenvalue-only blind inference** | Spectrum mode still uses eigenvector amplitudes; no {Eₙ}-only recovery | [factorization.md](./factorization.md), Phase 1 deferred |
 
-**Suggested first pick:** same |ψ⟩ factorization comparison across factor counts.
+**Suggested first pick:** 3D / torus factorization search.
 
 ## Deferred (not rejected)
 

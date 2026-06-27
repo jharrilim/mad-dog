@@ -17,7 +17,7 @@ fn blind_annealing_steps(n: usize) -> usize {
 }
 
 /// Locality fraction from permutation search on |ψ⟩ (Pauli + MI scorer).
-fn blind_locality_fraction(h: &Hamiltonian, ground: &QuantumState) -> f64 {
+pub(crate) fn blind_locality_fraction(h: &Hamiltonian, ground: &QuantumState) -> f64 {
     let n = ground.n;
     let params = SearchParams {
         search_method: if n <= 8 {

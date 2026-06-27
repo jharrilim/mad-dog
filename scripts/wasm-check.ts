@@ -37,6 +37,7 @@ import {
   run_branch_born_json,
   run_eft_dimension_json,
   run_inplace_split_json,
+  run_factorization_compare_json,
   run_holographic_bound_json,
   run_geometry_stability_json,
   run_geometry_dim_sweep_json,
@@ -575,6 +576,20 @@ const excitationCfg = {
   console.log('\nin-place split:')
   if (!r.splitEvent?.inPlaceImproves) fail('in-place split did not relieve pressure')
   else ok(`step=${r.splitEvent.triggerStep} deltaP=${r.splitEvent.pressureDelta.toFixed(3)}`)
+}
+
+{
+  const r = JSON.parse(
+    run_factorization_compare_json(
+      JSON.stringify({ nSmall: 8, field: 1.5, dt: 0.2, step: 12, seed: 4242, deltaN: 2 }),
+    ),
+  )
+  console.log('\nfactorization compare (same |ψ⟩, different n):')
+  if (!r.embeddingFaithful || r.roundtripFidelity < 0.99) {
+    fail(`embed/truncate not faithful (F=${r.roundtripFidelity}, faithful=${r.embeddingFaithful})`)
+  } else {
+    ok(`F=${r.roundtripFidelity.toFixed(4)} Δloc_rt=${r.localityDriftRoundtrip.toFixed(3)} Δloc_emb=${r.localityDriftEmbed.toFixed(3)}`)
+  }
 }
 
 {

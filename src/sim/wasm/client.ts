@@ -76,6 +76,7 @@ export type WasmMethod =
   | 'branchBorn'
   | 'eftDimension'
   | 'inplaceSplit'
+  | 'factorizationCompare'
   | 'holographicBound'
   | 'qeccProbe'
   | 'poincareComposite'

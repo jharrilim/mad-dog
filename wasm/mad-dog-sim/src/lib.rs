@@ -9,6 +9,7 @@ mod eft_dof;
 mod emergence;
 mod excitation_subspace;
 mod factorization;
+mod factorization_compare;
 mod geometry;
 mod geometry_stability;
 mod holography;
@@ -60,6 +61,7 @@ mod run_universe;
 mod spacetime;
 
 use emergence::{run_emergence, RunConfig as EmergenceConfig};
+use factorization_compare::{run_factorization_compare, FactorizationCompareConfig};
 use run_decoherence::{run_decoherence_quench, DecoherenceQuenchConfig};
 use run_excitation_subspace::{run_excitation_subspace_probe, ExcitationSubspaceConfig};
 use run_geometry_dim_sweep::run_geometry_dim_sweep;
@@ -399,6 +401,16 @@ pub fn run_boost_invariance_json(config_json: &str) -> Result<String, JsValue> {
     let config: BoostInvarianceConfig =
         serde_json::from_str(config_json).map_err(|e| JsValue::from_str(&e.to_string()))?;
     let mut result = run_boost_invariance(&config);
+    result.elapsed_ms = js_sys::Date::now() - start;
+    serde_json::to_string(&result).map_err(|e| JsValue::from_str(&e.to_string()))
+}
+
+#[wasm_bindgen]
+pub fn run_factorization_compare_json(config_json: &str) -> Result<String, JsValue> {
+    let start = js_sys::Date::now();
+    let config: FactorizationCompareConfig =
+        serde_json::from_str(config_json).map_err(|e| JsValue::from_str(&e.to_string()))?;
+    let mut result = run_factorization_compare(&config);
     result.elapsed_ms = js_sys::Date::now() - start;
     serde_json::to_string(&result).map_err(|e| JsValue::from_str(&e.to_string()))
 }

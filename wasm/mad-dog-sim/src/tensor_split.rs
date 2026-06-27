@@ -27,6 +27,39 @@ pub fn embed_state_at_split(state: &QuantumState, split_site: usize, delta: usiz
     out
 }
 
+/// Project onto |0⟩^Δ on inserted qubits — inverse of [`embed_state_at_split`].
+pub fn truncate_state_at_split(state: &QuantumState, split_site: usize, delta: usize) -> QuantumState {
+    let n_old = state.n;
+    let n_new = n_old.saturating_sub(delta);
+    assert!(n_new > 0 && split_site + delta <= n_old);
+    let mut out = QuantumState::zero(n_new);
+    for old_idx in 0..state.dim {
+        let mut extra_zero = true;
+        for q in split_site..split_site + delta {
+            if (old_idx >> q) & 1 != 0 {
+                extra_zero = false;
+                break;
+            }
+        }
+        if !extra_zero {
+            continue;
+        }
+        let mut new_idx = 0usize;
+        for q in 0..n_new {
+            let old_q = if q < split_site { q } else { q + delta };
+            new_idx |= ((old_idx >> old_q) & 1) << q;
+        }
+        out.data[2 * new_idx] += state.data[2 * old_idx];
+        out.data[2 * new_idx + 1] += state.data[2 * old_idx + 1];
+    }
+    out.normalize();
+    out
+}
+
+pub fn quench_state_at_step(n: usize, field: f64, dt: f64, step: usize, seed: u32) -> QuantumState {
+    state_at_step(n, field, dt, step, seed)
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct InplaceSplitEvent {
@@ -204,6 +237,25 @@ mod tests {
         assert_eq!(e.n, 5);
         let norm: f64 = e.data.chunks(2).map(|c| c[0] * c[0] + c[1] * c[1]).sum();
         assert!((norm - 1.0).abs() < 1e-9);
+    }
+
+    #[test]
+    fn truncate_inverts_embed() {
+        let mut s = QuantumState::zero(6);
+        s.data[2 * 17] = 0.6;
+        s.data[2 * 17 + 1] = 0.8;
+        s.normalize();
+        let e = embed_state_at_split(&s, 2, 2);
+        let t = truncate_state_at_split(&e, 2, 2);
+        assert_eq!(t.n, 6);
+        let fidelity: f64 = s
+            .data
+            .chunks(2)
+            .zip(t.data.chunks(2))
+            .map(|(a, b)| a[0] * b[0] + a[1] * b[1])
+            .map(|x| x * x)
+            .sum();
+        assert!(fidelity > 0.999);
     }
 
     #[test]
