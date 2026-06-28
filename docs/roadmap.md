@@ -147,7 +147,8 @@ Operational checklist — each maps to falsification tests and roadmap phases.
 | Uniqueness tightening (Phase 12) | `check:scaling` — `equivalenceClassCount`, `scoreGapToSecondClass` vs n + model zoo (TFIM/XX/sparse); `bench:factorization` assertions |
 | Negative controls at scale (**M**) | Falsification **M** extended to n=8 (random + scrambled spectrum) |
 | AA-blind 2D tiebreak (partial) | MDS–grid fit + edge-MI heterogeneity tiebreak in exact search; superseded by D₄ recovery metric + torus MI penalty (**AL** shipped below) |
-| **AA-blind 2D recovery (AL)** | D₄ `grid_equiv_match` + small-torus `blind_2d_mi_term` penalty; 3×3 grid + 2×2 torus recover (seed 4242); `check:scaling` 15/15 |
+| **AA-blind 2D recovery (AL)** | D₄ `grid_equiv_match` + small-torus `blind_2d_mi_term` penalty; 3×3 grid + 2×2 torus recover (seed 4242); `check:scaling` 16/16 |
+| **Gapless XX blind boundary (AN)** | AA-blind fails on gapless XX (h=0.5); flat score landscape (spread < 0.02); TFIM control passes; `check:scaling` + falsification **AN** |
 
 ---
 
@@ -157,7 +158,7 @@ Phases 1–11 and signatures **S1–S10** are shipped. The main gap is no longer
 
 **Suggested first pick:** Extend scaling battery (G at n≥11, full falsification subset).
 
-**2026-06-27 probe ([scaling-research.md](./scaling-research.md)):** chain factorization holds n=4–8; AA-blind chain holds n=4–8; **AA-blind 2D passes (AL)** — D₄ recovery metric on 3×3 grid, inverted-MI penalty on 2×2 torus; multi-clock **G** fails at n=11 (**AM**); Lorentz L′ CoV=0. `npm run check:scaling` (15 checks).
+**2026-06-27 probe ([scaling-research.md](./scaling-research.md)):** chain factorization holds n=4–8; AA-blind chain holds n=4–8; **AA-blind 2D passes (AL)** — D₄ recovery metric on 3×3 grid, inverted-MI penalty on 2×2 torus; gapless XX fails AA-blind (**AN**); multi-clock **G** fails at n=11 (**AM**); Lorentz L′ CoV=0. `npm run check:scaling` (16 checks).
 
 ### Priority 1 — Scaling and uniqueness
 
@@ -172,7 +173,7 @@ Phases 1–11 and signatures **S1–S10** are shipped. The main gap is no longer
 | Item | Question | Notes | Doc |
 |------|----------|-------|-----|
 | ~~**Grid/torus blind spectrum**~~ | Does MI+bandwidth recover 2D labelings? | **Shipped (AL)** — D₄ equivalence on grid; `blind_2d_mi_term` on 2×2 torus; `check:scaling` grid/torus pass | [factorization.md](./factorization.md), [scaling-research.md](./scaling-research.md) |
-| **Gapless / frustrated limits** | Is XX failure fundamental for MI-only blind search? | Document or extend scorer; XX remains negative control | `locality_spectrum.rs` |
+| ~~**Gapless / frustrated limits**~~ | Is XX failure fundamental for MI-only blind search? | **Shipped (AN)** — gapless XX fails with flat score landscape; semi-blind (Ĥ term) still recovers; negative control by design | [factorization.md](./factorization.md) |
 | **Minimal extra data** | What beyond {Eₙ} is needed to recover labeling? | **AK** closed {Eₙ}-only; probe correlators / low-weight Pauli expectations | [factorization.md](./factorization.md) |
 
 ### Priority 3 — Factor count dynamics

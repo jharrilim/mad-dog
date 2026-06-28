@@ -95,6 +95,50 @@ pub(crate) fn blind_case(model_kind: &str, n: usize, field: f64, seed: u32) -> L
     }
 }
 
+/// Score spread in top-k blind candidates (flat landscape → spread ≈ 0).
+pub fn blind_score_spread(model_kind: &str, n: usize, field: f64, seed: u32, top_k: usize) -> f64 {
+    let base_h = match model_kind {
+        "tfim" => tfim_chain(n, 1.0, field).hamiltonian,
+        "xx" => xx_chain(n, 1.0, field).hamiltonian,
+        other => panic!("unknown model kind: {other}"),
+    };
+    let (shuffled_h, _) = shuffle_hamiltonian(&base_h, seed);
+    let spectrum = spectrum_from_hamiltonian(&shuffled_h, EIGENSTATE_COUNT);
+    let params = spectrum_only_params(GraphKind::Line, 1, n, n);
+    let outcome = search_factorization(&shuffled_h, &[], top_k.max(2), &params, Some(&spectrum));
+    let top = &outcome.top_candidates;
+    if top.len() < 2 {
+        return 0.0;
+    }
+    top.first().unwrap().score - top.last().unwrap().score
+}
+
+/// Phase 12 falsification AN: gapless XX fails AA-blind with flat score landscape.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct XxBlindBoundaryResult {
+    pub pass: bool,
+    pub tfim_recovered: bool,
+    pub xx_gapless_recovered: bool,
+    pub xx_score_spread: f64,
+    pub cases: Vec<LocalitySpectrumCase>,
+}
+
+pub fn run_xx_blind_boundary() -> XxBlindBoundaryResult {
+    let tfim = blind_case("tfim", 6, 1.5, 4242);
+    let xx = blind_case("xx", 6, 0.5, 4242);
+    let spread = blind_score_spread("xx", 6, 0.5, 4242, 20);
+    // Gapless XX: algebraically-decaying MI → permutations tie; spread stays tiny.
+    let pass = tfim.recovered && !xx.recovered && spread < 0.02;
+    XxBlindBoundaryResult {
+        pass,
+        tfim_recovered: tfim.recovered,
+        xx_gapless_recovered: xx.recovered,
+        xx_score_spread: spread,
+        cases: vec![tfim, xx],
+    }
+}
+
 /// Blind MI+bandwidth case on a 2D lattice (for Phase 12 scaling research).
 pub fn blind_lattice_case(
     lattice: &str,
@@ -287,6 +331,18 @@ mod tests {
             b.chain_recovered,
             b.grid_recovered,
             b.torus_recovered
+        );
+    }
+
+    #[test]
+    fn xx_blind_gapless_boundary() {
+        let b = run_xx_blind_boundary();
+        assert!(
+            b.pass,
+            "AN boundary: tfim={} xx={} spread={:.4}",
+            b.tfim_recovered,
+            b.xx_gapless_recovered,
+            b.xx_score_spread
         );
     }
 

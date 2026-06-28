@@ -106,6 +106,18 @@ WASM battery: `run_eigenvalue_only_json`
 
 `npm run check:scaling` asserts grid/torus AA-blind recovery; falsification **AL** passes when chain + grid + torus all recover.
 
+## Gapless / frustrated blind limits (shipped 2026-06-27)
+
+**AA-blind** on gapless XX chain (h/J < 1, e.g. h=0.5, J=1) **cannot** recover labeling: mutual information decays algebraically with distance, so NN vs far-MI contrast vanishes and permutations score identically (top-20 spread < 0.02). Falsification **AN** and `check:scaling` `aa_blind_xx_gapless` encode this as a **correct negative**.
+
+| Mode | XX n=6 h=0.5 | Notes |
+|------|--------------|-------|
+| Semi-blind spectrum (40% Ĥ + MI) | ✓ | Hamiltonian locality term breaks degeneracy |
+| AA-blind (MI+bandwidth only) | ✗ | Flat landscape — fundamental for this scorer |
+| Pauli + MI | ✓ | Full Ĥ structure available |
+
+Fixing AA-blind on gapless models requires **minimal extra data** beyond {Eₙ, ψₙ} MI+bandwidth — e.g. low-weight Pauli expectations or correlators (roadmap Priority 2 open item).
+
 ## Limits
 
 - Line/grid/torus/cube permutations — no dynamic factor splitting.

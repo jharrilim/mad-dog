@@ -153,3 +153,9 @@ Dated bullets for decisions future agents should not relitigate without cause.
 - **Grid 3×3 “failure” was a metric bug** — true labeling sat in an 8-way D₄ primary-score tie; search returned a symmetry-equivalent perm but `perm_distance==0` rejected it. Fix: `grid_equiv_match` / `lattice_equiv_match`, not primary scorer rebalance.
 - **2×2 torus needed scorer fix** — wrap graph has no distance-≥2 pairs; spurious labelings inflate MI-NN > 1. Fix: `blind_2d_mi_term` penalizes inverted ratio on rows×cols ≤ 4 torus only; chain AA unchanged.
 - **AL flipped negative → positive** — `check:scaling` grid/torus now expect recovery; 15/15 pass.
+
+## 2026-06-27 — Phase 12 gapless XX blind (AN)
+
+- **Gapless XX AA-blind failure is fundamental for MI+bandwidth scorer** — algebraically-decaying MI; top-20 permutations tie (spread < 0.02). Not fixable without richer blind data (Pauli expectations, etc.).
+- **Semi-blind still works** — uniqueness_xx_n6 and ensemble K recover XX via Ĥ locality term; AN separates "blind MI only" limit from general factorization.
+- **Falsification AN + scaling `aa_blind_xx_gapless`** — expect fail on xx h=0.5; TFIM h=1.5 control passes.

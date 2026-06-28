@@ -46,7 +46,7 @@ use crate::lorentz::grid_cardinal_speed_cv;
 use crate::run_lorentz_scaling::run_lorentz_scaling;
 use crate::run_scaling_battery::run_multi_clock_g_scaling_boundary;
 use crate::scattering::{run_two_defect_scattering, lattice_separation, ScatteringConfig};
-use crate::locality_spectrum::{run_aa_blind_2d_boundary, run_locality_spectrum_battery};
+use crate::locality_spectrum::{run_aa_blind_2d_boundary, run_locality_spectrum_battery, run_xx_blind_boundary};
 use serde::Serialize;
 
 fn rt_ratio_std(n: usize, field: f64, seed: u32) -> f64 {
@@ -1277,6 +1277,20 @@ pub fn run_falsification_battery() -> FalsificationBatteryResult {
                 b.n9_min_pairwise_r2,
                 b.n11_g_fail,
                 b.n11_min_pairwise_r2
+            ),
+        });
+    }
+
+    // AN — gapless XX fails AA-blind MI+bandwidth (flat score landscape); TFIM control passes
+    {
+        let b = run_xx_blind_boundary();
+        tests.push(FalsificationTest {
+            id: "AN".to_string(),
+            name: "AA-blind fails on gapless XX chain; TFIM control passes".to_string(),
+            passed: b.pass,
+            detail: format!(
+                "tfim n=6 recovered={}; xx h=0.5 recovered={}; xx top-20 score spread={:.4}",
+                b.tfim_recovered, b.xx_gapless_recovered, b.xx_score_spread
             ),
         });
     }

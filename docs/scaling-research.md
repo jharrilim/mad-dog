@@ -21,7 +21,7 @@ Empirical probe of scaling, 2D spectrum-blind recovery, and uniqueness — prior
 
 **What breaks:** relational-time signature on long chains (G at n≥11).
 
-**What holds:** TFIM chain factorization (Pauli and spectrum modes), AA-blind chain to n=8, AA-blind 2D grid/torus (AL), Lorentz isotropy proxy, uniqueness with reflection/D₄ degeneracy only.
+**What holds:** TFIM chain factorization (Pauli and spectrum modes), AA-blind chain to n=8, AA-blind 2D grid/torus (AL), gapless XX correctly fails AA-blind (AN), Lorentz isotropy proxy, uniqueness with reflection/D₄ degeneracy only.
 
 ---
 
@@ -104,7 +104,7 @@ Automate pass-rate vs `n` for: factorization (exact to n=8, annealing beyond wit
 
 **Why first:** Surfaces *where* signatures degrade (G at n≈11) without committing to 2D scorer redesign; produces the Phase 12 “progress metric” from the roadmap.
 
-**Status (2026-06-27):** `npm run check:scaling` runs the minimal battery (15 checks); falsification **AL** encodes 2D AA-blind positive; falsification **AM** encodes multi-clock G breaking at n≥11.
+**Status (2026-06-27):** `npm run check:scaling` runs the minimal battery (16 checks); falsification **AL** encodes 2D AA-blind positive; falsification **AN** encodes gapless XX negative; falsification **AM** encodes multi-clock G breaking at n≥11.
 
 ### 2. New falsification **AM** — implemented
 
@@ -128,7 +128,7 @@ Complements **AA** (chain positive) and **AK** ({Eₙ}-only impossible). Positiv
 - **D₄ recovery metric:** `grid_equiv_match` / `lattice_equiv_match` — 3×3 true labeling in 8-way primary-score tie; raw `perm_distance` falsely reported failure.
 - **Small-torus MI penalty:** `blind_2d_mi_term` down-weights spurious labelings with MI-NN > 1 on 2×2 torus.
 
-**Result:** AA-blind chain regression passes. 2D exact recovery on 3×3 grid + 2×2 torus (seed 4242). `check:scaling` 15/15; **AL** positive.
+**Result:** AA-blind chain regression passes. 2D exact recovery on 3×3 grid + 2×2 torus (seed 4242). `check:scaling` 16/16; **AL** positive.
 
 **Still open:**
 
@@ -144,7 +144,13 @@ Complements **AA** (chain positive) and **AK** ({Eₙ}-only impossible). Positiv
 
 Falsification **M** now runs random nonlocal + scrambled spectrum at **n=6 and n=8** (exact search); all four must fail recovery.
 
-### 7. Blockers
+### 7. Gapless XX blind boundary — shipped (2026-06-27)
+
+**AN:** *AA-blind MI+bandwidth fails on gapless XX (h=0.5) with flat score landscape; TFIM control passes.*
+
+Gapless phases have algebraically-decaying MI — NN/far contrast vanishes, permutations tie. Semi-blind spectrum (with Ĥ term) still recovers XX; the limit is specific to MI+bandwidth-only inference, not factorization in general.
+
+### 8. Blockers
 
 | Blocker | Impact |
 |---------|--------|

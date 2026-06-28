@@ -265,6 +265,16 @@ pub fn run_scaling_battery() -> ScalingBatteryResult {
         ),
     });
 
+    let xx_gapless = blind_case("xx", 6, 0.5, 4242);
+    checks.push(ScalingCheck {
+        id: "aa_blind_xx_gapless".to_string(),
+        pass: !xx_gapless.recovered,
+        detail: format!(
+            "expect fail: recovered={} score={:.3} miNn={:.3}",
+            xx_gapless.recovered, xx_gapless.score, xx_gapless.mi_nn_ratio
+        ),
+    });
+
     for n in [7usize, 9] {
         push_multiclock_chain_g(&mut checks, n, true);
     }

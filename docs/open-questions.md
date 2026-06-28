@@ -10,9 +10,9 @@ We are **not** proving Mad-Dog from axioms or solving the measurement problem. W
 
 | Layer | Status |
 |-------|--------|
-| **Necessary conditions (S1–S10)** | Shipped — falsification battery **A–AM** (45 tests in `check:falsification`; **AB**, **AC** in `bench:factor`; `check:scaling` for n-sweep + G boundary) |
+| **Necessary conditions (S1–S10)** | Shipped — falsification battery **A–AN** (46 tests in `check:falsification`; **AB**, **AC** in `bench:factor`; `check:scaling` for n-sweep + G boundary) |
 | **Toy demonstrations** | Universe Lab, scattering, decoherence, factorization, clocks, holography |
-| **Scaling / uniqueness** | **Partially closed** — `check:scaling` (15 checks): factorization + AA-blind chain n=4–8, AA-blind 2D grid/torus, uniqueness zoo; multi-clock G breaks n≥11 (**AM**) |
+| **Scaling / uniqueness** | **Partially closed** — `check:scaling` (16 checks): factorization + AA-blind chain n=4–8, AA-blind 2D grid/torus, XX gapless negative, uniqueness zoo; multi-clock G breaks n≥11 (**AM**) |
 | **Observational export** | Shipped — [observational-bridge.md](./observational-bridge.md), `npm run bench:observational` |
 
 **Progress metric (from roadmap):** signatures pass on models we didn’t hand-tune, at **growing n**, with **negative controls** failing loudly.
@@ -48,7 +48,7 @@ From Carroll–Singh and our experiments — not closed by current code.
 
 - **ψₙ amplitudes required** — **AK** proved {Eₙ} alone cannot discriminate qubit labelings.
 - ~~**2D blind recovery** — AA is chain-only; grid/torus spectrum search not in battery.~~ **Answered (2026-06-27)** — **AL** passes: 3×3 grid + 2×2 torus AA-blind (D₄ recovery metric + small-torus MI penalty). See [factorization.md](./factorization.md).
-- **Gapless models** — XX fails MI+bandwidth blind search; fundamental limit or fixable with richer blind data?
+- ~~**Gapless models** — XX fails MI+bandwidth blind search; fundamental limit or fixable with richer blind data?~~ **Answered (2026-06-27)** — **AN** documents fundamental limit: gapless XX (h/J < 1) has algebraically-decaying MI; top-20 blind scores tie (spread < 0.02). Semi-blind (with Ĥ term) still recovers XX; fix requires data beyond MI+bandwidth on ψₙ.
 - **Minimal extra data** — what is the weakest observable beyond {Eₙ} that recovers labeling?
 
 ### Factor count and Hilbert-space growth
