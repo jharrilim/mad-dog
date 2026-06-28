@@ -1,6 +1,8 @@
 import { Link, Outlet, useLocation } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 
+const GITHUB_REPO_URL = 'https://github.com/jharrilim/mad-dog'
+
 export function Layout() {
   const { pathname } = useLocation()
   const isEssay = pathname === '/'
@@ -75,6 +77,14 @@ export function Layout() {
             >
               Glossary
             </Link>
+            <a
+              href={GITHUB_REPO_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-3 py-1.5 rounded-md transition-colors text-muted-foreground hover:text-foreground"
+            >
+              GitHub
+            </a>
           </div>
         </div>
       </nav>
