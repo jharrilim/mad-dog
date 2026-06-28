@@ -1250,12 +1250,12 @@ pub fn run_falsification_battery() -> FalsificationBatteryResult {
     }
 
 
-    // AL — AA-blind MI+bandwidth fails on 2D TFIM; chain n=6 control still recovers
+    // AL — AA-blind MI+bandwidth recovers 2D TFIM grid/torus (mod D₄); chain n=6 control
     {
         let b = run_aa_blind_2d_boundary();
         tests.push(FalsificationTest {
             id: "AL".to_string(),
-            name: "AA-blind locality fails on 2D grid/torus; chain control passes".to_string(),
+            name: "AA-blind locality recovers 2D grid/torus and chain control".to_string(),
             passed: b.pass,
             detail: format!(
                 "chain n=6 recovered={}; grid 3×3 recovered={}; torus 2×2 recovered={}",

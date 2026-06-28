@@ -120,7 +120,13 @@ pub fn blind_lattice_case(
     let params = spectrum_only_params(graph_kind, rows, cols, n);
     let outcome = search_factorization(&shuffled_h, &[], 1, &params, Some(&spectrum));
     let inv = inverse_perm(&true_shuffle);
-    let recovered = crate::factorization::perm_distance(&outcome.best.permutation, &inv) == 0;
+    let recovered = crate::factorization::lattice_equiv_match(
+        &outcome.best.permutation,
+        &inv,
+        graph_kind,
+        rows,
+        cols,
+    );
     LocalitySpectrumCase {
         model: format!("{lattice} {rows}x{cols} h={field:.2}"),
         n,
@@ -133,7 +139,7 @@ pub fn blind_lattice_case(
 }
 
 
-/// Phase 12 falsification AL: AA-blind fails on 2D lattices while chain control recovers.
+/// Phase 12 falsification AL: AA-blind recovers chain control and 2D grid/torus (mod D₄).
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AaBlind2dBoundaryResult {
@@ -148,7 +154,7 @@ pub fn run_aa_blind_2d_boundary() -> AaBlind2dBoundaryResult {
     let chain = blind_case("tfim", 6, 1.5, 4242);
     let grid = blind_lattice_case("grid", 3, 3, 1.5, 4242);
     let torus = blind_lattice_case("torus", 2, 2, 1.5, 4242);
-    let pass = chain.recovered && !grid.recovered && !torus.recovered;
+    let pass = chain.recovered && grid.recovered && torus.recovered;
     AaBlind2dBoundaryResult {
         pass,
         chain_recovered: chain.recovered,

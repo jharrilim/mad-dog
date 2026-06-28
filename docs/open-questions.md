@@ -12,7 +12,7 @@ We are **not** proving Mad-Dog from axioms or solving the measurement problem. W
 |-------|--------|
 | **Necessary conditions (S1–S10)** | Shipped — falsification battery **A–AM** (45 tests in `check:falsification`; **AB**, **AC** in `bench:factor`; `check:scaling` for n-sweep + G boundary) |
 | **Toy demonstrations** | Universe Lab, scattering, decoherence, factorization, clocks, holography |
-| **Scaling / uniqueness** | **Open** — biggest gap between mechanism and “our-universe-likeness”; Phase 12 priority |
+| **Scaling / uniqueness** | **Partially closed** — `check:scaling` (15 checks): factorization + AA-blind chain n=4–8, AA-blind 2D grid/torus, uniqueness zoo; multi-clock G breaks n≥11 (**AM**) |
 | **Observational export** | Shipped — [observational-bridge.md](./observational-bridge.md), `npm run bench:observational` |
 
 **Progress metric (from roadmap):** signatures pass on models we didn’t hand-tune, at **growing n**, with **negative controls** failing loudly.
@@ -41,13 +41,13 @@ From Carroll–Singh and our experiments — not closed by current code.
 
 ### Scaling and uniqueness
 
-- Do falsification tests keep passing as **n** and lattice size grow, or do we rely on annealing luck?
-- Are factorization search results **unique** enough (`equivalenceClassCount`, class score gaps) to claim labeling isn’t arbitrary?
+- ~~Are factorization search results **unique** enough (`equivalenceClassCount`, class score gaps) to claim labeling isn’t arbitrary?~~ **Answered (2026-06-27)** — `check:scaling` uniqueness checks on TFIM n=4/6/8 + XX/sparse n=6; gap narrows with n, stays positive; reflection-only degeneracy.
+- Do falsification tests keep passing as **n** and lattice size grow, or do we rely on annealing luck? **Partially** — exact search to n=8; G breaks n≥11 (**AM**).
 
 ### Spectrum-first locality
 
 - **ψₙ amplitudes required** — **AK** proved {Eₙ} alone cannot discriminate qubit labelings.
-- **2D blind recovery** — AA is chain-only; grid/torus spectrum search not in battery.
+- ~~**2D blind recovery** — AA is chain-only; grid/torus spectrum search not in battery.~~ **Answered (2026-06-27)** — **AL** passes: 3×3 grid + 2×2 torus AA-blind (D₄ recovery metric + small-torus MI penalty). See [factorization.md](./factorization.md).
 - **Gapless models** — XX fails MI+bandwidth blind search; fundamental limit or fixable with richer blind data?
 - **Minimal extra data** — what is the weakest observable beyond {Eₙ} that recovers labeling?
 

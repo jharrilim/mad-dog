@@ -10,7 +10,7 @@ Open hypothesis from [open-questions.md](./open-questions.md): given spectral da
 | **Spectrum only** (`inputMode: 'spectrum'`) | Eigenvalues + eigenvector amplitudes only | Weighted MI + **graph support bandwidth** (permutation-aware span/diameter of active sites on the candidate graph) + emergent dim |
 | **Eigenvalues only** (`inputMode: 'eigenvaluesOnly'`) | Low-lying {Eₙ} only — **cannot recover labeling** | Permutation-invariant level-spacing summary (flat across all candidates) |
 
-Spectrum scoring uses low-lying eigenstate weights (heavier weight on ground state) and measures how compact each eigenvector’s support is on the **candidate graph** after permuting qubit indices — line uses index span; grid/torus use Manhattan/torus graph diameter among active sites. On an open chain, the reflected labeling (k ↦ n−1−k) is equivalent; recovery uses `line_equiv_distance`.
+Spectrum scoring uses low-lying eigenstate weights (heavier weight on ground state) and measures how compact each eigenvector’s support is on the **candidate graph** after permuting qubit indices — line uses index span; grid/torus use Manhattan/torus graph diameter among active sites. On an open chain, the reflected labeling (k ↦ n−1−k) is equivalent; recovery uses `line_equiv_distance`. On square **grid/torus**, the eight D₄ rigid motions (rotations + reflections) are equivalent; recovery uses `grid_equiv_match` / `lattice_equiv_match`.
 
 ## Model zoo (Phase 1, 2026-06)
 
@@ -93,6 +93,18 @@ WASM: `factorizationSearch`, `factorizationRefinement`, `factorizationEnsemble`.
 Global Ĥ eigenvalues are **invariant under qubit permutations** — no labeling information is present in {Eₙ} alone. The codebase wires `inputMode: 'eigenvaluesOnly'` as an explicit negative demo; falsification **AK** checks that recovery fails while spectrum+ψ control still succeeds.
 
 WASM battery: `run_eigenvalue_only_json`
+
+## AA-blind 2D recovery (shipped 2026-06-27)
+
+**AA-blind** = `spectrum_scrambled=true` (no Ĥ term): 50% MI-NN ratio + 35% bandwidth + 15% emergent-dim bonus. Falsification **AA** (chain) and **AL** (2D) use this path via `locality_spectrum.rs`.
+
+| System | seed=4242 | Notes |
+|--------|-----------|-------|
+| chain n=4–8 | ✓ | unchanged |
+| grid 3×3 | ✓ | true labeling in top score bucket (8-way D₄ tie); recovery via `grid_equiv_match` |
+| torus 2×2 | ✓ | `blind_2d_mi_term` penalizes spurious MI-NN > 1 (wrap graph has no distance-≥2 pairs for far-MI contrast) |
+
+`npm run check:scaling` asserts grid/torus AA-blind recovery; falsification **AL** passes when chain + grid + torus all recover.
 
 ## Limits
 

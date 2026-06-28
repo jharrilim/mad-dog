@@ -248,9 +248,9 @@ pub fn run_scaling_battery() -> ScalingBatteryResult {
     let grid = blind_lattice_case("grid", 3, 3, 1.5, 4242);
     checks.push(ScalingCheck {
         id: "aa_blind_grid_3x3".to_string(),
-        pass: !grid.recovered,
+        pass: grid.recovered,
         detail: format!(
-            "expect fail: recovered={} score={:.3} miNn={:.3}",
+            "recovered={} score={:.3} miNn={:.3}",
             grid.recovered, grid.score, grid.mi_nn_ratio
         ),
     });
@@ -258,9 +258,9 @@ pub fn run_scaling_battery() -> ScalingBatteryResult {
     let torus = blind_lattice_case("torus", 2, 2, 1.5, 4242);
     checks.push(ScalingCheck {
         id: "aa_blind_torus_2x2".to_string(),
-        pass: !torus.recovered,
+        pass: torus.recovered,
         detail: format!(
-            "expect fail: recovered={} score={:.3} miNn={:.3}",
+            "recovered={} score={:.3} miNn={:.3}",
             torus.recovered, torus.score, torus.mi_nn_ratio
         ),
     });

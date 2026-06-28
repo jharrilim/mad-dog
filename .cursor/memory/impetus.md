@@ -86,7 +86,7 @@ Dated bullets for decisions future agents should not relitigate without cause.
 - **Ensemble K:** `run_factorization_ensemble` — TFIM/XX/Heisenberg/sparse, ≥80% recovery.
 - **Uniqueness report** on top-k equivalence classes (`line_equiv_distance` clustering).
 - **Negative control M:** random nonlocal + `spectrumScramble` must not recover.
-- **2026-06-27 — Phase 12 Priority 1** — Uniqueness tightening in `check:scaling` + `bench:factorization`; **M** extended to n=8; AA-blind 2D tiebreak partial (AL still negative).
+- **2026-06-27 — Phase 12 Priority 1** — Uniqueness tightening in `check:scaling` + `bench:factorization`; **M** extended to n=8; AA-blind 2D tiebreak partial (superseded by AL fix same day).
 
 ## 2026-06-21 — Phase 3 S3 (relational time)
 
@@ -147,3 +147,9 @@ Dated bullets for decisions future agents should not relitigate without cause.
 - **U′** — **Done** — participation ratio (1/Σλ²) on branch window spectrum as third DOF estimate; two-of-three pass (rel=0.5, abs=0.35); `eft_dof.rs`.
 - **T′/I′** — hold-out coupling/window bands.
 - **`docs/circularity-audit.md`** — per-test independence index (F′ family section started).
+
+## 2026-06-27 — Phase 12 AA-blind 2D (AL)
+
+- **Grid 3×3 “failure” was a metric bug** — true labeling sat in an 8-way D₄ primary-score tie; search returned a symmetry-equivalent perm but `perm_distance==0` rejected it. Fix: `grid_equiv_match` / `lattice_equiv_match`, not primary scorer rebalance.
+- **2×2 torus needed scorer fix** — wrap graph has no distance-≥2 pairs; spurious labelings inflate MI-NN > 1. Fix: `blind_2d_mi_term` penalizes inverted ratio on rows×cols ≤ 4 torus only; chain AA unchanged.
+- **AL flipped negative → positive** — `check:scaling` grid/torus now expect recovery; 15/15 pass.
