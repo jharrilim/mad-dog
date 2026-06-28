@@ -7,6 +7,7 @@ export function Layout() {
   const isExperiments = pathname.startsWith('/experiments')
   const isLab = pathname.startsWith('/lab')
   const isGlossary = pathname.startsWith('/glossary')
+  const isFalsification = pathname.startsWith('/falsification')
 
   return (
     <div className="min-h-svh flex flex-col">
@@ -51,6 +52,17 @@ export function Layout() {
               )}
             >
               Universe Lab
+            </Link>
+            <Link
+              to="/falsification"
+              className={cn(
+                'px-3 py-1.5 rounded-md transition-colors',
+                isFalsification
+                  ? 'bg-secondary text-secondary-foreground'
+                  : 'text-muted-foreground hover:text-foreground',
+              )}
+            >
+              Falsification
             </Link>
             <Link
               to="/glossary"

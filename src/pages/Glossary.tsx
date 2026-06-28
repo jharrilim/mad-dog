@@ -410,13 +410,15 @@ const sections: Section[] = [
         term: 'Falsification battery',
         body: (
           <>
-            Automated checks on the{' '}
+            Automated Mad-Dog claim tests — see the{' '}
+            <Link to="/falsification" className="underline hover:text-foreground">
+              Falsification
+            </Link>{' '}
+            page for philosophy and signature mapping, or run the live suite on{' '}
             <Link to="/experiments" className="underline hover:text-foreground">
               Experiments
-            </Link>{' '}
-            page: blind locality recovery, MI vs lattice light-cone velocity,
-            RT ratio stability, multi-clock inconsistency, and more. Failures are
-            research signals, not theorem violations.
+            </Link>
+            . Failures are research signals, not theorem violations.
           </>
         ),
       },

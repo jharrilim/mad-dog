@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { Separator } from '@/components/ui/separator'
 import { Simulator } from '@/components/Simulator'
 import { SpacetimeViz } from '@/components/SpacetimeViz'
@@ -121,7 +122,12 @@ function Experiments() {
             <h2 className="text-2xl font-semibold mb-2">Falsification Tests</h2>
             <p className="text-muted-foreground">
               Automated checks for claims specific to the Mad-Dog emergence
-              program — what would disprove them if they failed.
+              program — what would disprove them if they failed. How the battery
+              is structured:{' '}
+              <Link to="/falsification" className="underline hover:text-foreground">
+                Falsification guide
+              </Link>
+              .
             </p>
           </div>
           <FalsificationViz />

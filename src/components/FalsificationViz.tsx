@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { useCallback, useState } from 'react'
 import { Play, Loader2 } from 'lucide-react'
 import {
@@ -33,7 +34,11 @@ export function FalsificationViz() {
         <CardTitle>Falsification battery</CardTitle>
         <CardDescription>
           Tests that would disprove Mad-Dog-specific claims — not generic gapped-
-          system properties. See docs/falsification.md for criteria.
+          system properties.{' '}
+          <Link to="/falsification" className="underline hover:text-foreground">
+            How the battery works
+          </Link>
+          .
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">

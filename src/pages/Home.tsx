@@ -303,6 +303,12 @@ function Home() {
                   </Link>{' '}
                   — signatures S1–S10 and Phase 10 are shipped
                 </li>
+                <li>
+                  Read how emergence claims are tested:{' '}
+                  <Link to="/falsification" className="underline hover:text-foreground">
+                    Falsification battery
+                  </Link>
+                </li>
               </ul>
             </CardContent>
           </Card>
